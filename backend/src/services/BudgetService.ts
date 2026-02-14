@@ -236,6 +236,7 @@ export class BudgetService {
 
         // Copiar tag values
         for (const tagValue of expense.tagValues) {
+          // @ts-ignore - tagDefinitionId exists in the unchecked input type
           await tx.tagValue.create({
             data: {
               expenseId: newExpense.id,

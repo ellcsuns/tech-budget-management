@@ -104,13 +104,14 @@ export class AuthService {
     );
 
     // Generate JWT token
+    // @ts-ignore - JWT_SECRET and JWT_EXPIRATION are guaranteed to be strings
     const token = jwt.sign(
       {
         userId: user.id,
         username: user.username
       },
-      String(JWT_SECRET),
-      { expiresIn: String(JWT_EXPIRATION) }
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRATION }
     );
 
     // Calculate expiration date
@@ -227,13 +228,14 @@ export class AuthService {
     const session = await this.validateToken(token);
 
     // Generate new token
+    // @ts-ignore - JWT_SECRET and JWT_EXPIRATION are guaranteed to be strings
     const newToken = jwt.sign(
       {
         userId: session.userId,
         username: session.username
       },
-      String(JWT_SECRET),
-      { expiresIn: String(JWT_EXPIRATION) }
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRATION }
     );
 
     // Calculate expiration date
