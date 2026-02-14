@@ -11,8 +11,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'PLAN' | 'COMPARISON'>('PLAN');
   const [filters, setFilters] = useState({
-    currency: undefined as string | undefined,
-    financialCompanyId: undefined as string | undefined,
+    currencies: undefined as string[] | undefined,
+    financialCompanyIds: undefined as string[] | undefined,
     visibleColumns: {
       budget: true,
       committed: true,

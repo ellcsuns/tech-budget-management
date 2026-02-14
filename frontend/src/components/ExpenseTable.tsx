@@ -35,14 +35,20 @@ export default function ExpenseTable({ expenses, viewMode, filters }: ExpenseTab
   };
 
   const filteredExpenses = expenses.filter(expense => {
-    if (filters.currency) {
-      const hasCurrency = expense.planValues?.some(pv => pv.transactionCurrency === filters.currency) ||
-                         expense.transactions?.some(t => t.transactionCurrency === filters.currency);
+    // Filter by currencies
+    if (filters.currencies && filters.currencies.length > 0) {
+      const hasCurrency = expense.planValues?.some(pv => filters.currencies.includes(pv.transactionCurrency)) ||
+                         expense.transactions?.some(t => filters.currencies.includes(t.transactionCurrency));
       if (!hasCurrency) return false;
     }
-    if (filters.financialCompanyId && expense.financialCompanyId !== filters.financialCompanyId) {
-      return false;
+    
+    // Filter by financial companies
+    if (filters.financialCompanyIds && filters.financialCompanyIds.length > 0) {
+      if (!filters.financialCompanyIds.includes(expense.financialCompanyId)) {
+        return false;
+      }
     }
+    
     return true;
   });
 

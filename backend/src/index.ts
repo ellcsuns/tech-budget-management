@@ -10,8 +10,15 @@ import { planValueRouter } from './routes/planValueRoutes';
 import { masterDataRouter } from './routes/masterDataRoutes';
 import { taggingRouter } from './routes/taggingRoutes';
 import { conversionRateRouter } from './routes/conversionRateRoutes';
+import { authRouter } from './routes/authRoutes';
+import { userRouter } from './routes/userRoutes';
+import { roleRouter } from './routes/roleRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/requestLogger';
+import { AuthService } from './services/AuthService';
+import { PasswordService } from './services/PasswordService';
+import { UserService } from './services/UserService';
+import { RoleService } from './services/RoleService';
 
 dotenv.config();
 
@@ -19,12 +26,26 @@ const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3001;
 
+// Initialize services and ensure default admin exists
+const passwordService = new PasswordService();
+const userService = new UserService(prisma, passwordService);
+const roleService = new RoleService(prisma);
+const authService = new AuthService(prisma, passwordService, userService, roleService);
+
+// Ensure default admin user exists on startup
+authService.ensureDefaultAdmin().catch(console.error);
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(requestLogger);
 
-// Routes
+// Authentication and Authorization Routes
+app.use('/api/auth', authRouter(prisma));
+app.use('/api/users', userRouter(prisma));
+app.use('/api/roles', roleRouter(prisma));
+
+// Existing Routes
 app.use('/api/budgets', budgetRouter(prisma));
 app.use('/api/expenses', expenseRouter(prisma));
 app.use('/api/transactions', transactionRouter(prisma));

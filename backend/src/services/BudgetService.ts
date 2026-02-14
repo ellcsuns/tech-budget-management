@@ -125,3 +125,234 @@ export class BudgetService {
     });
   }
 }
+
+  async createNewVersion(
+    sourceBudgetId: string,
+    planValueChanges: Array<{ expenseId: string; month: number; transactionValue: number; transactionCurrency: string }>
+  ): Promise<Budget> {
+    return await this.prisma.$transaction(async (tx) => {
+      // Obtener presupuesto fuente
+      const sourceBudget = await tx.budget.findUnique({
+        where: { id: sourceBudgetId },
+        include: {
+          expenses: {
+            include: {
+              planValues: true,
+              tagValues: {
+                include: {
+                  tagDefinition: true
+                }
+              }
+            }
+          },
+          conversionRates: true
+        }
+      });
+
+      if (!sourceBudget) {
+        throw new Error('Presupuesto fuente no encontrado');
+      }
+
+      // Calcular siguiente versión
+      const nextVersion = await this.getNextVersion(sourceBudget.year);
+
+      // Crear nuevo presupuesto
+      const newBudget = await tx.budget.create({
+        data: {
+          year: sourceBudget.year,
+          version: nextVersion
+        }
+      });
+
+      // Copiar tasas de conversión
+      for (const rate of sourceBudget.conversionRates) {
+        await tx.conversionRate.create({
+          data: {
+            budgetId: newBudget.id,
+            currency: rate.currency,
+            month: rate.month,
+            rate: rate.rate
+          }
+        });
+      }
+
+      // Copiar gastos
+      for (const expense of sourceBudget.expenses) {
+        const newExpense = await tx.expense.create({
+          data: {
+            budgetId: newBudget.id,
+            code: expense.code,
+            shortDescription: expense.shortDescription,
+            longDescription: expense.longDescription,
+            technologyDirections: expense.technologyDirections,
+            userAreas: expense.userAreas,
+            financialCompanyId: expense.financialCompanyId,
+            parentExpenseId: expense.parentExpenseId
+          }
+        });
+
+        // Copiar valores plan
+        for (const planValue of expense.planValues) {
+          // Buscar si hay cambio para este gasto y mes
+          const change = planValueChanges.find(
+            c => c.expenseId === expense.id && c.month === planValue.month
+          );
+
+          let transactionValue = planValue.transactionValue;
+          let transactionCurrency = planValue.transactionCurrency;
+
+          if (change) {
+            transactionValue = change.transactionValue;
+            transactionCurrency = change.transactionCurrency;
+          }
+
+          // Obtener tasa de conversión
+          const conversionRate = await tx.conversionRate.findUnique({
+            where: {
+              budgetId_currency_month: {
+                budgetId: newBudget.id,
+                currency: transactionCurrency,
+                month: planValue.month
+              }
+            }
+          });
+
+          if (!conversionRate) {
+            throw new Error(`No se encontró tasa de conversión para ${transactionCurrency} en el mes ${planValue.month}`);
+          }
+
+          const usdValue = Number(transactionValue) * Number(conversionRate.rate);
+
+          await tx.planValue.create({
+            data: {
+              expenseId: newExpense.id,
+              month: planValue.month,
+              transactionCurrency,
+              transactionValue,
+              usdValue,
+              conversionRate: conversionRate.rate
+            }
+          });
+        }
+
+        // Copiar tag values
+        for (const tagValue of expense.tagValues) {
+          await tx.tagValue.create({
+            data: {
+              expenseId: newExpense.id,
+              tagDefinitionId: tagValue.tagDefinitionId,
+              value: tagValue.value
+            }
+          });
+        }
+      }
+
+      return await tx.budget.findUnique({
+        where: { id: newBudget.id },
+        include: {
+          expenses: {
+            include: {
+              planValues: true,
+              tagValues: true
+            }
+          },
+          conversionRates: true
+        }
+      }) as Budget;
+    });
+  }
+
+  async getNextVersion(year: number): Promise<string> {
+    const budgets = await this.prisma.budget.findMany({
+      where: { year },
+      orderBy: { version: 'desc' }
+    });
+
+    if (budgets.length === 0) {
+      return 'v1.0';
+    }
+
+    const lastVersion = budgets[0].version;
+    const match = lastVersion.match(/v(\d+)\.(\d+)/);
+    
+    if (!match) {
+      return 'v1.0';
+    }
+
+    const major = parseInt(match[1]);
+    const minor = parseInt(match[2]);
+
+    return `v${major}.${minor + 1}`;
+  }
+
+  async addExpenseToBudget(budgetId: string, expenseCode: string): Promise<any> {
+    // Buscar el gasto en otros presupuestos
+    const existingExpense = await this.prisma.expense.findFirst({
+      where: { code: expenseCode }
+    });
+
+    if (!existingExpense) {
+      throw new Error('Gasto no encontrado');
+    }
+
+    // Crear copia del gasto en el presupuesto actual
+    const newExpense = await this.prisma.expense.create({
+      data: {
+        budgetId,
+        code: existingExpense.code,
+        shortDescription: existingExpense.shortDescription,
+        longDescription: existingExpense.longDescription,
+        technologyDirections: existingExpense.technologyDirections,
+        userAreas: existingExpense.userAreas,
+        financialCompanyId: existingExpense.financialCompanyId,
+        parentExpenseId: existingExpense.parentExpenseId
+      }
+    });
+
+    // Inicializar valores plan en 0 para todos los meses
+    for (let month = 1; month <= 12; month++) {
+      await this.prisma.planValue.create({
+        data: {
+          expenseId: newExpense.id,
+          month,
+          transactionCurrency: 'USD',
+          transactionValue: 0,
+          usdValue: 0,
+          conversionRate: 1
+        }
+      });
+    }
+
+    return newExpense;
+  }
+
+  async removeExpenseFromBudget(budgetId: string, expenseId: string): Promise<void> {
+    const expense = await this.prisma.expense.findUnique({
+      where: { id: expenseId }
+    });
+
+    if (!expense || expense.budgetId !== budgetId) {
+      throw new Error('Gasto no encontrado en este presupuesto');
+    }
+
+    // Eliminar valores plan
+    await this.prisma.planValue.deleteMany({
+      where: { expenseId }
+    });
+
+    // Eliminar tag values
+    await this.prisma.tagValue.deleteMany({
+      where: { expenseId }
+    });
+
+    // Eliminar transacciones
+    await this.prisma.transaction.deleteMany({
+      where: { expenseId }
+    });
+
+    // Eliminar gasto
+    await this.prisma.expense.delete({
+      where: { id: expenseId }
+    });
+  }
+}

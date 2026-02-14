@@ -175,3 +175,87 @@ model TagValue {
   @@index([expenseId])
   @@index([tagId])
 }
+
+// ============================================
+// Authentication and Authorization Models
+// ============================================
+
+// User model
+model User {
+  id           String      @id @default(uuid())
+  username     String      @unique
+  passwordHash String
+  email        String      @unique
+  fullName     String
+  active       Boolean     @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  userRoles    UserRole[]
+  sessions     Session[]
+  
+  @@index([username])
+  @@index([email])
+  @@index([active])
+}
+
+// Role model
+model Role {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  description String
+  isSystem    Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  userRoles   UserRole[]
+  permissions Permission[]
+  
+  @@index([name])
+}
+
+// UserRole junction table (many-to-many)
+model UserRole {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId     String
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  assignedAt DateTime @default(now())
+  
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+}
+
+// Permission model
+model Permission {
+  id             String         @id @default(uuid())
+  roleId         String
+  role           Role           @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  menuCode       String
+  permissionType PermissionType
+  createdAt      DateTime       @default(now())
+  
+  @@unique([roleId, menuCode, permissionType])
+  @@index([roleId])
+  @@index([menuCode])
+}
+
+enum PermissionType {
+  VIEW
+  MODIFY
+}
+
+// Session model (for token blacklisting and tracking)
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([token])
+}

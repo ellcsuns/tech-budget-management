@@ -66,5 +66,37 @@ export function budgetRouter(prisma: PrismaClient) {
     }
   });
 
+  // POST /api/budgets/:id/versions - Crear nueva versión del presupuesto
+  router.post('/:id/versions', async (req, res, next) => {
+    try {
+      const { planValueChanges } = req.body;
+      const newBudget = await budgetService.createNewVersion(req.params.id, planValueChanges || []);
+      res.status(201).json(newBudget);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // POST /api/budgets/:id/expenses - Agregar gasto al presupuesto
+  router.post('/:id/expenses', async (req, res, next) => {
+    try {
+      const { expenseCode } = req.body;
+      const expense = await budgetService.addExpenseToBudget(req.params.id, expenseCode);
+      res.status(201).json(expense);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // DELETE /api/budgets/:id/expenses/:expenseId - Eliminar gasto del presupuesto
+  router.delete('/:id/expenses/:expenseId', async (req, res, next) => {
+    try {
+      await budgetService.removeExpenseFromBudget(req.params.id, req.params.expenseId);
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  });
+
   return router;
 }

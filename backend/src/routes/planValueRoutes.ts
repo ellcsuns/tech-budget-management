@@ -18,9 +18,23 @@ export function planValueRouter(prisma: PrismaClient) {
   router.get('/', async (req, res, next) => {
     try {
       const expenseId = req.query.expenseId as string;
-      if (!expenseId) {
-        return res.status(400).json({ error: 'expenseId es requerido' });
+      const budgetId = req.query.budgetId as string;
+      
+      if (budgetId) {
+        // Obtener todos los plan values de un presupuesto
+        const expenses = await prisma.expense.findMany({
+          where: { budgetId },
+          include: { planValues: true }
+        });
+        
+        const allPlanValues = expenses.flatMap(expense => expense.planValues);
+        return res.json(allPlanValues);
       }
+      
+      if (!expenseId) {
+        return res.status(400).json({ error: 'expenseId o budgetId es requerido' });
+      }
+      
       const planValues = await planValueService.getPlanValuesByExpense(expenseId);
       res.json(planValues);
     } catch (error) {
