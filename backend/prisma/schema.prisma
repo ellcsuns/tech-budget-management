@@ -1,0 +1,177 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Budget model
+model Budget {
+  id              String            @id @default(uuid())
+  year            Int
+  version         String
+  expenses        Expense[]
+  conversionRates ConversionRate[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  
+  @@unique([year, version])
+  @@index([year])
+}
+
+// Expense model
+model Expense {
+  id                    String        @id @default(uuid())
+  budgetId              String
+  budget                Budget        @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  code                  String
+  shortDescription      String
+  longDescription       String
+  technologyDirections  String[]      // Array de IDs
+  userAreas             String[]      // Array de IDs
+  financialCompanyId    String
+  financialCompany      FinancialCompany @relation(fields: [financialCompanyId], references: [id])
+  parentExpenseId       String?
+  parentExpense         Expense?      @relation("ExpenseHierarchy", fields: [parentExpenseId], references: [id])
+  childExpenses         Expense[]     @relation("ExpenseHierarchy")
+  transactions          Transaction[]
+  planValues            PlanValue[]
+  tagValues             TagValue[]
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  
+  @@unique([budgetId, code])
+  @@index([budgetId])
+  @@index([financialCompanyId])
+}
+
+// Transaction model
+model Transaction {
+  id                      String   @id @default(uuid())
+  expenseId               String
+  expense                 Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  type                    TransactionType
+  serviceDate             DateTime
+  postingDate             DateTime
+  referenceDocumentNumber String
+  externalPlatformLink    String
+  transactionCurrency     String
+  transactionValue        Decimal  @db.Decimal(15, 2)
+  usdValue                Decimal  @db.Decimal(15, 2)
+  conversionRate          Decimal  @db.Decimal(10, 6)
+  month                   Int
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  
+  @@unique([expenseId, referenceDocumentNumber])
+  @@index([expenseId, month])
+  @@index([type])
+}
+
+enum TransactionType {
+  COMMITTED
+  REAL
+}
+
+// PlanValue model
+model PlanValue {
+  id        String              @id @default(uuid())
+  expenseId String
+  expense   Expense             @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  month     Int
+  transactionCurrency String
+  transactionValue    Decimal @db.Decimal(15, 2)
+  usdValue            Decimal @db.Decimal(15, 2)
+  conversionRate      Decimal @db.Decimal(10, 6)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  
+  @@unique([expenseId, month])
+  @@index([expenseId])
+}
+
+// ConversionRate model
+model ConversionRate {
+  id        String   @id @default(uuid())
+  budgetId  String
+  budget    Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  currency  String
+  month     Int
+  rate      Decimal  @db.Decimal(10, 6)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([budgetId, currency, month])
+  @@index([budgetId, month])
+}
+
+// TechnologyDirection model
+model TechnologyDirection {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// UserArea model
+model UserArea {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// FinancialCompany model
+model FinancialCompany {
+  id          String    @id @default(uuid())
+  code        String    @unique
+  name        String
+  description String?
+  taxId       String?
+  expenses    Expense[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// TagDefinition model
+model TagDefinition {
+  id            String        @id @default(uuid())
+  name          String        @unique
+  description   String?
+  inputType     TagInputType
+  format        String?
+  selectOptions String[]
+  tagValues     TagValue[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+enum TagInputType {
+  FORMAT
+  FREE_TEXT
+  SELECT_LIST
+}
+
+// TagValue model
+model TagValue {
+  id            String        @id @default(uuid())
+  expenseId     String
+  expense       Expense       @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  tagId         String
+  tagDefinition TagDefinition @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  value         Json
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  @@unique([expenseId, tagId])
+  @@index([expenseId])
+  @@index([tagId])
+}
