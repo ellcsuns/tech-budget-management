@@ -237,12 +237,11 @@ export class BudgetService {
         // Copiar tag values
         for (const tagValue of expense.tagValues) {
           await tx.tagValue.create({
-            // @ts-ignore - tagDefinitionId exists in the unchecked input type
             data: {
               expenseId: newExpense.id,
               tagDefinitionId: tagValue.tagDefinition.id,
-              value: tagValue.value as any
-            }
+              value: tagValue.value
+            } as any
           });
         }
       }
