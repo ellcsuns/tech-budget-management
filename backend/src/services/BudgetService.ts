@@ -201,7 +201,7 @@ export class BudgetService {
           let transactionCurrency = planValue.transactionCurrency;
 
           if (change) {
-            transactionValue = change.transactionValue;
+            transactionValue = change.transactionValue as any;
             transactionCurrency = change.transactionCurrency;
           }
 
@@ -239,8 +239,8 @@ export class BudgetService {
           await tx.tagValue.create({
             data: {
               expenseId: newExpense.id,
-              tagDefinitionId: tagValue.tagDefinitionId,
-              value: tagValue.value
+              tagDefinitionId: tagValue.tagDefinition.id,
+              value: tagValue.value as any
             }
           });
         }
