@@ -196,7 +196,18 @@ export class ExpenseService {
   }
 
   async getExpenseMetadata(id: string) {
-    const expense = await this.getExpense(id);
+    const expense = await this.prisma.expense.findUnique({
+      where: { id },
+      include: {
+        financialCompany: true,
+        tagValues: {
+          include: {
+            tagDefinition: true
+          }
+        }
+      }
+    });
+
     if (!expense) {
       throw new Error('Gasto no encontrado');
     }
