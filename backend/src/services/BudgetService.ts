@@ -239,7 +239,9 @@ export class BudgetService {
           await tx.tagValue.create({
             data: {
               expenseId: newExpense.id,
-              tagDefinitionId: (tagValue as any).tagDefinitionId || tagValue.tagDefinition.id,
+              tagDefinition: {
+                connect: { id: tagValue.tagDefinition.id }
+              },
               value: tagValue.value as any
             }
           });
