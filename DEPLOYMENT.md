@@ -132,7 +132,7 @@ nano .env
 
 Actualizar con:
 ```env
-DATABASE_URL="postgresql://tech_user:tu_password_seguro@localhost:5432/tech_budget?schema=public"
+DATABASE_URL="postgresql://tech_user:tu_password_seguro@tech_user_bd_pwd:5432/tech_budget?schema=public"
 PORT=3001
 NODE_ENV=production
 ```

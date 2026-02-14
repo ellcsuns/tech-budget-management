@@ -25,7 +25,7 @@ tech-budget-management/
 
 ## Requisitos Previos
 
-- Node.js 18+
+- Node.js 22+ (LTS)
 - PostgreSQL 14+
 - npm
 
