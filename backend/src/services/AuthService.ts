@@ -109,8 +109,8 @@ export class AuthService {
         userId: user.id,
         username: user.username
       },
-      JWT_SECRET as string,
-      { expiresIn: JWT_EXPIRATION as string }
+      String(JWT_SECRET),
+      { expiresIn: String(JWT_EXPIRATION) }
     );
 
     // Calculate expiration date
@@ -232,8 +232,8 @@ export class AuthService {
         userId: session.userId,
         username: session.username
       },
-      JWT_SECRET as string,
-      { expiresIn: JWT_EXPIRATION as string }
+      String(JWT_SECRET),
+      { expiresIn: String(JWT_EXPIRATION) }
     );
 
     // Calculate expiration date
