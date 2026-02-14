@@ -96,7 +96,7 @@ export default function CommittedTransactionsPage() {
     try {
       const data = {
         ...formData,
-        type: 'COMMITTED',
+        type: 'COMMITTED' as const,
         transactionValue: parseFloat(formData.transactionValue)
       };
 

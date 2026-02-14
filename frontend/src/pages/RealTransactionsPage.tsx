@@ -94,7 +94,7 @@ export default function RealTransactionsPage() {
     try {
       const data = {
         ...formData,
-        type: 'REAL',
+        type: 'REAL' as const,
         transactionValue: parseFloat(formData.transactionValue)
       };
 

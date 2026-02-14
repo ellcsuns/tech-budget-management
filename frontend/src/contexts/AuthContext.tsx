@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const validateAndLoadUser = async (token: string) => {
+  const validateAndLoadUser = async (_token: string) => {
     try {
       const response = await api.get('/auth/me');
       setUser(response.data);
