@@ -124,7 +124,6 @@ export class BudgetService {
       ]
     });
   }
-}
 
   async createNewVersion(
     sourceBudgetId: string,
