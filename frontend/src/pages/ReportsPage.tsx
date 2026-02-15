@@ -89,7 +89,6 @@ export default function ReportsPage() {
 
   const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16'];
 
-  const maxCategoryValue = Math.max(...categoryData.map(d => d.value), 1);
   const maxBudgetValue = Math.max(...budgetVsRealData.map(d => d.value), 1);
   const maxAreaValue = Math.max(...userAreaData.map(d => d.value), 1);
   const totalPie = categoryData.reduce((sum, d) => sum + d.value, 0);

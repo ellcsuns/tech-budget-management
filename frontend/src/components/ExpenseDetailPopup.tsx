@@ -23,7 +23,7 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnl
     try {
       await expensesEnhancedApi.addTag(expense.id, tagForm);
       resetTagForm();
-      onUpdate();
+      onUpdate?.();
     } catch (error: any) {
       alert(error.response?.data?.error || 'Error al agregar tag');
     }
@@ -36,7 +36,7 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnl
     try {
       await expensesEnhancedApi.updateTag(expense.id, editingTag.key, tagForm);
       resetTagForm();
-      onUpdate();
+      onUpdate?.();
     } catch (error: any) {
       alert(error.response?.data?.error || 'Error al actualizar tag');
     }
@@ -47,7 +47,7 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnl
 
     try {
       await expensesEnhancedApi.removeTag(expense.id, tagKey);
-      onUpdate();
+      onUpdate?.();
     } catch (error: any) {
       alert(error.response?.data?.error || 'Error al eliminar tag');
     }
