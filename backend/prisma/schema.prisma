@@ -322,3 +322,35 @@ model Deferral {
   @@index([budgetId])
   @@index([expenseId])
 }
+
+
+// ============================================
+// Internationalization (i18n) Module
+// ============================================
+
+model Translation {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  es        String
+  en        String
+  category  String   @default("general")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([key])
+  @@index([category])
+}
+
+// ============================================
+// System Configuration
+// ============================================
+
+model SystemConfig {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([key])
+}

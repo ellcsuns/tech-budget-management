@@ -16,6 +16,9 @@ import { roleRouter } from './routes/roleRoutes';
 import { savingsRouter } from './routes/savings';
 import { expensesRouter } from './routes/expenses';
 import { deferralsRouter } from './routes/deferrals';
+import { translationRouter } from './routes/translationRoutes';
+import { configRouter } from './routes/configRoutes';
+import { reportRouter } from './routes/reportRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/requestLogger';
 import { AuthService } from './services/AuthService';
@@ -63,6 +66,9 @@ app.use('/api/conversion-rates', conversionRateRouter(prisma));
 app.use('/api/savings', savingsRouter(prisma));
 app.use('/api/expenses-enhanced', expensesRouter(prisma));
 app.use('/api/deferrals', deferralsRouter(prisma));
+app.use('/api/translations', translationRouter(prisma));
+app.use('/api/config', configRouter(prisma));
+app.use('/api/reports', reportRouter(prisma));
 
 // Health check
 app.get('/health', (req, res) => {

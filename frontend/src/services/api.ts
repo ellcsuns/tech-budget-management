@@ -87,7 +87,10 @@ export const budgetApi = {
   update: (id: string, data: Partial<Budget>) => api.put<Budget>(`/budgets/${id}`, data),
   delete: (id: string) => api.delete(`/budgets/${id}`),
   createNewVersion: (budgetId: string, planValueChanges: any[]) => 
-    api.post(`/budgets/${budgetId}/new-version`, { planValueChanges })
+    api.post(`/budgets/${budgetId}/new-version`, { planValueChanges }),
+  getActive: () => api.get<Budget>('/budgets/active'),
+  compare: (budgetAId: string, budgetBId: string) => 
+    api.get(`/budgets/compare?budgetA=${budgetAId}&budgetB=${budgetBId}`)
 };
 
 // Expense API
@@ -260,6 +263,36 @@ export const deferralApi = {
     endMonth: number;
   }) => api.post<Deferral>('/deferrals', data),
   delete: (id: string) => api.delete(`/deferrals/${id}`)
+};
+
+// Translation API
+export const translationApi = {
+  getAll: (params?: { page?: number; limit?: number; search?: string; category?: string }) => {
+    const p = new URLSearchParams();
+    if (params?.page) p.append('page', String(params.page));
+    if (params?.limit) p.append('limit', String(params.limit));
+    if (params?.search) p.append('search', params.search);
+    if (params?.category) p.append('category', params.category);
+    return api.get(`/translations?${p.toString()}`);
+  },
+  getByLocale: (locale: string) => api.get<Record<string, string>>(`/translations/locale/${locale}`),
+  create: (data: { key: string; es: string; en: string; category?: string }) => api.post('/translations', data),
+  update: (id: string, data: { es?: string; en?: string; category?: string }) => api.put(`/translations/${id}`, data),
+  delete: (id: string) => api.delete(`/translations/${id}`)
+};
+
+// Config API
+export const configApi = {
+  get: (key: string) => api.get<{ key: string; value: string }>(`/config/${key}`),
+  set: (key: string, value: string) => api.put(`/config/${key}`, { value })
+};
+
+// Report API
+export const reportApi = {
+  get: (type: string, filters: Record<string, string>) => {
+    const p = new URLSearchParams(filters);
+    return api.get(`/reports/${type}?${p.toString()}`);
+  }
 };
 
 export default api;

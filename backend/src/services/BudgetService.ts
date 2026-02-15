@@ -125,6 +125,45 @@ export class BudgetService {
     });
   }
 
+  async getActiveBudget(): Promise<Budget | null> {
+    const currentYear = new Date().getFullYear();
+    // Try current year first, get most recently created
+    let budget = await this.prisma.budget.findFirst({
+      where: { year: currentYear },
+      orderBy: { createdAt: 'desc' },
+      include: { expenses: true, conversionRates: true }
+    });
+    if (budget) return budget;
+    // Fallback: most recent budget of any year
+    budget = await this.prisma.budget.findFirst({
+      orderBy: [{ year: 'desc' }, { createdAt: 'desc' }],
+      include: { expenses: true, conversionRates: true }
+    });
+    return budget;
+  }
+
+  async compareBudgets(budgetAId: string, budgetBId: string) {
+    const [budgetA, budgetB] = await Promise.all([
+      this.prisma.budget.findUnique({
+        where: { id: budgetAId },
+        include: {
+          expenses: { include: { planValues: true, financialCompany: true } },
+          conversionRates: true
+        }
+      }),
+      this.prisma.budget.findUnique({
+        where: { id: budgetBId },
+        include: {
+          expenses: { include: { planValues: true, financialCompany: true } },
+          conversionRates: true
+        }
+      })
+    ]);
+    if (!budgetA || !budgetB) throw new Error('Budget not found');
+    if (budgetA.year !== budgetB.year) throw new Error('Budgets must be from the same year');
+    return { budgetA, budgetB };
+  }
+
   async createNewVersion(
     sourceBudgetId: string,
     planValueChanges: Array<{ expenseId: string; month: number; transactionValue: number; transactionCurrency: string }>

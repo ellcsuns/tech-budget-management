@@ -16,6 +16,29 @@ export function budgetRouter(prisma: PrismaClient) {
     }
   });
 
+  // GET /api/budgets/active - Get active budget
+  router.get('/active', async (req, res, next) => {
+    try {
+      const budget = await budgetService.getActiveBudget();
+      if (!budget) return res.status(404).json({ error: 'No active budget found' });
+      res.json(budget);
+    } catch (error) { next(error); }
+  });
+
+  // GET /api/budgets/compare - Compare two budgets
+  router.get('/compare', async (req, res, next) => {
+    try {
+      const { budgetA, budgetB } = req.query;
+      if (!budgetA || !budgetB) return res.status(400).json({ error: 'budgetA and budgetB are required' });
+      const result = await budgetService.compareBudgets(budgetA as string, budgetB as string);
+      res.json(result);
+    } catch (error: any) {
+      if (error.message?.includes('same year')) return res.status(400).json({ error: error.message });
+      if (error.message?.includes('not found')) return res.status(404).json({ error: error.message });
+      next(error);
+    }
+  });
+
   // GET /api/budgets/:id - Obtener presupuesto por ID
   router.get('/:id', async (req, res, next) => {
     try {

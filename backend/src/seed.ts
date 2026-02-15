@@ -1,4 +1,5 @@
 import { PrismaClient, TransactionType, TagInputType, PermissionType, SavingStatus } from '@prisma/client';
+import { seedTranslations } from './seedTranslations';
 
 const prisma = new PrismaClient();
 
@@ -7,6 +8,8 @@ async function main() {
 
   // Limpiar datos existentes
   console.log('🗑️  Limpiando datos existentes...');
+  await prisma.translation.deleteMany();
+  await prisma.systemConfig.deleteMany();
   await prisma.deferral.deleteMany();
   await prisma.saving.deleteMany();
   await prisma.tagValue.deleteMany();
@@ -680,6 +683,11 @@ async function main() {
       }
     });
   }
+
+  // ============================================
+  // TRADUCCIONES E I18N
+  // ============================================
+  await seedTranslations(prisma);
 
   // ============================================
   // RESUMEN
