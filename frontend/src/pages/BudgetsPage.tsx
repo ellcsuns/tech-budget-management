@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { budgetApi, planValueApi } from '../services/api';
-import { Budget, ExpenseRow, CellEdit } from '../types';
+import { budgetApi, planValueApi, expenseApi } from '../services/api';
+import { Budget, ExpenseRow, CellEdit, Expense } from '../types';
 import { getCellKey, validateCellValue, transformToExpenseRows } from '../utils/budgetEditHelpers';
 import { useAuth } from '../contexts/AuthContext';
 import BudgetSelector from '../components/BudgetSelector';
@@ -137,7 +137,7 @@ export default function BudgetsPage() {
     try {
       // Find expense by code from all expenses
       const res = await expenseApi.getByBudget(selectedBudget!.id);
-      const expense = res.data.find(e => e.code === expenseCode);
+      const expense = res.data.find((e: Expense) => e.code === expenseCode);
       
       if (!expense) {
         console.error('Expense not found:', expenseCode);
