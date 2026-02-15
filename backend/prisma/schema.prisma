@@ -16,6 +16,7 @@ model Budget {
   version         String
   expenses        Expense[]
   conversionRates ConversionRate[]
+  savings         Saving[]
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   
@@ -41,6 +42,7 @@ model Expense {
   transactions          Transaction[]
   planValues            PlanValue[]
   tagValues             TagValue[]
+  savings               Saving[]
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
   
@@ -193,6 +195,7 @@ model User {
   updatedAt    DateTime    @updatedAt
   userRoles    UserRole[]
   sessions     Session[]
+  savings      Saving[]
   
   @@index([username])
   @@index([email])
@@ -258,4 +261,35 @@ model Session {
   @@index([userId])
   @@index([expiresAt])
   @@index([token])
+}
+
+// ============================================
+// Savings Module
+// ============================================
+
+// Saving model
+model Saving {
+  id                   String          @id @default(uuid())
+  expenseId            String
+  expense              Expense         @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  budgetId             String
+  budget               Budget          @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  totalAmount          Decimal         @db.Decimal(15, 2)
+  description          String
+  status               SavingStatus    @default(PENDING)
+  monthlyDistribution  Json
+  createdAt            DateTime        @default(now())
+  createdBy            String
+  user                 User            @relation(fields: [createdBy], references: [id])
+  approvedAt           DateTime?
+  
+  @@index([budgetId])
+  @@index([expenseId])
+  @@index([status])
+  @@index([createdBy])
+}
+
+enum SavingStatus {
+  PENDING
+  APPROVED
 }

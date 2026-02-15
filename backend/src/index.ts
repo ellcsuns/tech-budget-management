@@ -13,6 +13,8 @@ import { conversionRateRouter } from './routes/conversionRateRoutes';
 import { authRouter } from './routes/authRoutes';
 import { userRouter } from './routes/userRoutes';
 import { roleRouter } from './routes/roleRoutes';
+import { savingsRouter } from './routes/savings';
+import { expensesRouter } from './routes/expenses';
 import { errorHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/requestLogger';
 import { AuthService } from './services/AuthService';
@@ -55,6 +57,10 @@ app.use('/api/user-areas', masterDataRouter(prisma, 'USER_AREA'));
 app.use('/api/financial-companies', masterDataRouter(prisma, 'FINANCIAL_COMPANY'));
 app.use('/api/tag-definitions', taggingRouter(prisma));
 app.use('/api/conversion-rates', conversionRateRouter(prisma));
+
+// New Routes - Savings and Enhanced Expenses
+app.use('/api/savings', savingsRouter(prisma));
+app.use('/api/expenses-enhanced', expensesRouter(prisma));
 
 // Health check
 app.get('/health', (req, res) => {

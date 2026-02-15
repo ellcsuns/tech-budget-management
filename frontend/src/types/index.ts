@@ -165,3 +165,36 @@ export interface PlanValueChange {
   transactionValue: number;
   transactionCurrency: string;
 }
+
+// Savings Types
+export interface Saving {
+  id: string;
+  expenseId: string;
+  budgetId: string;
+  totalAmount: number;
+  description: string;
+  status: 'PENDING' | 'APPROVED';
+  monthlyDistribution: Record<number, number>;
+  createdBy: string;
+  approvedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  expense?: Expense;
+  budget?: Budget;
+  user?: {
+    id: string;
+    username: string;
+    fullName: string;
+  };
+}
+
+// Custom Tags Types
+export interface CustomTag {
+  key: string;
+  value: string | number | Date;
+  valueType: 'TEXT' | 'NUMBER' | 'DATE' | 'SELECT';
+}
+
+export interface ExpenseWithTags extends Expense {
+  customTags: CustomTag[];
+}

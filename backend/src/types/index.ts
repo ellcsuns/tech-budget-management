@@ -23,6 +23,21 @@ export interface ExpenseInput {
   parentExpenseId?: string;
 }
 
+export interface ExpenseFilters {
+  searchText?: string;
+  technologyDirectionIds?: string[];
+  userAreaIds?: string[];
+  financialCompanyId?: string;
+  parentExpenseId?: string;
+  hasTag?: { key: string; value?: string };
+}
+
+export interface CustomTag {
+  key: string;
+  value: string | number | Date;
+  valueType: 'TEXT' | 'NUMBER' | 'DATE' | 'SELECT';
+}
+
 export interface TransactionInput {
   expenseId: string;
   type: TransactionType;

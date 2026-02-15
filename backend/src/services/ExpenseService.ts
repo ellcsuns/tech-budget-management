@@ -1,5 +1,9 @@
 import { PrismaClient, Expense } from '@prisma/client';
-import { ExpenseInput } from '../types';
+import { ExpenseInput, ExpenseFilters, CustomTag } from '../types';
+
+export interface ExpenseWithTags extends Expense {
+  customTags: CustomTag[];
+}
 
 export class ExpenseService {
   private prisma: PrismaClient;
@@ -9,12 +13,24 @@ export class ExpenseService {
   }
 
   async createExpense(budgetId: string, data: ExpenseInput): Promise<Expense> {
-    // Validar campos requeridos
-    if (!data.code || !data.shortDescription || !data.longDescription || 
-        !data.technologyDirections || data.technologyDirections.length === 0 ||
-        !data.userAreas || data.userAreas.length === 0 ||
-        !data.financialCompanyId) {
-      throw new Error('Todos los campos requeridos deben ser proporcionados');
+    // Validar campos requeridos con mensajes específicos
+    if (!data.code || data.code.trim() === '') {
+      throw new Error('Field code is required');
+    }
+    if (!data.shortDescription || data.shortDescription.trim() === '') {
+      throw new Error('Field shortDescription is required');
+    }
+    if (!data.longDescription || data.longDescription.trim() === '') {
+      throw new Error('Field longDescription is required');
+    }
+    if (!data.financialCompanyId || data.financialCompanyId.trim() === '') {
+      throw new Error('Field financialCompanyId is required');
+    }
+    if (!data.technologyDirections || data.technologyDirections.length === 0) {
+      throw new Error('Field technologyDirections is required');
+    }
+    if (!data.userAreas || data.userAreas.length === 0) {
+      throw new Error('Field userAreas is required');
     }
 
     // Validar que el presupuesto existe
@@ -190,6 +206,24 @@ export class ExpenseService {
   }
 
   async deleteExpense(id: string): Promise<void> {
+    // Delete custom tag definitions (cascade will delete tag values)
+    const tagDefs = await this.prisma.tagDefinition.findMany({
+      where: {
+        name: {
+          startsWith: `custom:${id}:`
+        }
+      }
+    });
+
+    await this.prisma.tagDefinition.deleteMany({
+      where: {
+        id: {
+          in: tagDefs.map(td => td.id)
+        }
+      }
+    });
+
+    // Delete expense (cascade will delete other related records)
     await this.prisma.expense.delete({
       where: { id }
     });
@@ -237,5 +271,315 @@ export class ExpenseService {
       financialCompany: expense.financialCompany,
       tags: expense.tagValues
     };
+  }
+
+  async getAllExpenses(filters?: ExpenseFilters): Promise<ExpenseWithTags[]> {
+    const where: any = {};
+
+    // Apply search text filter
+    if (filters?.searchText) {
+      const searchText = filters.searchText.toLowerCase();
+      where.OR = [
+        { code: { contains: searchText, mode: 'insensitive' } },
+        { shortDescription: { contains: searchText, mode: 'insensitive' } },
+        { longDescription: { contains: searchText, mode: 'insensitive' } }
+      ];
+    }
+
+    // Apply technology direction filter
+    if (filters?.technologyDirectionIds && filters.technologyDirectionIds.length > 0) {
+      where.technologyDirections = {
+        hasSome: filters.technologyDirectionIds
+      };
+    }
+
+    // Apply user area filter
+    if (filters?.userAreaIds && filters.userAreaIds.length > 0) {
+      where.userAreas = {
+        hasSome: filters.userAreaIds
+      };
+    }
+
+    // Apply financial company filter
+    if (filters?.financialCompanyId) {
+      where.financialCompanyId = filters.financialCompanyId;
+    }
+
+    // Apply parent expense filter
+    if (filters?.parentExpenseId) {
+      where.parentExpenseId = filters.parentExpenseId;
+    }
+
+    const expenses = await this.prisma.expense.findMany({
+      where,
+      include: {
+        financialCompany: true,
+        parentExpense: true,
+        tagValues: {
+          include: {
+            tagDefinition: true
+          }
+        }
+      },
+      orderBy: {
+        code: 'asc'
+      }
+    });
+
+    // Transform expenses to include custom tags
+    const expensesWithTags: ExpenseWithTags[] = await Promise.all(
+      expenses.map(async (expense) => {
+        const customTags = this.extractCustomTags(expense.tagValues);
+        return {
+          ...expense,
+          customTags
+        };
+      })
+    );
+
+    // Apply tag filter if specified
+    if (filters?.hasTag) {
+      return expensesWithTags.filter(expense => {
+        const matchingTag = expense.customTags.find(tag => 
+          tag.key === filters.hasTag!.key &&
+          (!filters.hasTag!.value || String(tag.value).toLowerCase().includes(filters.hasTag!.value.toLowerCase()))
+        );
+        return !!matchingTag;
+      });
+    }
+
+    return expensesWithTags;
+  }
+
+  private extractCustomTags(tagValues: any[]): CustomTag[] {
+    return tagValues
+      .filter(tv => tv.tagDefinition.name.startsWith('custom:'))
+      .map(tv => {
+        const parts = tv.tagDefinition.name.split(':');
+        const key = parts.slice(2).join(':'); // Handle keys with colons
+        const valueData = typeof tv.value === 'string' ? JSON.parse(tv.value) : tv.value;
+        
+        return {
+          key,
+          value: valueData.value,
+          valueType: valueData.valueType || 'TEXT'
+        };
+      });
+  }
+
+  async searchExpenses(searchText: string): Promise<ExpenseWithTags[]> {
+    if (!searchText || searchText.trim() === '') {
+      return this.getAllExpenses();
+    }
+
+    const searchLower = searchText.toLowerCase();
+
+    // Search in expense fields
+    const expenses = await this.prisma.expense.findMany({
+      where: {
+        OR: [
+          { code: { contains: searchText, mode: 'insensitive' } },
+          { shortDescription: { contains: searchText, mode: 'insensitive' } },
+          { longDescription: { contains: searchText, mode: 'insensitive' } }
+        ]
+      },
+      include: {
+        financialCompany: true,
+        parentExpense: true,
+        tagValues: {
+          include: {
+            tagDefinition: true
+          }
+        }
+      },
+      orderBy: {
+        code: 'asc'
+      }
+    });
+
+    // Transform to include custom tags
+    const expensesWithTags: ExpenseWithTags[] = expenses.map(expense => ({
+      ...expense,
+      customTags: this.extractCustomTags(expense.tagValues)
+    }));
+
+    // Also search in tag values
+    const allExpenses = await this.getAllExpenses();
+    const tagMatchedExpenses = allExpenses.filter(expense => {
+      return expense.customTags.some(tag => 
+        tag.key.toLowerCase().includes(searchLower) ||
+        String(tag.value).toLowerCase().includes(searchLower)
+      );
+    });
+
+    // Combine results and remove duplicates
+    const combinedMap = new Map<string, ExpenseWithTags>();
+    [...expensesWithTags, ...tagMatchedExpenses].forEach(expense => {
+      combinedMap.set(expense.id, expense);
+    });
+
+    return Array.from(combinedMap.values()).sort((a, b) => a.code.localeCompare(b.code));
+  }
+
+  async addCustomTag(expenseId: string, tag: CustomTag): Promise<void> {
+    // Validate expense exists
+    const expense = await this.prisma.expense.findUnique({ where: { id: expenseId } });
+    if (!expense) {
+      throw new Error('Gasto no encontrado');
+    }
+
+    // Validate tag key is not empty
+    if (!tag.key || tag.key.trim() === '') {
+      throw new Error('Tag key cannot be empty');
+    }
+
+    // Check for duplicate tag key
+    const tagDefName = `custom:${expenseId}:${tag.key}`;
+    const existingTagDef = await this.prisma.tagDefinition.findUnique({
+      where: { name: tagDefName }
+    });
+
+    if (existingTagDef) {
+      throw new Error('Tag key already exists on this expense');
+    }
+
+    // Validate value type
+    this.validateTagValue(tag);
+
+    // Create tag definition
+    const tagDefinition = await this.prisma.tagDefinition.create({
+      data: {
+        name: tagDefName,
+        description: `Custom tag for expense ${expenseId}`,
+        inputType: 'FREE_TEXT',
+        selectOptions: []
+      }
+    });
+
+    // Create tag value
+    await this.prisma.tagValue.create({
+      data: {
+        expenseId,
+        tagId: tagDefinition.id,
+        value: {
+          value: tag.value,
+          valueType: tag.valueType
+        }
+      }
+    });
+  }
+
+  async updateCustomTag(expenseId: string, tagKey: string, newTag: CustomTag): Promise<void> {
+    // Validate expense exists
+    const expense = await this.prisma.expense.findUnique({ where: { id: expenseId } });
+    if (!expense) {
+      throw new Error('Gasto no encontrado');
+    }
+
+    // Find existing tag definition
+    const oldTagDefName = `custom:${expenseId}:${tagKey}`;
+    const tagDefinition = await this.prisma.tagDefinition.findUnique({
+      where: { name: oldTagDefName }
+    });
+
+    if (!tagDefinition) {
+      throw new Error('Tag not found on expense');
+    }
+
+    // Validate new tag key is not empty
+    if (!newTag.key || newTag.key.trim() === '') {
+      throw new Error('Tag key cannot be empty');
+    }
+
+    // Validate value type
+    this.validateTagValue(newTag);
+
+    // If key changed, check for duplicate
+    if (tagKey !== newTag.key) {
+      const newTagDefName = `custom:${expenseId}:${newTag.key}`;
+      const existingTagDef = await this.prisma.tagDefinition.findUnique({
+        where: { name: newTagDefName }
+      });
+
+      if (existingTagDef) {
+        throw new Error('Tag key already exists on this expense');
+      }
+
+      // Update tag definition name
+      await this.prisma.tagDefinition.update({
+        where: { id: tagDefinition.id },
+        data: { name: newTagDefName }
+      });
+    }
+
+    // Update tag value
+    await this.prisma.tagValue.updateMany({
+      where: {
+        expenseId,
+        tagId: tagDefinition.id
+      },
+      data: {
+        value: {
+          value: newTag.value,
+          valueType: newTag.valueType
+        }
+      }
+    });
+  }
+
+  async removeCustomTag(expenseId: string, tagKey: string): Promise<void> {
+    // Find tag definition
+    const tagDefName = `custom:${expenseId}:${tagKey}`;
+    const tagDefinition = await this.prisma.tagDefinition.findUnique({
+      where: { name: tagDefName }
+    });
+
+    if (!tagDefinition) {
+      throw new Error('Tag not found on expense');
+    }
+
+    // Delete tag definition (cascade will delete tag values)
+    await this.prisma.tagDefinition.delete({
+      where: { id: tagDefinition.id }
+    });
+  }
+
+  async getExpenseWithTags(expenseId: string): Promise<ExpenseWithTags> {
+    const expense = await this.prisma.expense.findUnique({
+      where: { id: expenseId },
+      include: {
+        financialCompany: true,
+        parentExpense: true,
+        childExpenses: true,
+        tagValues: {
+          include: {
+            tagDefinition: true
+          }
+        }
+      }
+    });
+
+    if (!expense) {
+      throw new Error('Gasto no encontrado');
+    }
+
+    return {
+      ...expense,
+      customTags: this.extractCustomTags(expense.tagValues)
+    };
+  }
+
+  private validateTagValue(tag: CustomTag): void {
+    if (tag.valueType === 'NUMBER') {
+      const numValue = Number(tag.value);
+      if (isNaN(numValue)) {
+        throw new Error('Tag value does not match specified type');
+      }
+    } else if (tag.valueType === 'DATE') {
+      const dateValue = new Date(tag.value);
+      if (isNaN(dateValue.getTime())) {
+        throw new Error('Tag value does not match specified type');
+      }
+    }
   }
 }

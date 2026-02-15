@@ -11,6 +11,7 @@ interface MenuItem {
 const menuItems: MenuItem[] = [
   { path: '/dashboard', label: 'Dashboard', icon: '📊', menuCode: 'dashboard' },
   { path: '/budgets', label: 'Presupuestos', icon: '💰', menuCode: 'budgets' },
+  { path: '/savings', label: 'Ahorros', icon: '💵', menuCode: 'budgets' },
   { path: '/expenses', label: 'Gastos', icon: '📝', menuCode: 'expenses' },
   { path: '/plan-values', label: 'Valores Plan', icon: '📈', menuCode: 'plan-values' },
   { path: '/committed-transactions', label: 'Transacciones Comprometidas', icon: '🔒', menuCode: 'committed-transactions' },

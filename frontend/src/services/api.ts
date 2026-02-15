@@ -8,7 +8,10 @@ import type {
   TechnologyDirection,
   UserArea,
   FinancialCompany,
-  TagDefinition
+  TagDefinition,
+  Saving,
+  ExpenseWithTags,
+  CustomTag
 } from '../types';
 
 const API_BASE_URL = '/api';
@@ -166,6 +169,79 @@ export const tagDefinitionApi = {
   update: (id: string, data: Partial<TagDefinition>) => 
     api.put<TagDefinition>(`/tag-definitions/${id}`, data),
   delete: (id: string) => api.delete(`/tag-definitions/${id}`)
+};
+
+// Savings API
+export const savingsApi = {
+  getAll: (filters?: {
+    expenseId?: string;
+    budgetId?: string;
+    status?: string;
+    createdBy?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }) => {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) params.append(key, value);
+      });
+    }
+    return api.get<Saving[]>(`/savings?${params.toString()}`);
+  },
+  getById: (id: string) => api.get<Saving>(`/savings/${id}`),
+  create: (data: {
+    expenseId: string;
+    budgetId: string;
+    totalAmount: number;
+    description: string;
+    distributionStrategy: 'EVEN' | 'SINGLE_MONTH' | 'CUSTOM';
+    targetMonth?: number;
+    customDistribution?: Record<number, number>;
+  }) => api.post<Saving>('/savings', data),
+  approve: (savingIds: string[]) => api.post('/savings/approve', { savingIds }),
+  delete: (id: string) => api.delete(`/savings/${id}`)
+};
+
+// Enhanced Expenses API (with custom tags)
+export const expensesEnhancedApi = {
+  getAll: (filters?: {
+    searchText?: string;
+    technologyDirectionIds?: string;
+    userAreaIds?: string;
+    financialCompanyId?: string;
+    parentExpenseId?: string;
+    tagKey?: string;
+    tagValue?: string;
+  }) => {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) params.append(key, value);
+      });
+    }
+    return api.get<ExpenseWithTags[]>(`/expenses-enhanced?${params.toString()}`);
+  },
+  getById: (id: string) => api.get<ExpenseWithTags>(`/expenses-enhanced/${id}`),
+  create: (data: {
+    budgetId: string;
+    code: string;
+    shortDescription: string;
+    longDescription: string;
+    technologyDirections: string[];
+    userAreas: string[];
+    financialCompanyId: string;
+    parentExpenseId?: string;
+  }) => api.post<ExpenseWithTags>('/expenses-enhanced', data),
+  update: (id: string, data: Partial<ExpenseWithTags>) => 
+    api.put<ExpenseWithTags>(`/expenses-enhanced/${id}`, data),
+  delete: (id: string) => api.delete(`/expenses-enhanced/${id}`),
+  addTag: (expenseId: string, tag: CustomTag) => 
+    api.post(`/expenses-enhanced/${expenseId}/tags`, tag),
+  updateTag: (expenseId: string, tagKey: string, tag: CustomTag) => 
+    api.put(`/expenses-enhanced/${expenseId}/tags/${tagKey}`, tag),
+  removeTag: (expenseId: string, tagKey: string) => 
+    api.delete(`/expenses-enhanced/${expenseId}/tags/${tagKey}`)
 };
 
 export default api;

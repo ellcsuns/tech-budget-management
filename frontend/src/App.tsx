@@ -15,6 +15,7 @@ import RealTransactionsPage from './pages/RealTransactionsPage';
 import PlanValuesPage from './pages/PlanValuesPage';
 import ExpensesPage from './pages/ExpensesPage';
 import BudgetsPage from './pages/BudgetsPage';
+import SavingsPage from './pages/SavingsPage';
 
 function App() {
   return (
@@ -161,6 +162,17 @@ function App() {
               <ProtectedRoute menuCode="real-transactions" permissionType="VIEW">
                 <Layout>
                   <RealTransactionsPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/savings"
+            element={
+              <ProtectedRoute menuCode="budgets" permissionType="VIEW">
+                <Layout>
+                  <SavingsPage />
                 </Layout>
               </ProtectedRoute>
             }
