@@ -11,11 +11,11 @@ export default function ExpensesPage() {
   const [financialCompanies, setFinancialCompanies] = useState<FinancialCompany[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const [showInactive, setShowInactive] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<ExpenseWithTags | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [showForm, setShowForm] = useState(false);
 
-  // Form state
   const [formData, setFormData] = useState({
     budgetId: '',
     code: '',
@@ -31,6 +31,8 @@ export default function ExpensesPage() {
     loadMasterData();
     loadExpenses();
   }, []);
+
+  useEffect(() => { loadExpenses(); }, [showInactive]);
 
   const loadMasterData = async () => {
     try {
@@ -54,7 +56,7 @@ export default function ExpensesPage() {
     try {
       const filters: any = {};
       if (searchText) filters.searchText = searchText;
-      
+      if (showInactive) filters.includeInactive = true;
       const res = await expensesEnhancedApi.getAll(filters);
       setExpenses(res.data);
     } catch (error) {
@@ -64,9 +66,7 @@ export default function ExpensesPage() {
     }
   };
 
-  const handleSearch = () => {
-    loadExpenses();
-  };
+  const handleSearch = () => { loadExpenses(); };
 
   const handleCreateExpense = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,14 +80,22 @@ export default function ExpensesPage() {
     }
   };
 
-  const handleDeleteExpense = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar este gasto?')) return;
-
+  const handleDeactivateExpense = async (id: string) => {
+    if (!confirm('¿Desactivar este gasto? No se eliminará, solo se ocultará de los presupuestos activos.')) return;
     try {
       await expensesEnhancedApi.delete(id);
       loadExpenses();
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Error al eliminar gasto');
+      alert(error.response?.data?.error || 'Error al desactivar gasto');
+    }
+  };
+
+  const handleReactivateExpense = async (id: string) => {
+    try {
+      await expensesEnhancedApi.reactivate(id);
+      loadExpenses();
+    } catch (error: any) {
+      alert(error.response?.data?.error || 'Error al reactivar gasto');
     }
   };
 
@@ -102,47 +110,29 @@ export default function ExpensesPage() {
   };
 
   const resetForm = () => {
-    setFormData({
-      budgetId: '',
-      code: '',
-      shortDescription: '',
-      longDescription: '',
-      technologyDirections: [],
-      userAreas: [],
-      financialCompanyId: '',
-      parentExpenseId: ''
-    });
+    setFormData({ budgetId: '', code: '', shortDescription: '', longDescription: '', technologyDirections: [], userAreas: [], financialCompanyId: '', parentExpenseId: '' });
   };
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Gestión de Gastos</h1>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
+        <button onClick={() => setShowForm(!showForm)} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
           {showForm ? 'Cancelar' : 'Nuevo Gasto'}
         </button>
       </div>
 
-      {/* Search Bar */}
+      {/* Search Bar + Inactive Toggle */}
       <div className="bg-white p-4 rounded shadow mb-6">
-        <div className="flex gap-4">
-          <input
-            type="text"
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
+        <div className="flex gap-4 items-center">
+          <input type="text" value={searchText} onChange={(e) => setSearchText(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-            placeholder="Buscar por código, descripción o tags..."
-            className="flex-1 border rounded px-3 py-2"
-          />
-          <button
-            onClick={handleSearch}
-            className="bg-gray-600 text-white px-6 py-2 rounded hover:bg-gray-700"
-          >
-            Buscar
-          </button>
+            placeholder="Buscar por código, descripción o tags..." className="flex-1 border rounded px-3 py-2" />
+          <button onClick={handleSearch} className="bg-gray-600 text-white px-6 py-2 rounded hover:bg-gray-700">Buscar</button>
+          <label className="flex items-center gap-2 text-sm whitespace-nowrap">
+            <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
+            Ver desactivados
+          </label>
         </div>
       </div>
 
@@ -154,118 +144,48 @@ export default function ExpensesPage() {
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Presupuesto *</label>
-                <select
-                  value={formData.budgetId}
-                  onChange={(e) => setFormData({ ...formData, budgetId: e.target.value })}
-                  className="w-full border rounded px-3 py-2"
-                  required
-                >
+                <select value={formData.budgetId} onChange={(e) => setFormData({ ...formData, budgetId: e.target.value })} className="w-full border rounded px-3 py-2" required>
                   <option value="">Seleccionar</option>
-                  {budgets.map(b => (
-                    <option key={b.id} value={b.id}>{b.year} - v{b.version}</option>
-                  ))}
+                  {budgets.map(b => (<option key={b.id} value={b.id}>{b.year} - v{b.version}</option>))}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Código *</label>
-                <input
-                  type="text"
-                  value={formData.code}
-                  onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                  className="w-full border rounded px-3 py-2"
-                  required
-                />
+                <input type="text" value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} className="w-full border rounded px-3 py-2" required />
               </div>
             </div>
-
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">Descripción Corta *</label>
-              <input
-                type="text"
-                value={formData.shortDescription}
-                onChange={(e) => setFormData({ ...formData, shortDescription: e.target.value })}
-                className="w-full border rounded px-3 py-2"
-                required
-              />
+              <input type="text" value={formData.shortDescription} onChange={(e) => setFormData({ ...formData, shortDescription: e.target.value })} className="w-full border rounded px-3 py-2" required />
             </div>
-
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">Descripción Larga *</label>
-              <textarea
-                value={formData.longDescription}
-                onChange={(e) => setFormData({ ...formData, longDescription: e.target.value })}
-                className="w-full border rounded px-3 py-2"
-                rows={3}
-                required
-              />
+              <textarea value={formData.longDescription} onChange={(e) => setFormData({ ...formData, longDescription: e.target.value })} className="w-full border rounded px-3 py-2" rows={3} required />
             </div>
-
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Direcciones Tecnológicas *</label>
-                <select
-                  multiple
-                  value={formData.technologyDirections}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    technologyDirections: Array.from(e.target.selectedOptions, option => option.value)
-                  })}
-                  className="w-full border rounded px-3 py-2 h-24"
-                  required
-                >
-                  {techDirections.map(td => (
-                    <option key={td.id} value={td.id}>{td.name}</option>
-                  ))}
+                <select multiple value={formData.technologyDirections} onChange={(e) => setFormData({ ...formData, technologyDirections: Array.from(e.target.selectedOptions, o => o.value) })} className="w-full border rounded px-3 py-2 h-24" required>
+                  {techDirections.map(td => (<option key={td.id} value={td.id}>{td.name}</option>))}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Áreas de Usuario *</label>
-                <select
-                  multiple
-                  value={formData.userAreas}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    userAreas: Array.from(e.target.selectedOptions, option => option.value)
-                  })}
-                  className="w-full border rounded px-3 py-2 h-24"
-                  required
-                >
-                  {userAreas.map(ua => (
-                    <option key={ua.id} value={ua.id}>{ua.name}</option>
-                  ))}
+                <select multiple value={formData.userAreas} onChange={(e) => setFormData({ ...formData, userAreas: Array.from(e.target.selectedOptions, o => o.value) })} className="w-full border rounded px-3 py-2 h-24" required>
+                  {userAreas.map(ua => (<option key={ua.id} value={ua.id}>{ua.name}</option>))}
                 </select>
               </div>
             </div>
-
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">Empresa Financiera *</label>
-              <select
-                value={formData.financialCompanyId}
-                onChange={(e) => setFormData({ ...formData, financialCompanyId: e.target.value })}
-                className="w-full border rounded px-3 py-2"
-                required
-              >
+              <select value={formData.financialCompanyId} onChange={(e) => setFormData({ ...formData, financialCompanyId: e.target.value })} className="w-full border rounded px-3 py-2" required>
                 <option value="">Seleccionar</option>
-                {financialCompanies.map(fc => (
-                  <option key={fc.id} value={fc.id}>{fc.name}</option>
-                ))}
+                {financialCompanies.map(fc => (<option key={fc.id} value={fc.id}>{fc.name}</option>))}
               </select>
             </div>
-
             <div className="flex gap-2">
-              <button
-                type="submit"
-                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-              >
-                Crear Gasto
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowForm(false)}
-                className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
-              >
-                Cancelar
-              </button>
+              <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Crear Gasto</button>
+              <button type="button" onClick={() => setShowForm(false)} className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">Cancelar</button>
             </div>
           </form>
         </div>
@@ -284,45 +204,41 @@ export default function ExpensesPage() {
                 <th className="p-3 text-left">Código</th>
                 <th className="p-3 text-left">Descripción</th>
                 <th className="p-3 text-left">Empresa</th>
+                <th className="p-3 text-left">Moneda</th>
                 <th className="p-3 text-left">Tags</th>
-                <th className="p-3 text-left">Acciones</th>
+                <th className="p-3 text-center">Estado</th>
+                <th className="p-3 text-center">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {expenses.map(expense => (
-                <tr key={expense.id} className="border-t hover:bg-gray-50">
+                <tr key={expense.id} className={`border-t hover:bg-gray-50 ${!(expense as any).active ? 'opacity-50' : ''}`}>
                   <td className="p-3">{expense.code}</td>
                   <td className="p-3">{expense.shortDescription}</td>
-                  <td className="p-3">{expense.financialCompany?.name}</td>
+                  <td className="p-3">{expense.financialCompany?.name || '-'}</td>
+                  <td className="p-3">{expense.planValues?.[0]?.transactionCurrency || '-'}</td>
                   <td className="p-3">
                     {expense.customTags.length > 0 ? (
                       <div className="flex flex-wrap gap-1">
                         {expense.customTags.slice(0, 2).map((tag, idx) => (
-                          <span key={idx} className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
-                            {tag.key}
-                          </span>
+                          <span key={idx} className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">{tag.key}</span>
                         ))}
-                        {expense.customTags.length > 2 && (
-                          <span className="text-xs text-gray-500">+{expense.customTags.length - 2}</span>
-                        )}
+                        {expense.customTags.length > 2 && <span className="text-xs text-gray-500">+{expense.customTags.length - 2}</span>}
                       </div>
-                    ) : (
-                      <span className="text-gray-400 text-sm">Sin tags</span>
-                    )}
+                    ) : <span className="text-gray-400 text-sm">Sin tags</span>}
                   </td>
-                  <td className="p-3">
-                    <button
-                      onClick={() => handleViewDetail(expense)}
-                      className="text-blue-600 hover:text-blue-800 mr-3"
-                    >
-                      Ver Detalle
-                    </button>
-                    <button
-                      onClick={() => handleDeleteExpense(expense.id)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      Eliminar
-                    </button>
+                  <td className="p-3 text-center">
+                    <span className={`px-2 py-1 rounded text-xs ${(expense as any).active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      {(expense as any).active !== false ? 'Activo' : 'Inactivo'}
+                    </span>
+                  </td>
+                  <td className="p-3 text-center space-x-2">
+                    <button onClick={() => handleViewDetail(expense)} className="text-blue-600 hover:text-blue-800" title="Ver Detalle">🔍</button>
+                    {(expense as any).active !== false ? (
+                      <button onClick={() => handleDeactivateExpense(expense.id)} className="text-red-600 hover:text-red-800" title="Desactivar">🗑️</button>
+                    ) : (
+                      <button onClick={() => handleReactivateExpense(expense.id)} className="text-green-600 hover:text-green-800" title="Reactivar">♻️</button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -331,21 +247,9 @@ export default function ExpensesPage() {
         )}
       </div>
 
-      {/* Detail Popup */}
       {showDetail && selectedExpense && (
-        <ExpenseDetailPopup
-          expense={selectedExpense}
-          onClose={() => {
-            setShowDetail(false);
-            setSelectedExpense(null);
-          }}
-          onUpdate={() => {
-            loadExpenses();
-            if (selectedExpense) {
-              handleViewDetail(selectedExpense);
-            }
-          }}
-        />
+        <ExpenseDetailPopup expense={selectedExpense} onClose={() => { setShowDetail(false); setSelectedExpense(null); }}
+          onUpdate={() => { loadExpenses(); if (selectedExpense) handleViewDetail(selectedExpense); }} />
       )}
     </div>
   );

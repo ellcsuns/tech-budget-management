@@ -19,9 +19,7 @@ interface FilterPanelProps {
 export default function FilterPanel({ expenses, filters, onFiltersChange }: FilterPanelProps) {
   const [financialCompanies, setFinancialCompanies] = useState<FinancialCompany[]>([]);
 
-  useEffect(() => {
-    loadFinancialCompanies();
-  }, []);
+  useEffect(() => { loadFinancialCompanies(); }, []);
 
   const loadFinancialCompanies = async () => {
     try {
@@ -40,151 +38,60 @@ export default function FilterPanel({ expenses, filters, onFiltersChange }: Filt
   ));
 
   const toggleCurrency = (currency: string) => {
-    const currentCurrencies = filters.currencies || [];
-    const newCurrencies = currentCurrencies.includes(currency)
-      ? currentCurrencies.filter(c => c !== currency)
-      : [...currentCurrencies, currency];
-    
-    onFiltersChange({
-      ...filters,
-      currencies: newCurrencies.length > 0 ? newCurrencies : undefined
-    });
+    const current = filters.currencies || [];
+    const next = current.includes(currency) ? current.filter(c => c !== currency) : [...current, currency];
+    onFiltersChange({ ...filters, currencies: next.length > 0 ? next : undefined });
   };
 
   const toggleFinancialCompany = (companyId: string) => {
-    const currentCompanies = filters.financialCompanyIds || [];
-    const newCompanies = currentCompanies.includes(companyId)
-      ? currentCompanies.filter(c => c !== companyId)
-      : [...currentCompanies, companyId];
-    
-    onFiltersChange({
-      ...filters,
-      financialCompanyIds: newCompanies.length > 0 ? newCompanies : undefined
-    });
+    const current = filters.financialCompanyIds || [];
+    const next = current.includes(companyId) ? current.filter(c => c !== companyId) : [...current, companyId];
+    onFiltersChange({ ...filters, financialCompanyIds: next.length > 0 ? next : undefined });
   };
 
   const toggleColumn = (column: 'budget' | 'committed' | 'real') => {
-    onFiltersChange({
-      ...filters,
-      visibleColumns: {
-        ...filters.visibleColumns,
-        [column]: !filters.visibleColumns[column]
-      }
-    });
+    onFiltersChange({ ...filters, visibleColumns: { ...filters.visibleColumns, [column]: !filters.visibleColumns[column] } });
   };
 
   const clearFilters = () => {
-    onFiltersChange({
-      currencies: undefined,
-      financialCompanyIds: undefined,
-      visibleColumns: {
-        budget: true,
-        committed: true,
-        real: true
-      }
-    });
+    onFiltersChange({ currencies: undefined, financialCompanyIds: undefined, visibleColumns: { budget: true, committed: true, real: true } });
   };
 
   return (
-    <div className="space-y-4 mb-6">
-      {/* Visible Columns */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Columnas Visibles
-        </label>
-        <div className="flex gap-2">
-          <button
-            onClick={() => toggleColumn('budget')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filters.visibleColumns.budget
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-            }`}
-          >
-            Budget (Plan)
-          </button>
-          <button
-            onClick={() => toggleColumn('committed')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filters.visibleColumns.committed
-                ? 'bg-green-600 text-white'
-                : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-            }`}
-          >
-            Comprometido
-          </button>
-          <button
-            onClick={() => toggleColumn('real')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filters.visibleColumns.real
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-            }`}
-          >
-            Real
-          </button>
-        </div>
+    <div className="flex flex-wrap items-center gap-3 mb-4">
+      {/* Column toggles */}
+      <div className="flex items-center gap-1">
+        <span className="text-xs text-gray-500 mr-1">Columnas:</span>
+        <button onClick={() => toggleColumn('budget')} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filters.visibleColumns.budget ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>Ppto</button>
+        <button onClick={() => toggleColumn('committed')} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filters.visibleColumns.committed ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-600'}`}>Comp</button>
+        <button onClick={() => toggleColumn('real')} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filters.visibleColumns.real ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-600'}`}>Real</button>
       </div>
 
-      {/* Currency Filters */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Monedas
-        </label>
-        <div className="flex flex-wrap gap-2">
-          {currencies.map(currency => {
-            const isActive = filters.currencies?.includes(currency) ?? true;
-            return (
-              <button
-                key={currency}
-                onClick={() => toggleCurrency(currency)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  isActive
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                }`}
-              >
-                {currency}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <div className="w-px h-6 bg-gray-300" />
 
-      {/* Financial Company Filters */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Empresas Financieras
-        </label>
-        <div className="flex flex-wrap gap-2">
-          {financialCompanies.map(company => {
-            const isActive = filters.financialCompanyIds?.includes(company.id) ?? true;
-            return (
-              <button
-                key={company.id}
-                onClick={() => toggleFinancialCompany(company.id)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  isActive
-                    ? 'bg-teal-600 text-white'
-                    : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                }`}
-              >
-                {company.name}
-              </button>
-            );
-          })}
+      {/* Currency filters */}
+      {currencies.length > 0 && (
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-gray-500 mr-1">Moneda:</span>
+          {currencies.map(currency => (
+            <button key={currency} onClick={() => toggleCurrency(currency)} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${(filters.currencies?.includes(currency) ?? true) ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-600'}`}>{currency}</button>
+          ))}
         </div>
-      </div>
+      )}
 
-      {/* Clear Filters Button */}
-      <div className="flex justify-end">
-        <button
-          onClick={clearFilters}
-          className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 font-medium"
-        >
-          Limpiar Todos los Filtros
-        </button>
-      </div>
+      <div className="w-px h-6 bg-gray-300" />
+
+      {/* Financial company filters */}
+      {financialCompanies.length > 0 && (
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-gray-500 mr-1">Empresa:</span>
+          {financialCompanies.map(company => (
+            <button key={company.id} onClick={() => toggleFinancialCompany(company.id)} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${(filters.financialCompanyIds?.includes(company.id) ?? true) ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-600'}`}>{company.name}</button>
+          ))}
+        </div>
+      )}
+
+      <button onClick={clearFilters} className="px-3 py-1 bg-red-100 text-red-700 rounded text-xs font-medium hover:bg-red-200 ml-auto">Limpiar</button>
     </div>
   );
 }

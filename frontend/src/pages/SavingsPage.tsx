@@ -39,6 +39,11 @@ export default function SavingsPage() {
     try {
       const res = await budgetApi.getAll();
       setBudgets(res.data);
+      // Auto-select latest budget
+      if (res.data.length > 0) {
+        const latest = res.data[res.data.length - 1];
+        setSelectedBudget(latest.id);
+      }
     } catch (error) {
       console.error('Error loading budgets:', error);
     }
@@ -371,8 +376,9 @@ export default function SavingsPage() {
                       <button
                         onClick={() => handleDeleteSaving(saving.id)}
                         className="text-red-600 hover:text-red-800"
+                        title="Eliminar"
                       >
-                        Eliminar
+                        🗑️
                       </button>
                     )}
                   </td>

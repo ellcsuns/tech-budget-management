@@ -48,7 +48,7 @@ export function deferralsRouter(prisma: PrismaClient) {
   // POST /api/deferrals
   router.post('/', authenticateJWT, requirePermission(MENU_CODES.BUDGETS, PermissionType.MODIFY), async (req, res, next) => {
     try {
-      const userId = (req as any).user?.id;
+      const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'User not authenticated' });
 
       const { expenseId, budgetId, description, totalAmount, startMonth, endMonth } = req.body;
@@ -56,8 +56,12 @@ export function deferralsRouter(prisma: PrismaClient) {
         return res.status(400).json({ error: 'Todos los campos son requeridos' });
       }
 
+      if (parseInt(startMonth) >= parseInt(endMonth)) {
+        return res.status(400).json({ error: 'El mes de inicio debe ser menor al mes de fin' });
+      }
+
       const deferral = await deferralService.create({
-        expenseId, budgetId, description, totalAmount, startMonth, endMonth, createdBy: userId
+        expenseId, budgetId, description, totalAmount, startMonth: parseInt(startMonth), endMonth: parseInt(endMonth), createdBy: userId
       });
       res.status(201).json(deferral);
     } catch (error) {

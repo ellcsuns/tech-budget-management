@@ -30,6 +30,7 @@ export interface ExpenseFilters {
   financialCompanyId?: string;
   parentExpenseId?: string;
   hasTag?: { key: string; value?: string };
+  includeInactive?: boolean;
 }
 
 export interface CustomTag {
@@ -41,13 +42,13 @@ export interface CustomTag {
 export interface TransactionInput {
   expenseId: string;
   type: TransactionType;
-  serviceDate: Date;
-  postingDate: Date;
+  serviceDate: Date | string;
+  postingDate: Date | string;
   referenceDocumentNumber: string;
   externalPlatformLink: string;
   transactionCurrency: string;
   transactionValue: number;
-  month: number;
+  month?: number;
 }
 
 export interface PlanValueInput {

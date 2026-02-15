@@ -94,7 +94,7 @@ export default function BudgetTable({
             const currency = expense.planValues[0]?.transactionCurrency || 'USD';
             
             return (
-              <tr key={expense.id} className="hover:bg-gray-50">
+              <tr key={expense.id} className="hover:bg-gray-50 group">
                 <td className="px-4 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
                   {expense.code}
                 </td>
@@ -119,10 +119,10 @@ export default function BudgetTable({
                   <td className="px-4 py-2 text-center">
                     <button
                       onClick={() => onRemoveRow(expense.id)}
-                      className="text-red-600 hover:text-red-800 text-sm font-medium"
+                      className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
                       title="Eliminar fila"
                     >
-                      Eliminar
+                      🗑️
                     </button>
                   </td>
                 )}

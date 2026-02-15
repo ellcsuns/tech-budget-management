@@ -214,11 +214,12 @@ export const expensesEnhancedApi = {
     parentExpenseId?: string;
     tagKey?: string;
     tagValue?: string;
+    includeInactive?: boolean;
   }) => {
     const params = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
-        if (value) params.append(key, value);
+        if (value !== undefined && value !== null) params.append(key, String(value));
       });
     }
     return api.get<ExpenseWithTags[]>(`/expenses-enhanced?${params.toString()}`);
@@ -237,6 +238,7 @@ export const expensesEnhancedApi = {
   update: (id: string, data: Partial<ExpenseWithTags>) => 
     api.put<ExpenseWithTags>(`/expenses-enhanced/${id}`, data),
   delete: (id: string) => api.delete(`/expenses-enhanced/${id}`),
+  reactivate: (id: string) => api.put(`/expenses-enhanced/${id}/reactivate`),
   addTag: (expenseId: string, tag: CustomTag) => 
     api.post(`/expenses-enhanced/${expenseId}/tags`, tag),
   updateTag: (expenseId: string, tagKey: string, tag: CustomTag) => 

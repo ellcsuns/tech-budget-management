@@ -22,6 +22,7 @@ export interface Expense {
   transactions?: Transaction[];
   planValues?: PlanValue[];
   tagValues?: TagValue[];
+  active?: boolean;
   createdAt: string;
   updatedAt: string;
 }

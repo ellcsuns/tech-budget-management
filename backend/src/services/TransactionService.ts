@@ -12,9 +12,14 @@ export class TransactionService {
     // Validar campos requeridos
     if (!data.expenseId || !data.type || !data.serviceDate || !data.postingDate ||
         !data.referenceDocumentNumber || !data.externalPlatformLink ||
-        !data.transactionCurrency || data.transactionValue === undefined || !data.month) {
+        !data.transactionCurrency || data.transactionValue === undefined) {
       throw new Error('Todos los campos requeridos deben ser proporcionados');
     }
+
+    // Convert string dates to Date objects and derive month from serviceDate
+    const serviceDateObj = new Date(data.serviceDate);
+    const postingDateObj = new Date(data.postingDate);
+    const month = data.month || (serviceDateObj.getMonth() + 1);
 
     // Validar que el gasto existe
     const expense = await this.prisma.expense.findUnique({
@@ -39,7 +44,7 @@ export class TransactionService {
     }
 
     // Validar mes (1-12)
-    if (data.month < 1 || data.month > 12) {
+    if (month < 1 || month > 12) {
       throw new Error('El mes debe estar entre 1 y 12');
     }
 
@@ -49,13 +54,13 @@ export class TransactionService {
         budgetId_currency_month: {
           budgetId: expense.budgetId,
           currency: data.transactionCurrency,
-          month: data.month
+          month
         }
       }
     });
 
     if (!conversionRate) {
-      throw new Error(`No se encontró tasa de conversión para ${data.transactionCurrency} en el mes ${data.month}`);
+      throw new Error(`No se encontró tasa de conversión para ${data.transactionCurrency} en el mes ${month}`);
     }
 
     // Calcular valor en USD
@@ -66,15 +71,15 @@ export class TransactionService {
       data: {
         expenseId: data.expenseId,
         type: data.type,
-        serviceDate: data.serviceDate,
-        postingDate: data.postingDate,
+        serviceDate: serviceDateObj,
+        postingDate: postingDateObj,
         referenceDocumentNumber: data.referenceDocumentNumber,
         externalPlatformLink: data.externalPlatformLink,
         transactionCurrency: data.transactionCurrency,
         transactionValue: data.transactionValue,
         usdValue,
         conversionRate: conversionRate.rate,
-        month: data.month
+        month
       },
       include: {
         expense: true
@@ -147,6 +152,18 @@ export class TransactionService {
 
     // Recalcular USD si cambia valor, moneda o mes
     let updateData: any = { ...data };
+
+    // Convert date strings to Date objects if present
+    if (updateData.serviceDate && typeof updateData.serviceDate === 'string') {
+      updateData.serviceDate = new Date(updateData.serviceDate);
+    }
+    if (updateData.postingDate && typeof updateData.postingDate === 'string') {
+      updateData.postingDate = new Date(updateData.postingDate);
+    }
+    // Derive month from serviceDate if serviceDate changed
+    if (updateData.serviceDate) {
+      updateData.month = new Date(updateData.serviceDate).getMonth() + 1;
+    }
     
     if (data.transactionValue !== undefined || data.transactionCurrency || data.month) {
       const month = data.month ?? transaction.month;

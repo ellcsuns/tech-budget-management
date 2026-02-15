@@ -9,7 +9,6 @@ export default function Dashboard() {
   const [selectedBudget, setSelectedBudget] = useState<string>('');
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'PLAN' | 'COMPARISON'>('PLAN');
   const [filters, setFilters] = useState({
     currencies: undefined as string[] | undefined,
     financialCompanyIds: undefined as string[] | undefined,
@@ -20,23 +19,14 @@ export default function Dashboard() {
     }
   });
 
-  useEffect(() => {
-    loadBudgets();
-  }, []);
-
-  useEffect(() => {
-    if (selectedBudget) {
-      loadExpenses(selectedBudget);
-    }
-  }, [selectedBudget]);
+  useEffect(() => { loadBudgets(); }, []);
+  useEffect(() => { if (selectedBudget) loadExpenses(selectedBudget); }, [selectedBudget]);
 
   const loadBudgets = async () => {
     try {
       const response = await budgetApi.getAll();
       setBudgets(response.data);
-      if (response.data.length > 0) {
-        setSelectedBudget(response.data[0].id);
-      }
+      if (response.data.length > 0) setSelectedBudget(response.data[0].id);
     } catch (error) {
       console.error('Error loading budgets:', error);
     } finally {
@@ -56,12 +46,8 @@ export default function Dashboard() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-lg text-gray-600">Cargando...</div>
-      </div>
-    );
+  if (loading && !selectedBudget) {
+    return <div className="flex justify-center items-center h-64"><div className="text-lg text-gray-600">Cargando...</div></div>;
   }
 
   return (
@@ -69,50 +55,28 @@ export default function Dashboard() {
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-2xl font-bold mb-4">Dashboard de Presupuesto</h2>
         
-        <div className="flex gap-4 mb-6">
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Presupuesto
-            </label>
+        {/* Compact single-line filters */}
+        <div className="flex items-center gap-4 mb-4">
+          <div className="flex-1 max-w-xs">
             <select
               value={selectedBudget}
               onChange={(e) => setSelectedBudget(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             >
               {budgets.map((budget) => (
-                <option key={budget.id} value={budget.id}>
-                  {budget.year} - {budget.version}
-                </option>
+                <option key={budget.id} value={budget.id}>{budget.year} - {budget.version}</option>
               ))}
-            </select>
-          </div>
-
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Modo de Vista
-            </label>
-            <select
-              value={viewMode}
-              onChange={(e) => setViewMode(e.target.value as 'PLAN' | 'COMPARISON')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="PLAN">Vista Plan</option>
-              <option value="COMPARISON">Vista Comparativa</option>
             </select>
           </div>
         </div>
 
-        <FilterPanel
-          expenses={expenses}
-          filters={filters}
-          onFiltersChange={setFilters}
-        />
+        <FilterPanel expenses={expenses} filters={filters} onFiltersChange={setFilters} />
       </div>
 
       <div className="bg-white rounded-lg shadow p-6">
         <ExpenseTable
           expenses={expenses}
-          viewMode={viewMode}
+          viewMode="COMPARISON"
           filters={filters}
           readOnly={true}
         />

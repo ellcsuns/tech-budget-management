@@ -276,6 +276,11 @@ export class ExpenseService {
   async getAllExpenses(filters?: ExpenseFilters): Promise<ExpenseWithTags[]> {
     const where: any = {};
 
+    // By default, only show active expenses
+    if (!filters?.includeInactive) {
+      where.active = true;
+    }
+
     // Apply search text filter
     if (filters?.searchText) {
       const searchText = filters.searchText.toLowerCase();

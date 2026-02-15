@@ -7,6 +7,8 @@ interface BudgetSelectorProps {
 }
 
 export default function BudgetSelector({ budgets, selectedBudgetId, onSelect }: BudgetSelectorProps) {
+  const latestId = budgets.length > 0 ? budgets[budgets.length - 1].id : null;
+
   return (
     <div className="mb-6">
       <label htmlFor="budget-select" className="block text-sm font-medium text-gray-700 mb-2">
@@ -21,7 +23,7 @@ export default function BudgetSelector({ budgets, selectedBudgetId, onSelect }: 
         <option value="">-- Seleccione un presupuesto --</option>
         {budgets.map((budget) => (
           <option key={budget.id} value={budget.id}>
-            {budget.year} - {budget.version}
+            {budget.year} - {budget.version}{budget.id === latestId ? ' (Vigente)' : ''}
           </option>
         ))}
       </select>

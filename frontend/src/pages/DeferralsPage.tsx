@@ -31,7 +31,8 @@ export default function DeferralsPage() {
     try {
       const res = await budgetApi.getAll();
       setBudgets(res.data);
-      if (res.data.length > 0) setSelectedBudget(res.data[0].id);
+      // Auto-select latest budget (vigente)
+      if (res.data.length > 0) setSelectedBudget(res.data[res.data.length - 1].id);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -68,6 +69,11 @@ export default function DeferralsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedExpense || !selectedBudget) return;
+
+    if (parseInt(form.startMonth) >= parseInt(form.endMonth)) {
+      alert('El mes de inicio debe ser menor al mes de fin');
+      return;
+    }
 
     try {
       await deferralApi.create({
@@ -244,8 +250,9 @@ export default function DeferralsPage() {
                       <button
                         onClick={() => handleDelete(def.id)}
                         className="text-red-600 hover:text-red-800"
+                        title="Eliminar"
                       >
-                        Eliminar
+                        🗑️
                       </button>
                     </td>
                   </tr>

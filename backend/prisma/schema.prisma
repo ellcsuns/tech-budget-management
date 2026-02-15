@@ -45,12 +45,14 @@ model Expense {
   tagValues             TagValue[]
   savings               Saving[]
   deferrals             Deferral[]
+  active                Boolean       @default(true)
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
   
   @@unique([budgetId, code])
   @@index([budgetId])
   @@index([financialCompanyId])
+  @@index([active])
 }
 
 // Transaction model

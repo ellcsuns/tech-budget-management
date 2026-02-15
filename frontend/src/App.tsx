@@ -18,6 +18,7 @@ import BudgetsPage from './pages/BudgetsPage';
 import SavingsPage from './pages/SavingsPage';
 import ReportsPage from './pages/ReportsPage';
 import DeferralsPage from './pages/DeferralsPage';
+import ConfigurationPage from './pages/ConfigurationPage';
 
 function App() {
   return (
@@ -197,6 +198,17 @@ function App() {
               <ProtectedRoute menuCode="budgets" permissionType="VIEW">
                 <Layout>
                   <DeferralsPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/configuration"
+            element={
+              <ProtectedRoute menuCode="users" permissionType="VIEW">
+                <Layout>
+                  <ConfigurationPage />
                 </Layout>
               </ProtectedRoute>
             }

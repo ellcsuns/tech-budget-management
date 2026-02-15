@@ -201,14 +201,16 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnl
                         <button
                           onClick={() => startEditTag(tag)}
                           className="text-blue-600 hover:text-blue-800 text-sm"
+                          title="Editar"
                         >
-                          Editar
+                          ✏️
                         </button>
                         <button
                           onClick={() => handleDeleteTag(tag.key)}
                           className="text-red-600 hover:text-red-800 text-sm"
+                          title="Eliminar"
                         >
-                          Eliminar
+                          🗑️
                         </button>
                       </div>
                     )}

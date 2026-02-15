@@ -33,6 +33,7 @@ export function expensesRouter(prisma: PrismaClient) {
   router.get('/', requirePermission('expenses', 'VIEW'), async (req, res, next) => {
     try {
       const filters: any = {};
+      const includeInactive = req.query.includeInactive === 'true';
 
       if (req.query.searchText) {
         filters.searchText = req.query.searchText as string;
@@ -62,6 +63,8 @@ export function expensesRouter(prisma: PrismaClient) {
           value: req.query.tagValue as string | undefined
         };
       }
+
+      filters.includeInactive = includeInactive;
 
       const expenses = await expenseService.getAllExpenses(filters);
       res.json(expenses);
@@ -131,12 +134,36 @@ export function expensesRouter(prisma: PrismaClient) {
 
   /**
    * DELETE /api/expenses/:id
-   * Delete expense
+   * Deactivate expense (soft delete) - cannot delete if in active budget
    */
   router.delete('/:id', requirePermission('expenses', 'MODIFY'), async (req, res, next) => {
     try {
-      await expenseService.deleteExpense(req.params.id);
+      // Soft delete: deactivate instead of hard delete
+      await prisma.expense.update({
+        where: { id: req.params.id },
+        data: { active: false }
+      });
       res.status(204).send();
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        return res.status(404).json({ error: 'Gasto no encontrado' });
+      }
+      next(error);
+    }
+  });
+
+  /**
+   * PUT /api/expenses/:id/reactivate
+   * Reactivate a deactivated expense
+   */
+  router.put('/:id/reactivate', requirePermission('expenses', 'MODIFY'), async (req, res, next) => {
+    try {
+      const expense = await prisma.expense.update({
+        where: { id: req.params.id },
+        data: { active: true },
+        include: { financialCompany: true }
+      });
+      res.json(expense);
     } catch (error: any) {
       if (error.code === 'P2025') {
         return res.status(404).json({ error: 'Gasto no encontrado' });

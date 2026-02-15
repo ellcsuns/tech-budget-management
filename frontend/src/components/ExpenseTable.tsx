@@ -132,6 +132,19 @@ export default function ExpenseTable({ expenses, viewMode, filters, readOnly = f
     );
   }
 
+  // Determine if only budget column is visible (for inverted color logic)
+  const onlyBudgetVisible = filters.visibleColumns.budget && !filters.visibleColumns.committed && !filters.visibleColumns.real;
+
+  const getDiffColor = (diff: number) => {
+    if (diff === 0) return 'text-gray-400';
+    if (onlyBudgetVisible) {
+      // Inverted: positive diff (over budget) = RED, negative (under budget) = GREEN
+      return diff >= 0 ? 'text-red-600' : 'text-green-600';
+    }
+    // Normal: negative diff (over spent) = RED, positive (under spent) = GREEN  
+    return diff < 0 ? 'text-red-600' : 'text-green-600';
+  };
+
   // Vista comparativa
   return (
     <>
@@ -199,7 +212,7 @@ export default function ExpenseTable({ expenses, viewMode, filters, readOnly = f
                       {(() => {
                         const diff = value.budget - (value.committed + value.real);
                         return (
-                          <td key={`${value.month}-d`} className={`px-2 py-3 text-sm text-right font-medium ${diff < 0 ? 'text-red-600' : diff > 0 ? 'text-orange-600' : 'text-gray-400'}`}>
+                          <td key={`${value.month}-d`} className={`px-2 py-3 text-sm text-right font-medium ${getDiffColor(diff)}`}>
                             {diff !== 0 ? diff.toLocaleString() : '-'}
                           </td>
                         );
@@ -225,7 +238,7 @@ export default function ExpenseTable({ expenses, viewMode, filters, readOnly = f
                     {(() => {
                       const totalDiff = totalBudget - (totalCommitted + totalReal);
                       return (
-                        <td className={`px-2 py-3 text-sm text-right font-semibold ${totalDiff < 0 ? 'text-red-600' : totalDiff > 0 ? 'text-orange-600' : 'text-gray-400'}`}>
+                        <td className={`px-2 py-3 text-sm text-right font-semibold ${getDiffColor(totalDiff)}`}>
                           {totalDiff !== 0 ? totalDiff.toLocaleString() : '-'}
                         </td>
                       );
