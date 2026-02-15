@@ -48,7 +48,7 @@ export function deferralsRouter(prisma: PrismaClient) {
   // POST /api/deferrals
   router.post('/', authenticateJWT, requirePermission(MENU_CODES.BUDGETS, PermissionType.MODIFY), async (req, res, next) => {
     try {
-      const userId = req.user?.id;
+      const userId = req.user?.userId;
       if (!userId) return res.status(401).json({ error: 'User not authenticated' });
 
       const { expenseId, budgetId, description, totalAmount, startMonth, endMonth } = req.body;
