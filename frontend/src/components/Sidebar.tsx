@@ -71,37 +71,37 @@ export default function Sidebar() {
 
   return (
     <div className={`${collapsed ? 'w-16' : 'w-64'} bg-sidebar text-white min-h-screen flex flex-col transition-all duration-300`}>
-      {/* Header - clickable to go to dashboard */}
+      {/* Header - clickable to go to dashboard + collapse toggle */}
       <div className="p-4 border-b border-gray-700">
-        <div
-          className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
-          onClick={() => navigate('/dashboard')}
-          title="Ir al Dashboard"
-        >
-          <Logo size={collapsed ? 28 : 36} />
-          {!collapsed && (
-            <div>
-              <h1 className="text-lg font-bold">Tech Budget</h1>
-              <p className="text-xs text-gray-400">{t('app.subtitle') || 'Gestión de Presupuesto'}</p>
-            </div>
-          )}
+        <div className="flex items-center gap-3">
+          <div
+            className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity flex-1 min-w-0"
+            onClick={() => navigate('/dashboard')}
+            title="Ir al Dashboard"
+          >
+            <Logo size={collapsed ? 28 : 36} />
+            {!collapsed && (
+              <div className="min-w-0">
+                <h1 className="text-lg font-bold">Tech Budget</h1>
+                <p className="text-xs text-gray-400">{t('app.subtitle') || 'Gestión de Presupuesto'}</p>
+              </div>
+            )}
+          </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); setCollapsed(!collapsed); }}
+            className="p-1 rounded hover:bg-gray-700 transition-colors text-gray-400 hover:text-white flex-shrink-0"
+            title={collapsed ? 'Expandir menú' : 'Colapsar menú'}
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              {collapsed ? (
+                <path d="M7 4l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              ) : (
+                <path d="M13 4l-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              )}
+            </svg>
+          </button>
         </div>
       </div>
-
-      {/* Toggle button */}
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className="mx-auto my-2 p-1 rounded hover:bg-gray-700 transition-colors text-gray-400 hover:text-white"
-        title={collapsed ? 'Expandir menú' : 'Colapsar menú'}
-      >
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          {collapsed ? (
-            <path d="M7 4l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          ) : (
-            <path d="M13 4l-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          )}
-        </svg>
-      </button>
 
       {/* User info */}
       {!collapsed && (

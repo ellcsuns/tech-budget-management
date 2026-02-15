@@ -54,6 +54,15 @@ export default function ExpenseTable({ expenses, viewMode, filters, readOnly = f
   };
 
   const filteredExpenses = expenses.filter(expense => {
+    // Filter by search text
+    if (filters.searchText && filters.searchText.trim()) {
+      const search = filters.searchText.toLowerCase();
+      const matchCode = expense.code?.toLowerCase().includes(search);
+      const matchDesc = expense.shortDescription?.toLowerCase().includes(search);
+      const matchLong = (expense as any).longDescription?.toLowerCase().includes(search);
+      if (!matchCode && !matchDesc && !matchLong) return false;
+    }
+
     // Filter by currencies
     if (filters.currencies && filters.currencies.length > 0) {
       const hasCurrency = expense.planValues?.some(pv => filters.currencies.includes(pv.transactionCurrency)) ||

@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { financialCompanyApi } from '../services/api';
 import type { Expense, FinancialCompany } from '../types';
+import { HiOutlineXMark } from 'react-icons/hi2';
 
 interface FilterPanelProps {
   expenses: Expense[];
   filters: {
     currencies?: string[];
     financialCompanyIds?: string[];
+    searchText?: string;
     visibleColumns: {
       budget: boolean;
       committed: boolean;
@@ -54,44 +56,66 @@ export default function FilterPanel({ expenses, filters, onFiltersChange }: Filt
   };
 
   const clearFilters = () => {
-    onFiltersChange({ currencies: undefined, financialCompanyIds: undefined, visibleColumns: { budget: true, committed: true, real: true } });
+    onFiltersChange({ currencies: undefined, financialCompanyIds: undefined, searchText: '', visibleColumns: { budget: true, committed: true, real: true } });
   };
+
+  const handleSearchChange = (value: string) => {
+    onFiltersChange({ ...filters, searchText: value });
+  };
+
+  const accentOn = 'bg-accent text-white';
+  const accentOff = 'bg-gray-200 text-gray-500';
 
   return (
     <div className="flex flex-wrap items-center gap-3 mb-4">
+      {/* Search input */}
+      <input
+        type="text"
+        value={filters.searchText || ''}
+        onChange={(e) => handleSearchChange(e.target.value)}
+        placeholder="Buscar gasto..."
+        className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent w-48"
+      />
+
+      <div className="w-px h-6 bg-gray-300" />
+
       {/* Column toggles */}
       <div className="flex items-center gap-1">
-        <span className="text-xs text-gray-500 mr-1">Columnas:</span>
-        <button onClick={() => toggleColumn('budget')} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filters.visibleColumns.budget ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>Ppto</button>
-        <button onClick={() => toggleColumn('committed')} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filters.visibleColumns.committed ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-600'}`}>Comp</button>
-        <button onClick={() => toggleColumn('real')} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filters.visibleColumns.real ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-600'}`}>Real</button>
+        <button onClick={() => toggleColumn('budget')} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filters.visibleColumns.budget ? accentOn : accentOff}`}>Ppto</button>
+        <button onClick={() => toggleColumn('committed')} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filters.visibleColumns.committed ? accentOn : accentOff}`}>Comp</button>
+        <button onClick={() => toggleColumn('real')} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filters.visibleColumns.real ? accentOn : accentOff}`}>Real</button>
       </div>
 
       <div className="w-px h-6 bg-gray-300" />
 
       {/* Currency filters */}
       {currencies.length > 0 && (
-        <div className="flex items-center gap-1">
-          <span className="text-xs text-gray-500 mr-1">Moneda:</span>
-          {currencies.map(currency => (
-            <button key={currency} onClick={() => toggleCurrency(currency)} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${(filters.currencies?.includes(currency) ?? true) ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-600'}`}>{currency}</button>
-          ))}
-        </div>
+        <>
+          <div className="flex items-center gap-1">
+            {currencies.map(currency => (
+              <button key={currency} onClick={() => toggleCurrency(currency)} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${(filters.currencies?.includes(currency) ?? true) ? accentOn : accentOff}`}>{currency}</button>
+            ))}
+          </div>
+          <div className="w-px h-6 bg-gray-300" />
+        </>
       )}
-
-      <div className="w-px h-6 bg-gray-300" />
 
       {/* Financial company filters */}
       {financialCompanies.length > 0 && (
-        <div className="flex items-center gap-1">
-          <span className="text-xs text-gray-500 mr-1">Empresa:</span>
-          {financialCompanies.map(company => (
-            <button key={company.id} onClick={() => toggleFinancialCompany(company.id)} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${(filters.financialCompanyIds?.includes(company.id) ?? true) ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-600'}`}>{company.name}</button>
-          ))}
-        </div>
+        <>
+          <div className="flex items-center gap-1">
+            {financialCompanies.map(company => (
+              <button key={company.id} onClick={() => toggleFinancialCompany(company.id)} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${(filters.financialCompanyIds?.includes(company.id) ?? true) ? accentOn : accentOff}`}>{company.name}</button>
+            ))}
+          </div>
+          <div className="w-px h-6 bg-gray-300" />
+        </>
       )}
 
-      <button onClick={clearFilters} className="px-3 py-1 bg-red-100 text-red-700 rounded text-xs font-medium hover:bg-red-200 ml-auto">Limpiar</button>
+      {/* Clear filters icon button */}
+      <button onClick={clearFilters} className="text-accent hover:opacity-70 transition-opacity ml-auto" title="Limpiar filtros">
+        <HiOutlineXMark className="w-6 h-6" />
+      </button>
     </div>
   );
 }
