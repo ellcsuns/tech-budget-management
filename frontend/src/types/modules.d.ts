@@ -1,12 +1,3 @@
-declare module 'xlsx' {
-  export const utils: {
-    json_to_sheet(data: any[]): any;
-    book_new(): any;
-    book_append_sheet(wb: any, ws: any, name: string): void;
-  };
-  export function writeFile(wb: any, filename: string): void;
-}
-
 declare module 'react-icons' {
   import { ComponentType, SVGAttributes } from 'react';
   export type IconType = ComponentType<SVGAttributes<SVGElement> & { size?: number | string }>;

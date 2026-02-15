@@ -27,18 +27,26 @@ export default function DetailedReportsPage() {
     } finally { setLoading(false); }
   };
 
-  const exportExcel = async () => {
+  const exportExcel = () => {
     if (!data || !selectedReport) return;
-    try {
-      const XLSX = await import('xlsx');
-      const ws = XLSX.utils.json_to_sheet(data.rows);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, selectedReport.name.substring(0, 31));
-      const date = new Date().toISOString().split('T')[0];
-      XLSX.writeFile(wb, `reporte_${selectedReport.id}_${date}.xlsx`);
-    } catch {
-      alert('Error al exportar. Asegúrese de que la librería xlsx está instalada.');
+    const headers = selectedReport.columns.map(c => c.label);
+    const csvRows = [headers.join(',')];
+    for (const row of data.rows) {
+      const vals = selectedReport.columns.map(c => {
+        const v = row[c.key];
+        const str = v === null || v === undefined ? '' : String(v);
+        return str.includes(',') ? `"${str}"` : str;
+      });
+      csvRows.push(vals.join(','));
     }
+    const blob = new Blob(['\uFEFF' + csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const date = new Date().toISOString().split('T')[0];
+    a.download = `reporte_${selectedReport.id}_${date}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const getFilterOptions = (filterKey: string, filterDef: any) => {
@@ -101,7 +109,7 @@ export default function DetailedReportsPage() {
             </button>
             {data && data.rows.length > 0 && (
               <button onClick={exportExcel} className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                Descargar Excel
+                Descargar CSV
               </button>
             )}
           </div>
