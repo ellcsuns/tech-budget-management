@@ -281,7 +281,7 @@ export default function ReportsPage() {
         <div className="bg-white rounded-lg shadow p-6 col-span-2">
           <h3 className="text-lg font-bold mb-4">9. Presupuesto vs Ejecutado Mensual</h3>
           <div className="flex items-end gap-1 h-48">
-            {MONTHS.map((m, i) => (
+            {MONTHS.map((_m, i) => (
               <div key={i} className="flex-1 flex gap-0.5">
                 <div className="flex-1 flex flex-col items-center">
                   <div className="w-full rounded-t bg-blue-400" style={{ height: `${Math.max((monthlyComparison[i].budget / maxComparison) * 100, 2)}%`, minHeight: '4px' }} />
