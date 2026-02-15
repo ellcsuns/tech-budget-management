@@ -198,3 +198,24 @@ export interface CustomTag {
 export interface ExpenseWithTags extends Expense {
   customTags: CustomTag[];
 }
+
+// Deferral Types
+export interface Deferral {
+  id: string;
+  expenseId: string;
+  budgetId: string;
+  description: string;
+  totalAmount: number;
+  startMonth: number;
+  endMonth: number;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  expense?: Expense;
+  budget?: Budget;
+  user?: {
+    id: string;
+    username: string;
+    fullName: string;
+  };
+}

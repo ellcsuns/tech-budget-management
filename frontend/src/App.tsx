@@ -16,6 +16,8 @@ import PlanValuesPage from './pages/PlanValuesPage';
 import ExpensesPage from './pages/ExpensesPage';
 import BudgetsPage from './pages/BudgetsPage';
 import SavingsPage from './pages/SavingsPage';
+import ReportsPage from './pages/ReportsPage';
+import DeferralsPage from './pages/DeferralsPage';
 
 function App() {
   return (
@@ -173,6 +175,28 @@ function App() {
               <ProtectedRoute menuCode="budgets" permissionType="VIEW">
                 <Layout>
                   <SavingsPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/reports"
+            element={
+              <ProtectedRoute menuCode="reports" permissionType="VIEW">
+                <Layout>
+                  <ReportsPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/deferrals"
+            element={
+              <ProtectedRoute menuCode="budgets" permissionType="VIEW">
+                <Layout>
+                  <DeferralsPage />
                 </Layout>
               </ProtectedRoute>
             }

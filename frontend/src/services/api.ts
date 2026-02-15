@@ -11,7 +11,8 @@ import type {
   TagDefinition,
   Saving,
   ExpenseWithTags,
-  CustomTag
+  CustomTag,
+  Deferral
 } from '../types';
 
 const API_BASE_URL = '/api';
@@ -242,6 +243,21 @@ export const expensesEnhancedApi = {
     api.put(`/expenses-enhanced/${expenseId}/tags/${tagKey}`, tag),
   removeTag: (expenseId: string, tagKey: string) => 
     api.delete(`/expenses-enhanced/${expenseId}/tags/${tagKey}`)
+};
+
+// Deferrals API
+export const deferralApi = {
+  getByBudget: (budgetId: string) => api.get<Deferral[]>(`/deferrals?budgetId=${budgetId}`),
+  getById: (id: string) => api.get<Deferral>(`/deferrals/${id}`),
+  create: (data: {
+    expenseId: string;
+    budgetId: string;
+    description: string;
+    totalAmount: number;
+    startMonth: number;
+    endMonth: number;
+  }) => api.post<Deferral>('/deferrals', data),
+  delete: (id: string) => api.delete(`/deferrals/${id}`)
 };
 
 export default api;

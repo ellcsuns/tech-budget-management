@@ -15,7 +15,8 @@ export const MENU_CODES = {
   CONVERSION_RATES: 'conversion-rates',
   USERS: 'users',
   ROLES: 'roles',
-  REPORTS: 'reports'
+  REPORTS: 'reports',
+  DEFERRALS: 'deferrals'
 } as const;
 
 export type MenuCode = typeof MENU_CODES[keyof typeof MENU_CODES];

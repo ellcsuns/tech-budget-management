@@ -15,6 +15,7 @@ import { userRouter } from './routes/userRoutes';
 import { roleRouter } from './routes/roleRoutes';
 import { savingsRouter } from './routes/savings';
 import { expensesRouter } from './routes/expenses';
+import { deferralsRouter } from './routes/deferrals';
 import { errorHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/requestLogger';
 import { AuthService } from './services/AuthService';
@@ -61,6 +62,7 @@ app.use('/api/conversion-rates', conversionRateRouter(prisma));
 // New Routes - Savings and Enhanced Expenses
 app.use('/api/savings', savingsRouter(prisma));
 app.use('/api/expenses-enhanced', expensesRouter(prisma));
+app.use('/api/deferrals', deferralsRouter(prisma));
 
 // Health check
 app.get('/health', (req, res) => {

@@ -7,9 +7,10 @@ interface ExpenseTableProps {
   expenses: Expense[];
   viewMode: 'PLAN' | 'COMPARISON';
   filters: any;
+  readOnly?: boolean;
 }
 
-export default function ExpenseTable({ expenses, viewMode, filters }: ExpenseTableProps) {
+export default function ExpenseTable({ expenses, viewMode, filters, readOnly = false }: ExpenseTableProps) {
   const [selectedExpense, setSelectedExpense] = useState<ExpenseWithTags | null>(null);
   const [showDetail, setShowDetail] = useState(false);
 
@@ -118,6 +119,7 @@ export default function ExpenseTable({ expenses, viewMode, filters }: ExpenseTab
           <ExpenseDetailPopup
             expense={selectedExpense}
             onClose={handleCloseDetail}
+            readOnly={readOnly}
             onUpdate={() => {
               // Reload expense after update
               if (selectedExpense) {
@@ -134,46 +136,16 @@ export default function ExpenseTable({ expenses, viewMode, filters }: ExpenseTab
   return (
     <>
       <div className="overflow-x-auto">
-        <div className="mb-4 flex gap-4">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={filters.visibleColumns.budget}
-              onChange={(e) => filters.onVisibleColumnsChange?.({ ...filters.visibleColumns, budget: e.target.checked })}
-              className="mr-2"
-            />
-            Presupuesto
-          </label>
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={filters.visibleColumns.committed}
-              onChange={(e) => filters.onVisibleColumnsChange?.({ ...filters.visibleColumns, committed: e.target.checked })}
-              className="mr-2"
-            />
-            Comprometido
-          </label>
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={filters.visibleColumns.real}
-              onChange={(e) => filters.onVisibleColumnsChange?.({ ...filters.visibleColumns, real: e.target.checked })}
-              className="mr-2"
-            />
-            Real
-          </label>
-        </div>
-
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sticky left-0 bg-gray-50 z-10">Descripción</th>
               {months.map((month) => (
-                <th key={month} colSpan={[filters.visibleColumns.budget, filters.visibleColumns.committed, filters.visibleColumns.real].filter(Boolean).length} className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border-l">
+                <th key={month} colSpan={[filters.visibleColumns.budget, filters.visibleColumns.committed, filters.visibleColumns.real, true].filter(Boolean).length} className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border-l">
                   {month}
                 </th>
               ))}
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border-l">Total</th>
+              <th colSpan={[filters.visibleColumns.budget, filters.visibleColumns.committed, filters.visibleColumns.real, true].filter(Boolean).length} className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border-l">Total</th>
             </tr>
             <tr>
               <th className="sticky left-0 bg-gray-50 z-10"></th>
@@ -182,12 +154,14 @@ export default function ExpenseTable({ expenses, viewMode, filters }: ExpenseTab
                   {filters.visibleColumns.budget && <th key={`${month}-b`} className="px-2 py-2 text-xs text-gray-500">Ppto</th>}
                   {filters.visibleColumns.committed && <th key={`${month}-c`} className="px-2 py-2 text-xs text-gray-500">Comp</th>}
                   {filters.visibleColumns.real && <th key={`${month}-r`} className="px-2 py-2 text-xs text-gray-500">Real</th>}
+                  <th key={`${month}-d`} className="px-2 py-2 text-xs text-gray-500">Dif</th>
                 </>
               ))}
               <>
                 {filters.visibleColumns.budget && <th className="px-2 py-2 text-xs text-gray-500">Ppto</th>}
                 {filters.visibleColumns.committed && <th className="px-2 py-2 text-xs text-gray-500">Comp</th>}
                 {filters.visibleColumns.real && <th className="px-2 py-2 text-xs text-gray-500">Real</th>}
+                <th className="px-2 py-2 text-xs text-gray-500">Dif</th>
               </>
             </tr>
           </thead>
@@ -222,6 +196,14 @@ export default function ExpenseTable({ expenses, viewMode, filters }: ExpenseTab
                           {value.real > 0 ? value.real.toLocaleString() : '-'}
                         </td>
                       )}
+                      {(() => {
+                        const diff = value.budget - (value.committed + value.real);
+                        return (
+                          <td key={`${value.month}-d`} className={`px-2 py-3 text-sm text-right font-medium ${diff < 0 ? 'text-red-600' : diff > 0 ? 'text-orange-600' : 'text-gray-400'}`}>
+                            {diff !== 0 ? diff.toLocaleString() : '-'}
+                          </td>
+                        );
+                      })()}
                     </>
                   ))}
                   <>
@@ -240,6 +222,14 @@ export default function ExpenseTable({ expenses, viewMode, filters }: ExpenseTab
                         {totalReal > 0 ? totalReal.toLocaleString() : '-'}
                       </td>
                     )}
+                    {(() => {
+                      const totalDiff = totalBudget - (totalCommitted + totalReal);
+                      return (
+                        <td className={`px-2 py-3 text-sm text-right font-semibold ${totalDiff < 0 ? 'text-red-600' : totalDiff > 0 ? 'text-orange-600' : 'text-gray-400'}`}>
+                          {totalDiff !== 0 ? totalDiff.toLocaleString() : '-'}
+                        </td>
+                      );
+                    })()}
                   </>
                 </tr>
               );
@@ -252,8 +242,8 @@ export default function ExpenseTable({ expenses, viewMode, filters }: ExpenseTab
         <ExpenseDetailPopup
           expense={selectedExpense}
           onClose={handleCloseDetail}
+          readOnly={readOnly}
           onUpdate={() => {
-            // Reload expense after update
             if (selectedExpense) {
               handleExpenseClick(selectedExpense.id);
             }

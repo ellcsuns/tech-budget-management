@@ -22,7 +22,7 @@ export default function BudgetsPage() {
 
   // Check permission for editing
   const { hasPermission } = useAuth();
-  const canEdit = hasPermission('BUDGETS', 'MODIFY');
+  const canEdit = hasPermission('budgets', 'MODIFY');
 
   useEffect(() => {
     loadBudgets();

@@ -25,6 +25,12 @@ export function expenseRouter(prisma: PrismaClient) {
   // GET /api/expenses - List all expenses with filters (requires VIEW permission)
   router.get('/', authenticateJWT, requirePermission(MENU_CODES.EXPENSES, PermissionType.VIEW), async (req, res, next) => {
     try {
+      // If budgetId is provided, use getExpensesByBudget which includes planValues and transactions
+      if (req.query.budgetId) {
+        const expenses = await expenseService.getExpensesByBudget(req.query.budgetId as string);
+        return res.json(expenses);
+      }
+
       const filters: any = {};
       
       if (req.query.searchText) {

@@ -114,6 +114,7 @@ export default function Dashboard() {
           expenses={expenses}
           viewMode={viewMode}
           filters={filters}
+          readOnly={true}
         />
       </div>
     </div>

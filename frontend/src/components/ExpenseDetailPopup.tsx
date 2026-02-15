@@ -5,10 +5,11 @@ import type { ExpenseWithTags, CustomTag } from '../types';
 interface Props {
   expense: ExpenseWithTags;
   onClose: () => void;
-  onUpdate: () => void;
+  onUpdate?: () => void;
+  readOnly?: boolean;
 }
 
-export default function ExpenseDetailPopup({ expense, onClose, onUpdate }: Props) {
+export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnly = false }: Props) {
   const [showTagForm, setShowTagForm] = useState(false);
   const [editingTag, setEditingTag] = useState<CustomTag | null>(null);
   const [tagForm, setTagForm] = useState({
@@ -110,12 +111,14 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate }: Props
           <div className="border-t pt-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold">Tags Personalizados</h3>
-              <button
-                onClick={() => setShowTagForm(!showTagForm)}
-                className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
-              >
-                {showTagForm ? 'Cancelar' : 'Agregar Tag'}
-              </button>
+              {!readOnly && (
+                <button
+                  onClick={() => setShowTagForm(!showTagForm)}
+                  className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
+                >
+                  {showTagForm ? 'Cancelar' : 'Agregar Tag'}
+                </button>
+              )}
             </div>
 
             {/* Tag Form */}
@@ -193,20 +196,22 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate }: Props
                       </span>
                       <span className="text-xs text-gray-500 ml-2">({tag.valueType})</span>
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => startEditTag(tag)}
-                        className="text-blue-600 hover:text-blue-800 text-sm"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => handleDeleteTag(tag.key)}
-                        className="text-red-600 hover:text-red-800 text-sm"
-                      >
-                        Eliminar
-                      </button>
-                    </div>
+                    {!readOnly && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => startEditTag(tag)}
+                          className="text-blue-600 hover:text-blue-800 text-sm"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTag(tag.key)}
+                          className="text-red-600 hover:text-red-800 text-sm"
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
