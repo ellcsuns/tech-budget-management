@@ -11,7 +11,7 @@ import { fmt } from '../utils/formatters';
 import { HiOutlineLockClosed } from 'react-icons/hi2';
 
 export default function BudgetsPage() {
-  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [, setBudgets] = useState<Budget[]>([]);
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
   const [expenses, setExpenses] = useState<ExpenseRow[]>([]);
   const [editedCells, setEditedCells] = useState<Map<string, CellEdit>>(new Map());
