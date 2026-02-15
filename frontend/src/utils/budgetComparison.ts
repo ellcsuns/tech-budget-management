@@ -55,7 +55,7 @@ export function classifyExpenses(budgetA: any, budgetB: any): ComparisonRow[] {
 
     rows.push({
       expenseCode: code as string,
-      expenseDescription: (b || a)?.shortDescription || '',
+      expenseDescription: ((b || a) as any)?.shortDescription || '',
       status, monthlyA, monthlyB, totalA, totalB,
       difference: totalB - totalA,
       percentChange: totalA !== 0 ? ((totalB - totalA) / totalA) * 100 : 0
