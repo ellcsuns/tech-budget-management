@@ -57,12 +57,12 @@ export default function DetailedReportsPage() {
   };
 
   const formatCell = (value: any, type: string) => {
-    if (value === null || value === undefined) return '-';
-    if (type === 'currency') return typeof value === 'number' ? `$${value.toLocaleString()}` : value;
-    if (type === 'percentage') return typeof value === 'number' ? `${value.toFixed(1)}%` : value;
-    if (type === 'number') return typeof value === 'number' ? value.toLocaleString() : value;
-    return String(value);
-  };
+      if (value === null || value === undefined) return '-';
+      if (type === 'currency') return typeof value === 'number' ? value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : value;
+      if (type === 'percentage') return typeof value === 'number' ? `${value.toFixed(1)}%` : value;
+      if (type === 'number') return typeof value === 'number' ? value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : value;
+      return String(value);
+    };
 
   return (
     <div className="space-y-6">
@@ -74,7 +74,7 @@ export default function DetailedReportsPage() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {REPORT_DEFINITIONS.map(r => (
           <button key={r.id} onClick={() => { setSelectedReport(r); setData(null); setFilters({}); }}
-            className={`p-3 rounded-lg border text-left transition-all ${selectedReport?.id === r.id ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-200 hover:border-gray-400 bg-white'}`}>
+            className={`p-3 rounded-lg border text-left transition-all ${selectedReport?.id === r.id ? 'border-accent bg-blue-50 ring-2 ring-accent' : 'border-gray-200 hover:border-gray-400 bg-white'}`}>
             <p className="text-sm font-medium">{r.name}</p>
             <p className="text-xs text-gray-500 mt-1">{r.description}</p>
           </button>
@@ -104,11 +104,11 @@ export default function DetailedReportsPage() {
 
           <div className="flex gap-2">
             <button onClick={runReport} disabled={loading || !activeBudget}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+              className="btn-primary disabled:opacity-50">
               {loading ? 'Generando...' : 'Generar Reporte'}
             </button>
             {data && data.rows.length > 0 && (
-              <button onClick={exportExcel} className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+              <button onClick={exportExcel} className="btn-success">
                 Descargar CSV
               </button>
             )}

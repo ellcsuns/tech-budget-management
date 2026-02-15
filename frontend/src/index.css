@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-primary: #1E40AF;
+  --color-accent: #3B82F6;
+  --color-sidebar: #111827;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -11,7 +17,84 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Theme-aware button classes */
+.btn-primary {
+  background-color: var(--color-accent);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  transition: opacity 0.2s;
+}
+.btn-primary:hover { opacity: 0.85; }
+.btn-primary:disabled { opacity: 0.5; }
+
+.btn-success {
+  background-color: var(--color-primary);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  transition: opacity 0.2s;
+}
+.btn-success:hover { opacity: 0.85; }
+
+.btn-secondary {
+  background-color: #6B7280;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s;
+}
+.btn-secondary:hover { background-color: #4B5563; }
+
+.btn-danger {
+  background-color: #DC2626;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  transition: opacity 0.2s;
+}
+.btn-danger:hover { opacity: 0.85; }
+
+.btn-cancel {
+  background-color: #9CA3AF;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s;
+}
+.btn-cancel:hover { background-color: #6B7280; }
+
+/* Accent-colored text and borders */
+.text-accent { color: var(--color-accent); }
+.border-accent { border-color: var(--color-accent); }
+.bg-accent { background-color: var(--color-accent); }
+.ring-accent { --tw-ring-color: var(--color-accent); }
+
+/* Sidebar theme */
+.bg-sidebar { background-color: var(--color-sidebar); }
+
+/* Active tab */
+.tab-active {
+  border-bottom: 2px solid var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* Icon button base */
+.icon-btn {
+  color: var(--color-accent);
+  transition: opacity 0.2s;
+  display: inline-flex;
+  align-items: center;
+}
+.icon-btn:hover { opacity: 0.7; }
+.icon-btn-danger {
+  color: #DC2626;
+  transition: opacity 0.2s;
+  display: inline-flex;
+  align-items: center;
+}
+.icon-btn-danger:hover { opacity: 0.7; }
+
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }

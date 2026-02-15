@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { expensesEnhancedApi, budgetApi, technologyDirectionApi, userAreaApi, financialCompanyApi } from '../services/api';
 import type { ExpenseWithTags, Budget, TechnologyDirection, UserArea, FinancialCompany } from '../types';
 import ExpenseDetailPopup from '../components/ExpenseDetailPopup';
+import { HiOutlineMagnifyingGlass, HiOutlineTrash, HiOutlineArrowPath, HiOutlinePlusCircle } from 'react-icons/hi2';
 
 export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<ExpenseWithTags[]>([]);
@@ -117,7 +118,8 @@ export default function ExpensesPage() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Gestión de Gastos</h1>
-        <button onClick={() => setShowForm(!showForm)} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        <button onClick={() => setShowForm(!showForm)} className="btn-primary flex items-center gap-2">
+          <HiOutlinePlusCircle className="w-5 h-5" />
           {showForm ? 'Cancelar' : 'Nuevo Gasto'}
         </button>
       </div>
@@ -128,7 +130,9 @@ export default function ExpensesPage() {
           <input type="text" value={searchText} onChange={(e) => setSearchText(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
             placeholder="Buscar por código, descripción o tags..." className="flex-1 border rounded px-3 py-2" />
-          <button onClick={handleSearch} className="bg-gray-600 text-white px-6 py-2 rounded hover:bg-gray-700">Buscar</button>
+          <button onClick={handleSearch} className="btn-secondary flex items-center gap-2">
+            <HiOutlineMagnifyingGlass className="w-4 h-4" /> Buscar
+          </button>
           <label className="flex items-center gap-2 text-sm whitespace-nowrap">
             <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
             Ver desactivados
@@ -184,8 +188,8 @@ export default function ExpensesPage() {
               </select>
             </div>
             <div className="flex gap-2">
-              <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Crear Gasto</button>
-              <button type="button" onClick={() => setShowForm(false)} className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">Cancelar</button>
+              <button type="submit" className="btn-success">Crear Gasto</button>
+              <button type="button" onClick={() => setShowForm(false)} className="btn-cancel">Cancelar</button>
             </div>
           </form>
         </div>
@@ -233,11 +237,11 @@ export default function ExpensesPage() {
                     </span>
                   </td>
                   <td className="p-3 text-center space-x-2">
-                    <button onClick={() => handleViewDetail(expense)} className="text-blue-600 hover:text-blue-800" title="Ver Detalle">🔍</button>
+                    <button onClick={() => handleViewDetail(expense)} className="icon-btn" title="Ver Detalle"><HiOutlineMagnifyingGlass className="w-5 h-5" /></button>
                     {(expense as any).active !== false ? (
-                      <button onClick={() => handleDeactivateExpense(expense.id)} className="text-red-600 hover:text-red-800" title="Desactivar">🗑️</button>
+                      <button onClick={() => handleDeactivateExpense(expense.id)} className="icon-btn-danger" title="Desactivar"><HiOutlineTrash className="w-5 h-5" /></button>
                     ) : (
-                      <button onClick={() => handleReactivateExpense(expense.id)} className="text-green-600 hover:text-green-800" title="Reactivar">♻️</button>
+                      <button onClick={() => handleReactivateExpense(expense.id)} className="icon-btn" title="Reactivar"><HiOutlineArrowPath className="w-5 h-5" /></button>
                     )}
                   </td>
                 </tr>

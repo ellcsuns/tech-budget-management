@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
+import { HiOutlinePencilSquare, HiOutlinePauseCircle, HiOutlinePlayCircle, HiOutlinePlusCircle } from 'react-icons/hi2';
 
 interface User {
   id: string;
@@ -87,7 +88,7 @@ export default function UserManagementPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Gestión de Usuarios</h1>
-        <button onClick={handleCreate} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">+ Crear Usuario</button>
+        <button onClick={handleCreate} className="btn-primary flex items-center gap-2"><HiOutlinePlusCircle className="w-5 h-5" /> Crear Usuario</button>
       </div>
 
       {/* Stats */}
@@ -142,9 +143,9 @@ export default function UserManagementPage() {
                   </span>
                 </td>
                 <td className="px-6 py-4 text-center space-x-2">
-                  <button onClick={() => handleEdit(user)} className="text-blue-600 hover:text-blue-800" title="Editar">✏️</button>
-                  <button onClick={() => handleToggleStatus(user)} className={user.active ? 'text-yellow-600 hover:text-yellow-800' : 'text-green-600 hover:text-green-800'} title={user.active ? 'Desactivar' : 'Activar'}>
-                    {user.active ? '⏸️' : '▶️'}
+                  <button onClick={() => handleEdit(user)} className="icon-btn" title="Editar"><HiOutlinePencilSquare className="w-5 h-5" /></button>
+                  <button onClick={() => handleToggleStatus(user)} className={user.active ? 'icon-btn text-yellow-600' : 'icon-btn text-green-600'} title={user.active ? 'Desactivar' : 'Activar'}>
+                    {user.active ? <HiOutlinePauseCircle className="w-5 h-5" /> : <HiOutlinePlayCircle className="w-5 h-5" />}
                   </button>
                 </td>
               </tr>
@@ -186,8 +187,8 @@ export default function UserManagementPage() {
                 </div>
               </div>
               <div className="flex justify-end space-x-3 mt-6">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 border rounded-md hover:bg-gray-50">Cancelar</button>
-                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Guardar</button>
+                <button type="button" onClick={() => setIsModalOpen(false)} className="btn-cancel">Cancelar</button>
+                <button type="submit" className="btn-primary">Guardar</button>
               </div>
             </form>
           </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { budgetApi, expenseApi } from '../services/api';
 import type { Budget, Expense } from '../types';
+import { HiOutlineArrowDownTray } from 'react-icons/hi2';
 
 const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1'];
@@ -154,7 +155,7 @@ export default function ReportsPage() {
     <div className="mb-2">
       <div className="flex justify-between text-sm mb-1">
         <span className="truncate max-w-[200px]">{label}</span>
-        {showValue && <span className="text-gray-600 ml-2">${value.toLocaleString()}</span>}
+        {showValue && <span className="text-gray-600 ml-2">${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>}
       </div>
       <div className="w-full bg-gray-200 rounded-full h-5">
         <div className="h-5 rounded-full transition-all" style={{ width: `${Math.max((value / max) * 100, 2)}%`, backgroundColor: color }} />
@@ -182,8 +183,8 @@ export default function ReportsPage() {
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold">Reportes</h2>
-          <button onClick={exportToExcel} className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 flex items-center gap-2">
-            📥 Exportar Excel
+          <button onClick={exportToExcel} className="btn-success flex items-center gap-2">
+            <HiOutlineArrowDownTray className="w-5 h-5" /> Exportar Excel
           </button>
         </div>
         <div className="max-w-md">
@@ -195,10 +196,10 @@ export default function ReportsPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow p-4"><p className="text-sm text-gray-500">Presupuesto Total</p><p className="text-xl font-bold text-blue-600">${totalBudget.toLocaleString()}</p></div>
-        <div className="bg-white rounded-lg shadow p-4"><p className="text-sm text-gray-500">Comprometido</p><p className="text-xl font-bold text-yellow-600">${totalCommitted.toLocaleString()}</p></div>
-        <div className="bg-white rounded-lg shadow p-4"><p className="text-sm text-gray-500">Real</p><p className="text-xl font-bold text-green-600">${totalReal.toLocaleString()}</p></div>
-        <div className="bg-white rounded-lg shadow p-4"><p className="text-sm text-gray-500">Disponible</p><p className="text-xl font-bold text-purple-600">${(totalBudget - totalCommitted - totalReal).toLocaleString()}</p></div>
+        <div className="bg-white rounded-lg shadow p-4"><p className="text-sm text-gray-500">Presupuesto Total</p><p className="text-xl font-bold text-blue-600">${totalBudget.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p></div>
+        <div className="bg-white rounded-lg shadow p-4"><p className="text-sm text-gray-500">Comprometido</p><p className="text-xl font-bold text-yellow-600">${totalCommitted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p></div>
+        <div className="bg-white rounded-lg shadow p-4"><p className="text-sm text-gray-500">Real</p><p className="text-xl font-bold text-green-600">${totalReal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p></div>
+        <div className="bg-white rounded-lg shadow p-4"><p className="text-sm text-gray-500">Disponible</p><p className="text-xl font-bold text-purple-600">${(totalBudget - totalCommitted - totalReal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p></div>
       </div>
 
       <div className="grid grid-cols-2 gap-6">
@@ -216,7 +217,7 @@ export default function ReportsPage() {
                       <div className="flex justify-between text-sm"><span className="truncate">{item.name}</span><span className="font-medium ml-2">{pct}%</span></div>
                       <div className="w-full bg-gray-200 rounded-full h-2 mt-1"><div className="h-2 rounded-full" style={{ width: `${pct}%`, backgroundColor: COLORS[idx % COLORS.length] }} /></div>
                     </div>
-                    <span className="text-sm text-gray-600 flex-shrink-0">${item.value.toLocaleString()}</span>
+                    <span className="text-sm text-gray-600 flex-shrink-0">${item.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 );
               })}

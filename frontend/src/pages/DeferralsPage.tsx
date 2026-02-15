@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { budgetApi, expenseApi, deferralApi } from '../services/api';
 import type { Budget, Expense, Deferral } from '../types';
+import { HiOutlineTrash, HiOutlinePlusCircle } from 'react-icons/hi2';
 
 const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
@@ -114,8 +115,9 @@ export default function DeferralsPage() {
         <h1 className="text-3xl font-bold text-gray-800">Diferidos</h1>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="btn-primary flex items-center gap-2"
         >
+          <HiOutlinePlusCircle className="w-5 h-5" />
           {showForm ? 'Cancelar' : 'Nuevo Diferido'}
         </button>
       </div>
@@ -215,7 +217,7 @@ export default function DeferralsPage() {
             <button
               type="submit"
               disabled={!selectedExpense}
-              className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 disabled:opacity-50"
+              className="btn-success disabled:opacity-50"
             >
               Crear Diferido
             </button>
@@ -243,16 +245,16 @@ export default function DeferralsPage() {
                   <tr key={def.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-sm">{def.expense?.code} - {def.expense?.shortDescription}</td>
                     <td className="px-4 py-3 text-sm">{def.description}</td>
-                    <td className="px-4 py-3 text-sm text-right">${Number(def.totalAmount).toLocaleString()}</td>
+                    <td className="px-4 py-3 text-sm text-right">${Number(def.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td className="px-4 py-3 text-sm text-center">{MONTHS[def.startMonth - 1]} - {MONTHS[def.endMonth - 1]}</td>
                     <td className="px-4 py-3 text-sm">{def.user?.fullName || def.createdBy}</td>
                     <td className="px-4 py-3 text-sm text-center">
                       <button
                         onClick={() => handleDelete(def.id)}
-                        className="text-red-600 hover:text-red-800"
+                        className="icon-btn-danger"
                         title="Eliminar"
                       >
-                        🗑️
+                        <HiOutlineTrash className="w-5 h-5" />
                       </button>
                     </td>
                   </tr>

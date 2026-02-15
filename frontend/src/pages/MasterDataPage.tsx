@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { technologyDirectionApi, userAreaApi, financialCompanyApi } from '../services/api';
+import { HiOutlinePencilSquare, HiOutlineTrash, HiOutlinePlusCircle } from 'react-icons/hi2';
 
 type TabType = 'tech' | 'areas' | 'companies';
 
@@ -82,7 +83,8 @@ export default function MasterDataPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Datos Maestros</h1>
         <button onClick={() => { setShowForm(!showForm); setEditingItem(null); setForm({ code: '', name: '', description: '', taxId: '' }); }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+          className="btn-primary flex items-center gap-2">
+          <HiOutlinePlusCircle className="w-5 h-5" />
           {showForm ? 'Cancelar' : `+ Nueva ${tabLabel}`}
         </button>
       </div>
@@ -96,7 +98,7 @@ export default function MasterDataPage() {
               { key: 'companies' as TabType, label: 'Empresas Financieras' }
             ].map(tab => (
               <button key={tab.key} onClick={() => { setActiveTab(tab.key); setShowForm(false); }}
-                className={`px-6 py-3 text-sm font-medium ${activeTab === tab.key ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>
+                className={`px-6 py-3 text-sm font-medium ${activeTab === tab.key ? 'tab-active' : 'text-gray-500 hover:text-gray-700'}`}>
                 {tab.label}
               </button>
             ))}
@@ -130,11 +132,11 @@ export default function MasterDataPage() {
                 </div>
               )}
               <div className="col-span-2 flex gap-2">
-                <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                <button type="submit" className="btn-success">
                   {editingItem ? 'Actualizar' : 'Crear'}
                 </button>
                 <button type="button" onClick={() => { setShowForm(false); setEditingItem(null); }}
-                  className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">Cancelar</button>
+                  className="btn-cancel">Cancelar</button>
               </div>
             </form>
           </div>
@@ -162,8 +164,8 @@ export default function MasterDataPage() {
                     <td className="px-6 py-4 text-sm text-gray-500">{item.description || '-'}</td>
                     {activeTab === 'companies' && <td className="px-6 py-4 text-sm text-gray-500">{item.taxId || '-'}</td>}
                     <td className="px-6 py-4 text-sm text-center space-x-2">
-                      <button onClick={() => handleEdit(item)} className="text-blue-600 hover:text-blue-800" title="Editar">✏️</button>
-                      <button onClick={() => handleDelete(item)} className="text-red-600 hover:text-red-800" title="Eliminar">🗑️</button>
+                      <button onClick={() => handleEdit(item)} className="icon-btn" title="Editar"><HiOutlinePencilSquare className="w-5 h-5" /></button>
+                      <button onClick={() => handleDelete(item)} className="icon-btn-danger" title="Eliminar"><HiOutlineTrash className="w-5 h-5" /></button>
                     </td>
                   </tr>
                 ))}

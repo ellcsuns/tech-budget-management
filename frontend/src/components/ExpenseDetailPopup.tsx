@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { expensesEnhancedApi } from '../services/api';
 import type { ExpenseWithTags, CustomTag } from '../types';
+import { HiOutlinePencilSquare, HiOutlineTrash } from 'react-icons/hi2';
 
 interface Props {
   expense: ExpenseWithTags;
@@ -114,7 +115,7 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnl
               {!readOnly && (
                 <button
                   onClick={() => setShowTagForm(!showTagForm)}
-                  className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
+                  className="btn-primary text-sm"
                 >
                   {showTagForm ? 'Cancelar' : 'Agregar Tag'}
                 </button>
@@ -163,14 +164,14 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnl
                   <div className="flex gap-2">
                     <button
                       type="submit"
-                      className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                      className="btn-success"
                     >
                       {editingTag ? 'Actualizar' : 'Agregar'}
                     </button>
                     <button
                       type="button"
                       onClick={resetTagForm}
-                      className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
+                      className="btn-cancel"
                     >
                       Cancelar
                     </button>
@@ -200,17 +201,17 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnl
                       <div className="flex gap-2">
                         <button
                           onClick={() => startEditTag(tag)}
-                          className="text-blue-600 hover:text-blue-800 text-sm"
+                          className="icon-btn"
                           title="Editar"
                         >
-                          ✏️
+                          <HiOutlinePencilSquare className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteTag(tag.key)}
-                          className="text-red-600 hover:text-red-800 text-sm"
+                          className="icon-btn-danger"
                           title="Eliminar"
                         >
-                          🗑️
+                          <HiOutlineTrash className="w-4 h-4" />
                         </button>
                       </div>
                     )}
@@ -224,7 +225,7 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnl
           <div className="mt-6 flex justify-end">
             <button
               onClick={onClose}
-              className="bg-gray-600 text-white px-6 py-2 rounded hover:bg-gray-700"
+              className="btn-secondary"
             >
               Cerrar
             </button>

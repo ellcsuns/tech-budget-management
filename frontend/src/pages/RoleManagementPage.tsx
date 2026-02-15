@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
+import { HiOutlinePencilSquare, HiOutlineTrash, HiOutlinePlusCircle } from 'react-icons/hi2';
 
 interface Role {
   id: string;
@@ -100,7 +101,7 @@ export default function RoleManagementPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Gestión de Roles</h1>
-        <button onClick={handleCreate} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">+ Crear Rol</button>
+        <button onClick={handleCreate} className="btn-primary flex items-center gap-2"><HiOutlinePlusCircle className="w-5 h-5" /> Crear Rol</button>
       </div>
 
       {/* Stats */}
@@ -140,9 +141,9 @@ export default function RoleManagementPage() {
               </span>
             </div>
             <div className="flex space-x-2">
-              <button onClick={() => handleEdit(role)} className="flex-1 bg-blue-50 text-blue-600 px-3 py-2 rounded hover:bg-blue-100 text-sm">✏️ Editar</button>
+              <button onClick={() => handleEdit(role)} className="flex-1 bg-blue-50 text-accent px-3 py-2 rounded hover:bg-blue-100 text-sm flex items-center justify-center gap-1"><HiOutlinePencilSquare className="w-4 h-4" /> Editar</button>
               {!role.isSystem && (
-                <button onClick={() => handleDelete(role)} className="flex-1 bg-red-50 text-red-600 px-3 py-2 rounded hover:bg-red-100 text-sm" disabled={role.userCount > 0}>🗑️ Eliminar</button>
+                <button onClick={() => handleDelete(role)} className="flex-1 bg-red-50 text-red-600 px-3 py-2 rounded hover:bg-red-100 text-sm flex items-center justify-center gap-1" disabled={role.userCount > 0}><HiOutlineTrash className="w-4 h-4" /> Eliminar</button>
               )}
             </div>
           </div>
@@ -188,8 +189,8 @@ export default function RoleManagementPage() {
                 </div>
               </div>
               <div className="flex justify-end space-x-3 mt-6">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 border rounded-md hover:bg-gray-50">Cancelar</button>
-                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Guardar</button>
+                <button type="button" onClick={() => setIsModalOpen(false)} className="btn-cancel">Cancelar</button>
+                <button type="submit" className="btn-primary">Guardar</button>
               </div>
             </form>
           </div>

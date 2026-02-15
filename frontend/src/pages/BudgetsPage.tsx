@@ -8,6 +8,7 @@ import BudgetTable from '../components/BudgetTable';
 import RowManager from '../components/RowManager';
 import SaveButton from '../components/SaveButton';
 import ConfirmationDialog from '../components/ConfirmationDialog';
+import { HiOutlineLockClosed } from 'react-icons/hi2';
 
 export default function BudgetsPage() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
@@ -182,7 +183,7 @@ export default function BudgetsPage() {
           <div className="mb-4 flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Presupuesto: {selectedBudget.year} - {selectedBudget.version}</p>
-              {!canEdit && <p className="text-sm text-gray-500 flex items-center gap-1"><span>🔒</span> Solo lectura</p>}
+              {!canEdit && <p className="text-sm text-gray-500 flex items-center gap-1"><HiOutlineLockClosed className="w-4 h-4" /> Solo lectura</p>}
               {hasUnsavedChanges && <p className="text-sm text-yellow-600 font-medium">⚠ Hay cambios sin guardar</p>}
             </div>
             <div className="flex gap-3">

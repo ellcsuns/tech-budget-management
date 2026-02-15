@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api, transactionApi, expenseApi, budgetApi } from '../services/api';
+import { HiOutlinePencilSquare, HiOutlineTrash, HiOutlinePlusCircle } from 'react-icons/hi2';
 
 interface Transaction {
   id: string;
@@ -127,8 +128,8 @@ export default function CommittedTransactionsPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Transacciones Comprometidas</h1>
-        <button onClick={handleCreate} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-          + Nueva Transacción
+        <button onClick={handleCreate} className="btn-primary flex items-center gap-2">
+          <HiOutlinePlusCircle className="w-5 h-5" /> Nueva Transacción
         </button>
       </div>
 
@@ -156,11 +157,11 @@ export default function CommittedTransactionsPage() {
                   <td className="px-6 py-4 text-sm text-gray-500">{new Date(transaction.postingDate).toLocaleDateString()}</td>
                   <td className="px-6 py-4 text-sm text-gray-500">{transaction.referenceDocumentNumber}</td>
                   <td className="px-6 py-4 text-sm text-gray-500">{transaction.transactionCurrency}</td>
-                  <td className="px-6 py-4 text-sm text-right text-gray-900">{transaction.transactionValue.toLocaleString()}</td>
+                  <td className="px-6 py-4 text-sm text-right text-gray-900">{transaction.transactionValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   <td className="px-6 py-4 text-sm text-center text-gray-500">{getMonthFromDate(transaction.serviceDate)}</td>
                   <td className="px-6 py-4 text-sm space-x-2">
-                    <button onClick={() => handleEdit(transaction)} className="text-blue-600 hover:text-blue-900">✏️</button>
-                    <button onClick={() => handleDelete(transaction)} className="text-red-600 hover:text-red-900">🗑️</button>
+                    <button onClick={() => handleEdit(transaction)} className="icon-btn" title="Editar"><HiOutlinePencilSquare className="w-5 h-5" /></button>
+                    <button onClick={() => handleDelete(transaction)} className="icon-btn-danger" title="Eliminar"><HiOutlineTrash className="w-5 h-5" /></button>
                   </td>
                 </tr>
               );
@@ -220,8 +221,8 @@ export default function CommittedTransactionsPage() {
                 </div>
               </div>
               <div className="flex justify-end space-x-3 mt-6">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 border rounded-md hover:bg-gray-50">Cancelar</button>
-                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Guardar</button>
+                <button type="button" onClick={() => setIsModalOpen(false)} className="btn-cancel">Cancelar</button>
+                <button type="submit" className="btn-primary">Guardar</button>
               </div>
             </form>
           </div>

@@ -3,6 +3,7 @@ import { ExpenseRow, CellEdit } from '../types';
 import { getCellKey, calculateTotal } from '../utils/budgetEditHelpers';
 import EditableCell from './EditableCell';
 import TotalCell from './TotalCell';
+import { HiOutlineTrash } from 'react-icons/hi2';
 
 interface BudgetTableProps {
   expenses: ExpenseRow[];
@@ -122,7 +123,7 @@ export default function BudgetTable({
                       className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
                       title="Eliminar fila"
                     >
-                      🗑️
+                      <HiOutlineTrash className="w-4 h-4" />
                     </button>
                   </td>
                 )}

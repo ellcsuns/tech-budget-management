@@ -36,7 +36,7 @@ export default function ProtectedRoute({ children, menuCode, permissionType }: P
           </p>
           <button
             onClick={() => window.history.back()}
-            className="mt-6 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            className="mt-6 btn-primary"
           >
             Volver
           </button>

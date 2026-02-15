@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Expense, ExpenseWithTags } from '../types';
 import { expensesEnhancedApi } from '../services/api';
+import { fmt } from '../utils/formatters';
 import ExpenseDetailPopup from './ExpenseDetailPopup';
 
 interface ExpenseTableProps {
@@ -102,11 +103,11 @@ export default function ExpenseTable({ expenses, viewMode, filters, readOnly = f
                     <td className="px-4 py-3 text-sm text-gray-900">{expense.shortDescription}</td>
                     {monthlyValues.map((value) => (
                       <td key={value.month} className="px-4 py-3 text-sm text-right text-gray-900">
-                        {value.budget > 0 ? value.budget.toLocaleString() : ''}
+                        {value.budget > 0 ? fmt(value.budget) : ''}
                       </td>
                     ))}
                     <td className="px-4 py-3 text-sm text-right font-semibold text-gray-900">
-                      {total.toLocaleString()}
+                      {fmt(total)}
                     </td>
                   </tr>
                 );
@@ -196,24 +197,24 @@ export default function ExpenseTable({ expenses, viewMode, filters, readOnly = f
                     <>
                       {filters.visibleColumns.budget && (
                         <td key={`${value.month}-b`} className="px-2 py-3 text-sm text-right text-gray-900">
-                          {value.budget > 0 ? value.budget.toLocaleString() : '-'}
+                          {value.budget > 0 ? fmt(value.budget) : '-'}
                         </td>
                       )}
                       {filters.visibleColumns.committed && (
                         <td key={`${value.month}-c`} className="px-2 py-3 text-sm text-right text-blue-600">
-                          {value.committed > 0 ? value.committed.toLocaleString() : '-'}
+                          {value.committed > 0 ? fmt(value.committed) : '-'}
                         </td>
                       )}
                       {filters.visibleColumns.real && (
                         <td key={`${value.month}-r`} className="px-2 py-3 text-sm text-right text-green-600">
-                          {value.real > 0 ? value.real.toLocaleString() : '-'}
+                          {value.real > 0 ? fmt(value.real) : '-'}
                         </td>
                       )}
                       {(() => {
                         const diff = value.budget - (value.committed + value.real);
                         return (
                           <td key={`${value.month}-d`} className={`px-2 py-3 text-sm text-right font-medium ${getDiffColor(diff)}`}>
-                            {diff !== 0 ? diff.toLocaleString() : '-'}
+                            {diff !== 0 ? fmt(diff) : '-'}
                           </td>
                         );
                       })()}
@@ -222,24 +223,24 @@ export default function ExpenseTable({ expenses, viewMode, filters, readOnly = f
                   <>
                     {filters.visibleColumns.budget && (
                       <td className="px-2 py-3 text-sm text-right font-semibold text-gray-900 border-l">
-                        {totalBudget > 0 ? totalBudget.toLocaleString() : '-'}
+                        {totalBudget > 0 ? fmt(totalBudget) : '-'}
                       </td>
                     )}
                     {filters.visibleColumns.committed && (
                       <td className="px-2 py-3 text-sm text-right font-semibold text-blue-600">
-                        {totalCommitted > 0 ? totalCommitted.toLocaleString() : '-'}
+                        {totalCommitted > 0 ? fmt(totalCommitted) : '-'}
                       </td>
                     )}
                     {filters.visibleColumns.real && (
                       <td className="px-2 py-3 text-sm text-right font-semibold text-green-600">
-                        {totalReal > 0 ? totalReal.toLocaleString() : '-'}
+                        {totalReal > 0 ? fmt(totalReal) : '-'}
                       </td>
                     )}
                     {(() => {
                       const totalDiff = totalBudget - (totalCommitted + totalReal);
                       return (
                         <td className={`px-2 py-3 text-sm text-right font-semibold ${getDiffColor(totalDiff)}`}>
-                          {totalDiff !== 0 ? totalDiff.toLocaleString() : '-'}
+                          {totalDiff !== 0 ? fmt(totalDiff) : '-'}
                         </td>
                       );
                     })()}

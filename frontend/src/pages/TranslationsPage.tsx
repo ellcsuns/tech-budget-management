@@ -60,7 +60,7 @@ export default function TranslationsPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-800">{t('menu.translations') || 'Traducciones'}</h1>
-        <button onClick={() => setShowNew(true)} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+        <button onClick={() => setShowNew(true)} className="btn-primary">
           + Nueva Traducción
         </button>
       </div>
@@ -84,8 +84,8 @@ export default function TranslationsPage() {
                   <option value="label">Etiqueta</option>
                   <option value="message">Mensaje</option>
                 </select>
-                <button onClick={handleCreate} className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700">✓</button>
-                <button onClick={() => setShowNew(false)} className="px-3 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">✕</button>
+                <button onClick={handleCreate} className="px-3 py-2 btn-success text-sm">✓</button>
+                <button onClick={() => setShowNew(false)} className="px-3 py-2 btn-cancel text-sm">✕</button>
               </div>
             </div>
           </div>
@@ -125,7 +125,7 @@ export default function TranslationsPage() {
                       </>
                     ) : (
                       <>
-                        <button onClick={() => startEdit(tr)} className="text-blue-600 hover:text-blue-800">Editar</button>
+                        <button onClick={() => startEdit(tr)} className="text-accent hover:opacity-70">Editar</button>
                         <button onClick={() => handleDelete(tr.id)} className="text-red-600 hover:text-red-800">Eliminar</button>
                       </>
                     )}

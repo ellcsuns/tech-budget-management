@@ -25,7 +25,7 @@ export default function SaveButton({
         px-6 py-2 rounded-md font-medium transition-colors
         ${isDisabled
           ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          : 'bg-green-600 text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500'
+          : 'btn-success'
         }
       `}
     >

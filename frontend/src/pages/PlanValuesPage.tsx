@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api, budgetApi, expenseApi } from '../services/api';
+import { fmt, MONTH_NAMES } from '../utils/formatters';
 
 interface Expense {
   id: string;
@@ -175,7 +176,7 @@ export default function PlanValuesPage() {
               </button>
               <button
                 onClick={handleSaveChanges}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="btn-primary"
               >
                 Guardar y Crear Versión
               </button>
@@ -211,9 +212,9 @@ export default function PlanValuesPage() {
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sticky left-20 bg-gray-50">
                 Descripción
               </th>
-              {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
-                <th key={month} className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                  Mes {month}
+              {MONTH_NAMES.map((name, i) => (
+                <th key={i} className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                  {name}
                 </th>
               ))}
               <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase bg-blue-50">
@@ -256,13 +257,13 @@ export default function PlanValuesPage() {
                           autoFocus
                         />
                       ) : (
-                        <span>{value.toLocaleString()}</span>
+                        <span>{fmt(value)}</span>
                       )}
                     </td>
                   );
                 })}
                 <td className="px-4 py-2 text-sm text-right font-bold bg-blue-50">
-                  {getMonthTotal(expense.id).toLocaleString()}
+                  {fmt(getMonthTotal(expense.id))}
                 </td>
               </tr>
             ))}

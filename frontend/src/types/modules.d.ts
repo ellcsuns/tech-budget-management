@@ -22,4 +22,18 @@ declare module 'react-icons/hi2' {
   export const HiOutlineScale: IconType;
   export const HiOutlineTableCells: IconType;
   export const HiOutlineLanguage: IconType;
+  export const HiOutlinePencilSquare: IconType;
+  export const HiOutlineTrash: IconType;
+  export const HiOutlineMagnifyingGlass: IconType;
+  export const HiOutlinePlusCircle: IconType;
+  export const HiOutlineArrowDownTray: IconType;
+  export const HiOutlineArrowPath: IconType;
+  export const HiOutlinePauseCircle: IconType;
+  export const HiOutlinePlayCircle: IconType;
+  export const HiOutlineClipboardDocumentList: IconType;
+  export const HiOutlineXMark: IconType;
+  export const HiOutlineFunnel: IconType;
+  export const HiOutlineDocumentArrowDown: IconType;
+  export const HiOutlineEye: IconType;
+  export const HiOutlineEyeSlash: IconType;
 }

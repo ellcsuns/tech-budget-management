@@ -18,7 +18,7 @@ export default function BudgetSelector({ budgets, selectedBudgetId, onSelect }: 
         id="budget-select"
         value={selectedBudgetId || ''}
         onChange={(e) => onSelect(e.target.value)}
-        className="block w-full max-w-md px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+        className="block w-full max-w-md px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
       >
         <option value="">-- Seleccione un presupuesto --</option>
         {budgets.map((budget) => (

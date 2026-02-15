@@ -74,7 +74,7 @@ export default function BudgetComparePage() {
             </select>
           </div>
           <button onClick={compare} disabled={!budgetAId || !budgetBId || loading}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+            className="btn-primary disabled:opacity-50">
             {loading ? 'Comparando...' : 'Comparar'}
           </button>
         </div>
@@ -85,15 +85,15 @@ export default function BudgetComparePage() {
           <div className="grid grid-cols-4 gap-4">
             <div className="bg-white rounded-lg shadow p-4 text-center">
               <p className="text-sm text-gray-500">Total {budgetAData?.version}</p>
-              <p className="text-2xl font-bold">${summary.totalA.toLocaleString()}</p>
+              <p className="text-2xl font-bold">${summary.totalA.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             </div>
             <div className="bg-white rounded-lg shadow p-4 text-center">
               <p className="text-sm text-gray-500">Total {budgetBData?.version}</p>
-              <p className="text-2xl font-bold">${summary.totalB.toLocaleString()}</p>
+              <p className="text-2xl font-bold">${summary.totalB.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             </div>
             <div className={`bg-white rounded-lg shadow p-4 text-center ${summary.difference >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               <p className="text-sm text-gray-500">Diferencia</p>
-              <p className="text-2xl font-bold">{summary.difference >= 0 ? '+' : ''}${summary.difference.toLocaleString()}</p>
+              <p className="text-2xl font-bold">{summary.difference >= 0 ? '+' : ''}${summary.difference.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               <p className="text-sm">({summary.percentChange.toFixed(1)}%)</p>
             </div>
             <div className="bg-white rounded-lg shadow p-4 text-center">
@@ -108,7 +108,7 @@ export default function BudgetComparePage() {
 
           <div className="flex gap-2">
             <button onClick={() => setShowDescription(!showDescription)}
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm">
+              className="btn-secondary text-sm">
               {showDescription ? 'Ocultar' : 'Ver'} Descripción Detallada
             </button>
           </div>
@@ -140,10 +140,10 @@ export default function BudgetComparePage() {
                     <td className="p-3">{statusLabel(r.status)}</td>
                     <td className="p-3 font-mono">{r.expenseCode}</td>
                     <td className="p-3">{r.expenseDescription}</td>
-                    <td className="p-3 text-right">${r.totalA.toLocaleString()}</td>
-                    <td className="p-3 text-right">${r.totalB.toLocaleString()}</td>
+                    <td className="p-3 text-right">${r.totalA.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="p-3 text-right">${r.totalB.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td className={`p-3 text-right ${getDifferenceColor(r.difference)}`}>
-                      {r.difference >= 0 ? '+' : ''}${r.difference.toLocaleString()}
+                      {r.difference >= 0 ? '+' : ''}${r.difference.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td className={`p-3 text-right ${getDifferenceColor(r.percentChange)}`}>
                       {r.percentChange.toFixed(1)}%

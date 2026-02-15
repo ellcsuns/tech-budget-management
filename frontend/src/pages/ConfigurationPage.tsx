@@ -10,14 +10,25 @@ const THEMES = [
   { id: 'orange', name: 'Naranja Energético', primary: '#9A3412', sidebar: '#1C1917', accent: '#F97316' },
 ];
 
+const FONT_SIZES = [
+  { id: 'xs', label: 'Muy pequeño', scale: 0.8 },
+  { id: 'sm', label: 'Pequeño', scale: 0.9 },
+  { id: 'md', label: 'Normal', scale: 1.0 },
+  { id: 'lg', label: 'Grande', scale: 1.1 },
+  { id: 'xl', label: 'Muy grande', scale: 1.2 },
+];
+
 export default function ConfigurationPage() {
   const { locale, setLocale, t } = useI18n();
   const [currentTheme, setCurrentTheme] = useState('default');
   const [previewTheme, setPreviewTheme] = useState<string | null>(null);
+  const [fontSize, setFontSize] = useState('md');
 
   useEffect(() => {
-    const saved = localStorage.getItem('app_theme');
-    if (saved) setCurrentTheme(saved);
+    const savedTheme = localStorage.getItem('app_theme');
+    if (savedTheme) setCurrentTheme(savedTheme);
+    const savedFont = localStorage.getItem('app_font_size');
+    if (savedFont) setFontSize(savedFont);
   }, []);
 
   const applyTheme = (themeId: string) => {
@@ -28,6 +39,14 @@ export default function ConfigurationPage() {
     document.documentElement.style.setProperty('--color-accent', theme.accent);
     localStorage.setItem('app_theme', themeId);
     setCurrentTheme(themeId);
+  };
+
+  const applyFontSize = (sizeId: string) => {
+    const size = FONT_SIZES.find(s => s.id === sizeId);
+    if (!size) return;
+    document.documentElement.style.fontSize = `${size.scale * 16}px`;
+    localStorage.setItem('app_font_size', sizeId);
+    setFontSize(sizeId);
   };
 
   const previewData = previewTheme ? THEMES.find(t => t.id === previewTheme) : null;
@@ -42,16 +61,38 @@ export default function ConfigurationPage() {
         <p className="text-sm text-gray-600 mb-4">{t('config.language_desc') || 'Selecciona el idioma de la interfaz.'}</p>
         <div className="flex gap-4">
           <button onClick={() => setLocale('es')}
-            className={`px-6 py-3 rounded-lg border-2 transition-all ${locale === 'es' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-200 hover:border-gray-400'}`}>
+            className={`px-6 py-3 rounded-lg border-2 transition-all ${locale === 'es' ? 'border-accent bg-blue-50 ring-2 ring-accent' : 'border-gray-200 hover:border-gray-400'}`}>
             <span className="text-2xl mr-2">🇪🇸</span>
             <span className="font-medium">Español</span>
           </button>
           <button onClick={() => setLocale('en')}
-            className={`px-6 py-3 rounded-lg border-2 transition-all ${locale === 'en' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-200 hover:border-gray-400'}`}>
+            className={`px-6 py-3 rounded-lg border-2 transition-all ${locale === 'en' ? 'border-accent bg-blue-50 ring-2 ring-accent' : 'border-gray-200 hover:border-gray-400'}`}>
             <span className="text-2xl mr-2">🇺🇸</span>
             <span className="font-medium">English</span>
           </button>
         </div>
+      </div>
+
+      {/* Font Size */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-bold mb-4">{t('config.font_size') || 'Tamaño de Texto'}</h2>
+        <p className="text-sm text-gray-600 mb-4">{t('config.font_size_desc') || 'Ajusta el tamaño del texto en toda la aplicación.'}</p>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-gray-400">A</span>
+          <div className="flex gap-2">
+            {FONT_SIZES.map(size => (
+              <button
+                key={size.id}
+                onClick={() => applyFontSize(size.id)}
+                className={`px-4 py-2 rounded-lg border-2 transition-all ${fontSize === size.id ? 'border-accent bg-blue-50 ring-2 ring-accent' : 'border-gray-200 hover:border-gray-400'}`}
+              >
+                <span style={{ fontSize: `${size.scale * 14}px` }} className="font-medium">{size.label}</span>
+              </button>
+            ))}
+          </div>
+          <span className="text-xl text-gray-400">A</span>
+        </div>
+        <p className="text-xs text-gray-400 mt-3">Vista previa: <span style={{ fontSize: `${(FONT_SIZES.find(s => s.id === fontSize)?.scale || 1) * 14}px` }}>Este es un texto de ejemplo con el tamaño seleccionado.</span></p>
       </div>
 
       {/* Theme Selection */}
@@ -65,7 +106,7 @@ export default function ConfigurationPage() {
               onClick={() => applyTheme(theme.id)}
               onMouseEnter={() => setPreviewTheme(theme.id)}
               onMouseLeave={() => setPreviewTheme(null)}
-              className={`p-4 rounded-lg border-2 transition-all ${currentTheme === theme.id ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200 hover:border-gray-400'}`}
+              className={`p-4 rounded-lg border-2 transition-all ${currentTheme === theme.id ? 'border-accent ring-2 ring-accent' : 'border-gray-200 hover:border-gray-400'}`}
             >
               <div className="flex gap-2 mb-3">
                 <div className="w-8 h-8 rounded-full" style={{ backgroundColor: theme.primary }} />
@@ -73,16 +114,14 @@ export default function ConfigurationPage() {
                 <div className="w-8 h-8 rounded-full" style={{ backgroundColor: theme.accent }} />
               </div>
               <p className="text-sm font-medium text-gray-800">{theme.name}</p>
-              {currentTheme === theme.id && <p className="text-xs text-blue-600 mt-1">✓ Activo</p>}
+              {currentTheme === theme.id && <p className="text-xs text-accent mt-1">✓ Activo</p>}
             </button>
           ))}
         </div>
 
-        {/* Theme Preview Popup */}
         {previewData && (
           <div className="absolute right-0 top-16 w-72 bg-white rounded-lg shadow-xl border p-4 z-50">
             <p className="text-sm font-bold mb-3">Preview: {previewData.name}</p>
-            {/* Mini sidebar preview */}
             <div className="rounded-lg overflow-hidden mb-3" style={{ backgroundColor: previewData.sidebar }}>
               <div className="p-3 border-b border-gray-600">
                 <p className="text-white text-sm font-bold">Tech Budget</p>
@@ -93,17 +132,10 @@ export default function ConfigurationPage() {
                 <div className="px-3 py-2 rounded text-gray-300 text-xs">Gastos</div>
               </div>
             </div>
-            {/* Buttons preview */}
             <div className="flex gap-2 mb-3">
               <button className="px-3 py-1 text-white text-xs rounded" style={{ backgroundColor: previewData.primary }}>Guardar</button>
               <button className="px-3 py-1 text-white text-xs rounded" style={{ backgroundColor: previewData.accent }}>Editar</button>
               <button className="px-3 py-1 text-xs rounded border" style={{ borderColor: previewData.accent, color: previewData.accent }}>Cancelar</button>
-            </div>
-            {/* Icons preview */}
-            <div className="flex gap-3">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke={previewData.accent} strokeWidth="1.5"/><path d="M7 10l2 2 4-4" stroke={previewData.accent} strokeWidth="1.5" strokeLinecap="round"/></svg>
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="14" height="14" rx="2" stroke={previewData.accent} strokeWidth="1.5"/><path d="M7 10h6M10 7v6" stroke={previewData.accent} strokeWidth="1.5" strokeLinecap="round"/></svg>
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 15l4-4 3 3 7-7" stroke={previewData.accent} strokeWidth="1.5" strokeLinecap="round"/></svg>
             </div>
           </div>
         )}

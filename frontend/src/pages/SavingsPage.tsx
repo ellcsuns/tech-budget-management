@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { savingsApi, budgetApi, expenseApi } from '../services/api';
 import type { Saving, Budget, Expense } from '../types';
+import { HiOutlineTrash, HiOutlinePlusCircle } from 'react-icons/hi2';
 
 export default function SavingsPage() {
   const [savings, setSavings] = useState<Saving[]>([]);
@@ -142,8 +143,9 @@ export default function SavingsPage() {
         <h1 className="text-2xl font-bold">Módulo de Ahorros</h1>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          className="btn-primary flex items-center gap-2"
         >
+          <HiOutlinePlusCircle className="w-5 h-5" />
           {showForm ? 'Cancelar' : 'Nuevo Ahorro'}
         </button>
       </div>
@@ -193,7 +195,7 @@ export default function SavingsPage() {
         </div>
         <button
           onClick={loadSavings}
-          className="mt-4 bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+          className="mt-4 btn-secondary"
         >
           Filtrar
         </button>
@@ -294,14 +296,14 @@ export default function SavingsPage() {
             <div className="flex gap-2">
               <button
                 type="submit"
-                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                className="btn-success"
               >
                 Crear Ahorro
               </button>
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
+                className="btn-cancel"
               >
                 Cancelar
               </button>
@@ -317,7 +319,7 @@ export default function SavingsPage() {
             <span>{selectedSavings.size} ahorro(s) seleccionado(s)</span>
             <button
               onClick={handleApproveSavings}
-              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+              className="btn-success"
             >
               Aprobar Seleccionados
             </button>
@@ -361,7 +363,7 @@ export default function SavingsPage() {
                   <td className="p-3">{saving.budget?.year} - v{saving.budget?.version}</td>
                   <td className="p-3">{saving.expense?.code}</td>
                   <td className="p-3">{saving.description}</td>
-                  <td className="p-3 text-right">${saving.totalAmount.toFixed(2)}</td>
+                  <td className="p-3 text-right">${Number(saving.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   <td className="p-3">
                     <span className={`px-2 py-1 rounded text-xs ${
                       saving.status === 'APPROVED' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
@@ -375,10 +377,10 @@ export default function SavingsPage() {
                     {saving.status === 'PENDING' && (
                       <button
                         onClick={() => handleDeleteSaving(saving.id)}
-                        className="text-red-600 hover:text-red-800"
+                        className="icon-btn-danger"
                         title="Eliminar"
                       >
-                        🗑️
+                        <HiOutlineTrash className="w-5 h-5" />
                       </button>
                     )}
                   </td>
