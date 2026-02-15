@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { budgetApi, expenseApi } from '../services/api';
-import type { Budget, Expense } from '../types';
+import type { Expense } from '../types';
 import ExpenseTable from '../components/ExpenseTable';
 import FilterPanel from '../components/FilterPanel';
 
