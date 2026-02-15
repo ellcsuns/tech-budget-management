@@ -3,11 +3,11 @@ import { budgetApi, planValueApi, expenseApi } from '../services/api';
 import { Budget, ExpenseRow, CellEdit, Expense } from '../types';
 import { getCellKey, validateCellValue, transformToExpenseRows } from '../utils/budgetEditHelpers';
 import { useAuth } from '../contexts/AuthContext';
-import BudgetSelector from '../components/BudgetSelector';
 import BudgetTable from '../components/BudgetTable';
 import RowManager from '../components/RowManager';
 import SaveButton from '../components/SaveButton';
 import ConfirmationDialog from '../components/ConfirmationDialog';
+import { fmt } from '../utils/formatters';
 import { HiOutlineLockClosed } from 'react-icons/hi2';
 
 export default function BudgetsPage() {
@@ -21,6 +21,7 @@ export default function BudgetsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState<string | null>(null);
+  const [searchText, setSearchText] = useState('');
 
   const { hasPermission } = useAuth();
   const canEdit = hasPermission('budgets', 'MODIFY');
@@ -39,7 +40,6 @@ export default function BudgetsPage() {
     try {
       const res = await budgetApi.getAll();
       setBudgets(res.data);
-      // Auto-select latest budget (last created = vigente)
       if (res.data.length > 0) {
         const latest = res.data[res.data.length - 1];
         loadBudgetDetails(latest.id);
@@ -70,11 +70,6 @@ export default function BudgetsPage() {
     }
   };
 
-  const handleBudgetSelect = (budgetId: string) => {
-    if (budgetId) loadBudgetDetails(budgetId);
-    else { setSelectedBudget(null); setExpenses([]); }
-  };
-
   const handleCellEdit = (expenseId: string, month: number, value: string) => {
     const cellKey = getCellKey(expenseId, month);
     const validation = validateCellValue(value);
@@ -94,9 +89,7 @@ export default function BudgetsPage() {
     }
   };
 
-  const handleRemoveRow = (expenseId: string) => {
-    setShowDeleteDialog(expenseId);
-  };
+  const handleRemoveRow = (expenseId: string) => { setShowDeleteDialog(expenseId); };
 
   const confirmRemoveRow = () => {
     if (!showDeleteDialog) return;
@@ -114,7 +107,6 @@ export default function BudgetsPage() {
       const expense = res.data.find((e: Expense) => e.code === expenseCode);
       if (!expense) return;
       if (expenses.some(e => e.id === expense.id)) { alert('Este gasto ya está en la tabla'); return; }
-
       const planValuesRes = await planValueApi.getByExpense(expense.id);
       const planValues = [];
       for (let month = 1; month <= 12; month++) {
@@ -123,9 +115,7 @@ export default function BudgetsPage() {
       }
       setExpenses([...expenses, { id: expense.id, code: expense.code, description: expense.shortDescription, planValues, isNew: true }]);
       setHasUnsavedChanges(true);
-    } catch (error) {
-      alert('Error al agregar la fila');
-    }
+    } catch (error) { alert('Error al agregar la fila'); }
   };
 
   const handleSave = async () => {
@@ -143,18 +133,21 @@ export default function BudgetsPage() {
       if (error.response?.status === 403) alert('No tienes permisos para modificar este presupuesto');
       else if (error.response?.status === 409) alert('Este presupuesto ha sido modificado por otro usuario. Por favor recarga la página.');
       else alert('Error al guardar el presupuesto.');
-    } finally {
-      setIsSaving(false);
-    }
+    } finally { setIsSaving(false); }
   };
 
-  // Calculate totals by currency and company
+  // Filter expenses by search text
+  const filteredExpenses = useMemo(() => {
+    if (!searchText.trim()) return expenses;
+    const s = searchText.toLowerCase();
+    return expenses.filter(e => e.code?.toLowerCase().includes(s) || e.description?.toLowerCase().includes(s));
+  }, [expenses, searchText]);
+
+  // Calculate totals from filtered expenses
   const totals = useMemo(() => {
     const byCurrency: Record<string, number> = {};
-    const byCompany: Record<string, number> = {};
     let totalUSD = 0;
-
-    expenses.forEach(exp => {
+    filteredExpenses.forEach(exp => {
       exp.planValues.forEach(pv => {
         const cellKey = getCellKey(exp.id, pv.month);
         const edited = editedCells.get(cellKey);
@@ -164,58 +157,61 @@ export default function BudgetsPage() {
         totalUSD += Number(pv.usdValue) || val;
       });
     });
-
-    return { byCurrency, byCompany, totalUSD };
-  }, [expenses, editedCells]);
+    return { byCurrency, totalUSD };
+  }, [filteredExpenses, editedCells]);
 
   if (isLoading && !selectedBudget) return <div className="text-center py-8">Cargando...</div>;
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Presupuestos</h1>
-      </div>
-
-      <BudgetSelector budgets={budgets} selectedBudgetId={selectedBudget?.id || null} onSelect={handleBudgetSelect} />
-
+    <div className="space-y-4">
       {selectedBudget && (
-        <div className="mt-6">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Presupuesto: {selectedBudget.year} - {selectedBudget.version}</p>
-              {!canEdit && <p className="text-sm text-gray-500 flex items-center gap-1"><HiOutlineLockClosed className="w-4 h-4" /> Solo lectura</p>}
-              {hasUnsavedChanges && <p className="text-sm text-yellow-600 font-medium">⚠ Hay cambios sin guardar</p>}
-            </div>
-            <div className="flex gap-3">
-              {canEdit && (
-                <>
-                  <RowManager budgetId={selectedBudget.id} onAddRow={handleAddRow} />
-                  <SaveButton hasUnsavedChanges={hasUnsavedChanges} hasValidationErrors={validationErrors.size > 0} isSaving={isSaving} onSave={() => setShowConfirmDialog(true)} />
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Totals indicators */}
-          <div className="flex gap-4 mb-4 flex-wrap">
-            {Object.entries(totals.byCurrency).map(([curr, val]) => (
-              <div key={curr} className="bg-blue-50 px-4 py-2 rounded-lg">
-                <span className="text-xs text-gray-500">Total {curr}</span>
-                <p className="text-sm font-bold text-blue-800">${val.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+        <>
+          <div className="bg-white rounded-lg shadow p-4">
+            {/* Search + controls row */}
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              <input
+                type="text"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                placeholder="Buscar gasto..."
+                className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent w-48"
+              />
+              <div className="ml-auto flex items-center gap-3">
+                <p className="text-sm text-gray-500">{selectedBudget.year} - {selectedBudget.version}</p>
+                {!canEdit && <p className="text-sm text-gray-500 flex items-center gap-1"><HiOutlineLockClosed className="w-4 h-4" /> Solo lectura</p>}
+                {hasUnsavedChanges && <span className="text-sm text-yellow-600 font-medium">⚠ Cambios sin guardar</span>}
+                {canEdit && (
+                  <>
+                    <RowManager budgetId={selectedBudget.id} onAddRow={handleAddRow} />
+                    <SaveButton hasUnsavedChanges={hasUnsavedChanges} hasValidationErrors={validationErrors.size > 0} isSaving={isSaving} onSave={() => setShowConfirmDialog(true)} />
+                  </>
+                )}
               </div>
-            ))}
-            <div className="bg-green-50 px-4 py-2 rounded-lg">
-              <span className="text-xs text-gray-500">Total USD</span>
-              <p className="text-sm font-bold text-green-800">${totals.totalUSD.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+            </div>
+
+            {/* Dynamic totals indicators */}
+            <div className="flex gap-4 flex-wrap">
+              {Object.entries(totals.byCurrency).map(([curr, val]) => (
+                <div key={curr} className="bg-blue-50 px-4 py-2 rounded-lg">
+                  <span className="text-xs text-gray-500">Total {curr}</span>
+                  <p className="text-sm font-bold text-blue-800">${fmt(val)}</p>
+                </div>
+              ))}
+              <div className="bg-green-50 px-4 py-2 rounded-lg">
+                <span className="text-xs text-gray-500">Total USD</span>
+                <p className="text-sm font-bold text-green-800">${fmt(totals.totalUSD)}</p>
+              </div>
             </div>
           </div>
 
-          {isLoading ? (
-            <div className="text-center py-8">Cargando detalles...</div>
-          ) : (
-            <BudgetTable expenses={expenses} editedCells={editedCells} validationErrors={validationErrors} canEdit={canEdit} onCellEdit={handleCellEdit} onRemoveRow={handleRemoveRow} />
-          )}
-        </div>
+          <div className="bg-white rounded-lg shadow p-4">
+            {isLoading ? (
+              <div className="text-center py-8">Cargando detalles...</div>
+            ) : (
+              <BudgetTable expenses={filteredExpenses} editedCells={editedCells} validationErrors={validationErrors} canEdit={canEdit} onCellEdit={handleCellEdit} onRemoveRow={handleRemoveRow} />
+            )}
+          </div>
+        </>
       )}
 
       <ConfirmationDialog
@@ -224,7 +220,6 @@ export default function BudgetsPage() {
         onConfirm={() => { setShowConfirmDialog(false); handleSave(); }}
         onCancel={() => setShowConfirmDialog(false)}
       />
-
       <ConfirmationDialog
         isOpen={!!showDeleteDialog}
         message="¿Estás seguro de eliminar esta fila del presupuesto?"

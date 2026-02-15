@@ -3,19 +3,17 @@ import { budgetApi, expenseApi } from '../services/api';
 import type { Expense } from '../types';
 import ExpenseTable from '../components/ExpenseTable';
 import FilterPanel from '../components/FilterPanel';
+import { fmt } from '../utils/formatters';
 
 export default function Dashboard() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totals, setTotals] = useState({ budget: 0, committed: 0, real: 0, diff: 0 });
   const [filters, setFilters] = useState({
     currencies: undefined as string[] | undefined,
     financialCompanyIds: undefined as string[] | undefined,
     searchText: '',
-    visibleColumns: {
-      budget: true,
-      committed: true,
-      real: true
-    }
+    visibleColumns: { budget: true, committed: true, real: true }
   });
 
   useEffect(() => { loadLatestBudget(); }, []);
@@ -24,7 +22,6 @@ export default function Dashboard() {
     try {
       const response = await budgetApi.getAll();
       if (response.data.length > 0) {
-        // Auto-select latest (vigente) budget
         const latest = response.data[response.data.length - 1];
         await loadExpenses(latest.id);
       }
@@ -47,22 +44,51 @@ export default function Dashboard() {
     }
   };
 
+  const getDiffColor = () => {
+    if (totals.diff === 0) return 'text-gray-500';
+    return totals.diff > 0 ? 'text-green-700' : 'text-red-700';
+  };
+  const getDiffBg = () => {
+    if (totals.diff === 0) return 'bg-gray-50';
+    return totals.diff > 0 ? 'bg-green-50' : 'bg-red-50';
+  };
+
   if (loading) {
     return <div className="flex justify-center items-center h-64"><div className="text-lg text-gray-600">Cargando...</div></div>;
   }
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow p-6">
+    <div className="space-y-4">
+      <div className="bg-white rounded-lg shadow p-4">
         <FilterPanel expenses={expenses} filters={filters} onFiltersChange={setFilters} />
+        {/* Dynamic totals indicators */}
+        <div className="flex gap-4 flex-wrap">
+          <div className="bg-blue-50 px-4 py-2 rounded-lg">
+            <span className="text-xs text-gray-500">Presupuesto</span>
+            <p className="text-sm font-bold text-blue-800">${fmt(totals.budget)}</p>
+          </div>
+          <div className="bg-indigo-50 px-4 py-2 rounded-lg">
+            <span className="text-xs text-gray-500">Comprometido</span>
+            <p className="text-sm font-bold text-indigo-800">${fmt(totals.committed)}</p>
+          </div>
+          <div className="bg-emerald-50 px-4 py-2 rounded-lg">
+            <span className="text-xs text-gray-500">Real</span>
+            <p className="text-sm font-bold text-emerald-800">${fmt(totals.real)}</p>
+          </div>
+          <div className={`${getDiffBg()} px-4 py-2 rounded-lg`}>
+            <span className="text-xs text-gray-500">Diferencia</span>
+            <p className={`text-sm font-bold ${getDiffColor()}`}>${fmt(totals.diff)}</p>
+          </div>
+        </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white rounded-lg shadow p-4">
         <ExpenseTable
           expenses={expenses}
           viewMode="COMPARISON"
           filters={filters}
           readOnly={true}
+          onTotalsChange={setTotals}
         />
       </div>
     </div>
