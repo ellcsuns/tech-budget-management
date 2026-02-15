@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import type { Expense } from '../types';
+import type { Expense, ExpenseWithTags } from '../types';
+import { expensesEnhancedApi } from '../services/api';
 import ExpenseDetailPopup from './ExpenseDetailPopup';
 
 interface ExpenseTableProps {
@@ -9,7 +10,23 @@ interface ExpenseTableProps {
 }
 
 export default function ExpenseTable({ expenses, viewMode, filters }: ExpenseTableProps) {
-  const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
+  const [selectedExpense, setSelectedExpense] = useState<ExpenseWithTags | null>(null);
+  const [showDetail, setShowDetail] = useState(false);
+
+  const handleExpenseClick = async (expenseId: string) => {
+    try {
+      const res = await expensesEnhancedApi.getById(expenseId);
+      setSelectedExpense(res.data);
+      setShowDetail(true);
+    } catch (error) {
+      console.error('Error loading expense:', error);
+    }
+  };
+
+  const handleCloseDetail = () => {
+    setShowDetail(false);
+    setSelectedExpense(null);
+  };
 
   const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
@@ -77,7 +94,7 @@ export default function ExpenseTable({ expenses, viewMode, filters }: ExpenseTab
                 return (
                   <tr
                     key={expense.id}
-                    onClick={() => setSelectedExpenseId(expense.id)}
+                    onClick={() => handleExpenseClick(expense.id)}
                     className="hover:bg-gray-50 cursor-pointer"
                   >
                     <td className="px-4 py-3 text-sm text-gray-900">{expense.code}</td>
@@ -97,11 +114,16 @@ export default function ExpenseTable({ expenses, viewMode, filters }: ExpenseTab
           </table>
         </div>
 
-        {selectedExpenseId && (
+        {showDetail && selectedExpense && (
           <ExpenseDetailPopup
-            expenseId={selectedExpenseId}
-            isOpen={!!selectedExpenseId}
-            onClose={() => setSelectedExpenseId(null)}
+            expense={selectedExpense}
+            onClose={handleCloseDetail}
+            onUpdate={() => {
+              // Reload expense after update
+              if (selectedExpense) {
+                handleExpenseClick(selectedExpense.id);
+              }
+            }}
           />
         )}
       </>
@@ -179,7 +201,7 @@ export default function ExpenseTable({ expenses, viewMode, filters }: ExpenseTab
               return (
                 <tr
                   key={expense.id}
-                  onClick={() => setSelectedExpenseId(expense.id)}
+                  onClick={() => handleExpenseClick(expense.id)}
                   className="hover:bg-gray-50 cursor-pointer"
                 >
                   <td className="px-4 py-3 text-sm text-gray-900 sticky left-0 bg-white z-10">{expense.shortDescription}</td>
@@ -226,11 +248,16 @@ export default function ExpenseTable({ expenses, viewMode, filters }: ExpenseTab
         </table>
       </div>
 
-      {selectedExpenseId && (
+      {showDetail && selectedExpense && (
         <ExpenseDetailPopup
-          expenseId={selectedExpenseId}
-          isOpen={!!selectedExpenseId}
-          onClose={() => setSelectedExpenseId(null)}
+          expense={selectedExpense}
+          onClose={handleCloseDetail}
+          onUpdate={() => {
+            // Reload expense after update
+            if (selectedExpense) {
+              handleExpenseClick(selectedExpense.id);
+            }
+          }}
         />
       )}
     </>

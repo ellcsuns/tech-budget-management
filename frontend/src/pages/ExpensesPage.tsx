@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { expensesEnhancedApi, budgetApi, technologyDirectionApi, userAreaApi, financialCompanyApi } from '../services/api';
-import type { ExpenseWithTags, Budget, TechnologyDirection, UserArea, FinancialCompany, CustomTag } from '../types';
+import type { ExpenseWithTags, Budget, TechnologyDirection, UserArea, FinancialCompany } from '../types';
 import ExpenseDetailPopup from '../components/ExpenseDetailPopup';
 
 export default function ExpensesPage() {
