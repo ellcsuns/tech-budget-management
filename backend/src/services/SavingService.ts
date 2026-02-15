@@ -1,4 +1,4 @@
-import { PrismaClient, Saving, SavingStatus } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 export interface SavingInput {
   expenseId: string;
@@ -17,7 +17,7 @@ export interface MonthlyDistribution {
 export interface SavingFilters {
   expenseId?: string;
   budgetId?: string;
-  status?: SavingStatus;
+  status?: 'PENDING' | 'APPROVED';
   createdBy?: string;
   dateFrom?: Date;
   dateTo?: Date;
@@ -29,7 +29,7 @@ export class SavingService {
   /**
    * Create a new saving
    */
-  async createSaving(data: SavingInput, userId: string): Promise<Saving> {
+  async createSaving(data: SavingInput, userId: string): Promise<any> {
     // Validate totalAmount
     if (data.totalAmount <= 0) {
       throw new Error('Total amount must be greater than zero');
@@ -57,7 +57,7 @@ export class SavingService {
         budgetId: data.budgetId,
         totalAmount: data.totalAmount,
         description: data.description,
-        status: SavingStatus.PENDING,
+        status: 'PENDING',
         monthlyDistribution: monthlyDistribution as any,
         createdBy: userId
       },
@@ -72,7 +72,7 @@ export class SavingService {
   /**
    * Get savings with optional filters
    */
-  async getSavings(filters?: SavingFilters): Promise<Saving[]> {
+  async getSavings(filters?: SavingFilters): Promise<any[]> {
     const where: any = {};
 
     if (filters?.expenseId) {
@@ -123,7 +123,7 @@ export class SavingService {
   /**
    * Get saving by ID
    */
-  async getSavingById(id: string): Promise<Saving | null> {
+  async getSavingById(id: string): Promise<any | null> {
     return await this.prisma.saving.findUnique({
       where: { id },
       include: {
@@ -160,19 +160,19 @@ export class SavingService {
         throw new Error('One or more savings not found');
       }
 
-      const alreadyApproved = savings.filter(s => s.status === SavingStatus.APPROVED);
+      const alreadyApproved = savings.filter((s: any) => s.status === 'APPROVED');
       if (alreadyApproved.length > 0) {
         throw new Error('One or more savings have already been approved');
       }
 
       // Group savings by budgetId
-      const savingsByBudget = savings.reduce((acc, saving) => {
+      const savingsByBudget = savings.reduce((acc: any, saving: any) => {
         if (!acc[saving.budgetId]) {
           acc[saving.budgetId] = [];
         }
         acc[saving.budgetId].push(saving);
         return acc;
-      }, {} as Record<string, typeof savings>);
+      }, {} as Record<string, any[]>);
 
       // For each budget, aggregate savings and create new version
       const newBudgets = [];
@@ -181,7 +181,7 @@ export class SavingService {
         // Aggregate monthly distributions by expense
         const expenseDistributions: Record<string, MonthlyDistribution> = {};
         
-        for (const saving of budgetSavings) {
+        for (const saving of budgetSavings as any[]) {
           if (!expenseDistributions[saving.expenseId]) {
             expenseDistributions[saving.expenseId] = {};
           }
@@ -199,7 +199,7 @@ export class SavingService {
         // Build planValueChanges array (negative amounts for savings)
         const planValueChanges = [];
         for (const [expenseId, distribution] of Object.entries(expenseDistributions)) {
-          const expense = budgetSavings.find(s => s.expenseId === expenseId)?.expense;
+          const expense = (budgetSavings as any[]).find((s: any) => s.expenseId === expenseId)?.expense;
           const currency = expense?.planValues?.[0]?.transactionCurrency || 'USD';
           
           for (const [month, amount] of Object.entries(distribution)) {
@@ -224,7 +224,7 @@ export class SavingService {
           id: { in: savingIds }
         },
         data: {
-          status: SavingStatus.APPROVED,
+          status: 'APPROVED',
           approvedAt: new Date()
         }
       });

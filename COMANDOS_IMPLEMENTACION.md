@@ -38,10 +38,11 @@ cd /home/ubuntu/tech-budget-management
 git pull origin main
 ```
 
-### 2. Backend - Compilar y Reiniciar
+### 2. Backend - Regenerar Cliente Prisma, Compilar y Reiniciar
 
 ```bash
 cd /home/ubuntu/tech-budget-management/backend
+npx prisma generate
 npm run build
 pm2 restart tech-budget-api
 ```
@@ -61,6 +62,14 @@ pm2 logs tech-budget-api --lines 50
 
 # Verificar que el API esté corriendo
 curl http://localhost:3001/health
+```
+
+---
+
+## Comando Todo-en-Uno (Copia y pega esto)
+
+```bash
+cd /home/ubuntu/tech-budget-management && git pull origin main && cd backend && npx prisma generate && npm run build && pm2 restart tech-budget-api && cd ../frontend && npm run build && pm2 logs tech-budget-api --lines 30
 ```
 
 ---

@@ -1,12 +1,27 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { SavingService } from '../services/SavingService';
-import { authenticateJWT } from '../middleware/authenticateJWT';
-import { requirePermission } from '../middleware/requirePermission';
+import { AuthService } from '../services/AuthService';
+import { PasswordService } from '../services/PasswordService';
+import { UserService } from '../services/UserService';
+import { RoleService } from '../services/RoleService';
+import { PermissionService } from '../services/PermissionService';
+import { createAuthenticateJWT } from '../middleware/authenticateJWT';
+import { createRequirePermission } from '../middleware/requirePermission';
 
 export function savingsRouter(prisma: PrismaClient) {
   const router = Router();
   const savingService = new SavingService(prisma);
+  
+  // Initialize services for middleware
+  const passwordService = new PasswordService();
+  const userService = new UserService(prisma, passwordService);
+  const roleService = new RoleService(prisma);
+  const authService = new AuthService(prisma, passwordService, userService, roleService);
+  const permissionService = new PermissionService(prisma);
+  
+  const authenticateJWT = createAuthenticateJWT(authService);
+  const requirePermission = createRequirePermission(permissionService);
 
   // Apply authentication to all routes
   router.use(authenticateJWT);
