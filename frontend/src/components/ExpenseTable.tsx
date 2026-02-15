@@ -145,27 +145,36 @@ export default function ExpenseTable({ expenses, viewMode, filters }: ExpenseTab
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descripción</th>
-              {months.slice(0, 3).map((month) => (
-                <th key={month} colSpan={3} className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border-l">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sticky left-0 bg-gray-50 z-10">Descripción</th>
+              {months.map((month) => (
+                <th key={month} colSpan={[filters.visibleColumns.budget, filters.visibleColumns.committed, filters.visibleColumns.real].filter(Boolean).length} className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border-l">
                   {month}
                 </th>
               ))}
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border-l">Total</th>
             </tr>
             <tr>
-              <th></th>
-              {months.slice(0, 3).map((month) => (
+              <th className="sticky left-0 bg-gray-50 z-10"></th>
+              {months.map((month) => (
                 <>
                   {filters.visibleColumns.budget && <th key={`${month}-b`} className="px-2 py-2 text-xs text-gray-500">Ppto</th>}
                   {filters.visibleColumns.committed && <th key={`${month}-c`} className="px-2 py-2 text-xs text-gray-500">Comp</th>}
                   {filters.visibleColumns.real && <th key={`${month}-r`} className="px-2 py-2 text-xs text-gray-500">Real</th>}
                 </>
               ))}
+              <>
+                {filters.visibleColumns.budget && <th className="px-2 py-2 text-xs text-gray-500">Ppto</th>}
+                {filters.visibleColumns.committed && <th className="px-2 py-2 text-xs text-gray-500">Comp</th>}
+                {filters.visibleColumns.real && <th className="px-2 py-2 text-xs text-gray-500">Real</th>}
+              </>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredExpenses.map((expense) => {
               const monthlyValues = getMonthlyValues(expense);
+              const totalBudget = calculateTotal(monthlyValues, 'budget');
+              const totalCommitted = calculateTotal(monthlyValues, 'committed');
+              const totalReal = calculateTotal(monthlyValues, 'real');
 
               return (
                 <tr
@@ -173,26 +182,43 @@ export default function ExpenseTable({ expenses, viewMode, filters }: ExpenseTab
                   onClick={() => setSelectedExpenseId(expense.id)}
                   className="hover:bg-gray-50 cursor-pointer"
                 >
-                  <td className="px-4 py-3 text-sm text-gray-900">{expense.shortDescription}</td>
-                  {monthlyValues.slice(0, 3).map((value) => (
+                  <td className="px-4 py-3 text-sm text-gray-900 sticky left-0 bg-white z-10">{expense.shortDescription}</td>
+                  {monthlyValues.map((value) => (
                     <>
                       {filters.visibleColumns.budget && (
                         <td key={`${value.month}-b`} className="px-2 py-3 text-sm text-right text-gray-900">
-                          {value.budget > 0 ? value.budget.toLocaleString() : ''}
+                          {value.budget > 0 ? value.budget.toLocaleString() : '-'}
                         </td>
                       )}
                       {filters.visibleColumns.committed && (
-                        <td key={`${value.month}-c`} className="px-2 py-3 text-sm text-right text-gray-900">
-                          {value.committed > 0 ? value.committed.toLocaleString() : ''}
+                        <td key={`${value.month}-c`} className="px-2 py-3 text-sm text-right text-blue-600">
+                          {value.committed > 0 ? value.committed.toLocaleString() : '-'}
                         </td>
                       )}
                       {filters.visibleColumns.real && (
-                        <td key={`${value.month}-r`} className="px-2 py-3 text-sm text-right text-gray-900">
-                          {value.real > 0 ? value.real.toLocaleString() : ''}
+                        <td key={`${value.month}-r`} className="px-2 py-3 text-sm text-right text-green-600">
+                          {value.real > 0 ? value.real.toLocaleString() : '-'}
                         </td>
                       )}
                     </>
                   ))}
+                  <>
+                    {filters.visibleColumns.budget && (
+                      <td className="px-2 py-3 text-sm text-right font-semibold text-gray-900 border-l">
+                        {totalBudget > 0 ? totalBudget.toLocaleString() : '-'}
+                      </td>
+                    )}
+                    {filters.visibleColumns.committed && (
+                      <td className="px-2 py-3 text-sm text-right font-semibold text-blue-600">
+                        {totalCommitted > 0 ? totalCommitted.toLocaleString() : '-'}
+                      </td>
+                    )}
+                    {filters.visibleColumns.real && (
+                      <td className="px-2 py-3 text-sm text-right font-semibold text-green-600">
+                        {totalReal > 0 ? totalReal.toLocaleString() : '-'}
+                      </td>
+                    )}
+                  </>
                 </tr>
               );
             })}

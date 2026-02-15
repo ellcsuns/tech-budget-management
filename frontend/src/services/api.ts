@@ -57,9 +57,33 @@ export const budgetApi = {
   getAll: () => api.get<Budget[]>('/budgets'),
   getByYear: (year: number) => api.get<Budget[]>(`/budgets?year=${year}`),
   getById: (id: string) => api.get<Budget>(`/budgets/${id}`),
+  getBudgetWithDetails: async (budgetId: string) => {
+    const [budgetRes, expensesRes] = await Promise.all([
+      api.get<Budget>(`/budgets/${budgetId}`),
+      api.get<Expense[]>(`/expenses?budgetId=${budgetId}`)
+    ]);
+    
+    // Fetch plan values for all expenses
+    const expensesWithPlanValues = await Promise.all(
+      expensesRes.data.map(async (expense) => {
+        const planValuesRes = await api.get<PlanValue[]>(`/plan-values?expenseId=${expense.id}`);
+        return { ...expense, planValues: planValuesRes.data };
+      })
+    );
+    
+    return {
+      ...budgetRes,
+      data: {
+        ...budgetRes.data,
+        expenses: expensesWithPlanValues
+      }
+    };
+  },
   create: (data: { year: number; version: string }) => api.post<Budget>('/budgets', data),
   update: (id: string, data: Partial<Budget>) => api.put<Budget>(`/budgets/${id}`, data),
-  delete: (id: string) => api.delete(`/budgets/${id}`)
+  delete: (id: string) => api.delete(`/budgets/${id}`),
+  createNewVersion: (budgetId: string, planValueChanges: any[]) => 
+    api.post(`/budgets/${budgetId}/new-version`, { planValueChanges })
 };
 
 // Expense API

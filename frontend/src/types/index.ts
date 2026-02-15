@@ -131,3 +131,37 @@ export interface TableFilters {
     real: boolean;
   };
 }
+
+// Budget Editing Types
+export interface BudgetEditState {
+  selectedBudget: Budget | null;
+  expenses: ExpenseRow[];
+  editedCells: Map<string, CellEdit>;
+  hasUnsavedChanges: boolean;
+  validationErrors: Map<string, string>;
+  isLoading: boolean;
+  isSaving: boolean;
+}
+
+export interface ExpenseRow {
+  id: string;
+  code: string;
+  description: string;
+  planValues: PlanValue[];
+  isNew: boolean;
+}
+
+export interface CellEdit {
+  expenseId: string;
+  month: number;
+  value: number;
+  currency: string;
+  isValid: boolean;
+}
+
+export interface PlanValueChange {
+  expenseId: string;
+  month: number;
+  transactionValue: number;
+  transactionCurrency: string;
+}
