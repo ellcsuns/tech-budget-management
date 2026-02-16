@@ -126,9 +126,13 @@ export default function ExpenseTable({ expenses, viewMode, filters, readOnly = f
       real += calcTotal(mv, 'real');
     });
     const diff = budget - (committed + real);
-    if (onTotalsChange) onTotalsChange({ budget, committed, real, diff });
     return { budget, committed, real, diff };
   }, [filteredExpenses]);
+
+  // Notify parent of totals changes
+  React.useEffect(() => {
+    if (onTotalsChange) onTotalsChange(grandTotals);
+  }, [grandTotals]);
 
   // Monthly grand totals for footer row
   const monthlyGrandTotals = useMemo(() => {

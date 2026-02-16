@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, KeyboardEvent } from 'react';
+import React, { useState, useEffect, useRef, KeyboardEvent } from 'react';
 import { fmt } from '../utils/formatters';
 
 interface EditableCellProps {
@@ -28,7 +28,7 @@ export default function EditableCell({ value, isEdited, error, disabled, onChang
     return (
       <td className="px-4 py-2">
         <input ref={inputRef} type="text" value={localValue}
-          onChange={(e) => setLocalValue(e.target.value)} onBlur={handleBlur} onKeyDown={handleKeyDown}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLocalValue(e.target.value)} onBlur={handleBlur} onKeyDown={handleKeyDown}
           className="w-full px-2 py-1 text-sm text-right border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
       </td>
     );

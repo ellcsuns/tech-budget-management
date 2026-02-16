@@ -119,7 +119,7 @@ export default function BudgetsPage() {
     if (!selectedBudget) return;
     try {
       setIsSaving(true);
-      const planValueChanges = Array.from(editedCells.values()).map((cell) => ({
+      const planValueChanges = Array.from(editedCells.values()).map((cell: CellEdit) => ({
         expenseId: cell.expenseId, month: cell.month, transactionValue: cell.value, transactionCurrency: cell.currency
       }));
       const res = await budgetApi.createNewVersion(selectedBudget.id, planValueChanges);
@@ -143,7 +143,7 @@ export default function BudgetsPage() {
   const totals = useMemo(() => {
     const byCurrency: Record<string, number> = {};
     filteredExpenses.forEach((exp: ExpenseRow) => {
-      exp.planValues.forEach((pv) => {
+      exp.planValues.forEach((pv: { month: number; transactionValue: number | string; transactionCurrency: string }) => {
         const cellKey = getCellKey(exp.id, pv.month);
         const edited = editedCells.get(cellKey);
         const val = edited ? edited.value : Number(pv.transactionValue);

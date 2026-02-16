@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { financialCompanyApi } from '../services/api';
 import type { Expense, FinancialCompany } from '../types';
 import { HiOutlineXMark } from 'react-icons/hi2';
@@ -72,7 +72,7 @@ export default function FilterPanel({ expenses, filters, onFiltersChange }: Filt
       <input
         type="text"
         value={filters.searchText || ''}
-        onChange={(e) => handleSearchChange(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearchChange(e.target.value)}
         placeholder="Buscar gasto..."
         className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent w-48"
       />
