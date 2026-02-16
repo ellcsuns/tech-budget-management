@@ -161,7 +161,7 @@ export default function PlanValuesPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Valores Planeados</h1>
+        <div />
         <div className="flex space-x-3">
           {pendingChanges.size > 0 && (
             <>

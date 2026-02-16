@@ -100,7 +100,7 @@ export default function RoleManagementPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Gestión de Roles</h1>
+        <div />
         <button onClick={handleCreate} className="btn-primary flex items-center gap-2"><HiOutlinePlusCircle className="w-5 h-5" /> Crear Rol</button>
       </div>
 

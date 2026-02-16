@@ -81,7 +81,7 @@ export default function MasterDataPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Datos Maestros</h1>
+        <div />
         <button onClick={() => { setShowForm(!showForm); setEditingItem(null); setForm({ code: '', name: '', description: '', taxId: '' }); }}
           className="btn-primary flex items-center gap-2">
           <HiOutlinePlusCircle className="w-5 h-5" />

@@ -1,17 +1,16 @@
-import { useState, useEffect, useMemo } from 'react';
-import { budgetApi, planValueApi, expenseApi } from '../services/api';
-import { Budget, ExpenseRow, CellEdit, Expense } from '../types';
+import React, { useState, useEffect, useMemo } from 'react';
+import { budgetApi, expenseApi, planValueApi } from '../services/api';
+import type { Budget, Expense, ExpenseRow, CellEdit } from '../types';
 import { getCellKey, validateCellValue, transformToExpenseRows } from '../utils/budgetEditHelpers';
 import { useAuth } from '../contexts/AuthContext';
-import BudgetTable from '../components/BudgetTable';
+import { fmt } from '../utils/formatters';
 import RowManager from '../components/RowManager';
 import SaveButton from '../components/SaveButton';
 import ConfirmationDialog from '../components/ConfirmationDialog';
-import { fmt } from '../utils/formatters';
+import BudgetTable from '../components/BudgetTable';
 import { HiOutlineLockClosed } from 'react-icons/hi2';
 
 export default function BudgetsPage() {
-  const [, setBudgets] = useState<Budget[]>([]);
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
   const [expenses, setExpenses] = useState<ExpenseRow[]>([]);
   const [editedCells, setEditedCells] = useState<Map<string, CellEdit>>(new Map());
@@ -30,7 +29,7 @@ export default function BudgetsPage() {
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasUnsavedChanges) { e.preventDefault(); e.returnValue = ''; }
+      if (hasUnsavedChanges) { e.preventDefault(); }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
@@ -39,7 +38,6 @@ export default function BudgetsPage() {
   const loadBudgets = async () => {
     try {
       const res = await budgetApi.getAll();
-      setBudgets(res.data);
       if (res.data.length > 0) {
         const latest = res.data[res.data.length - 1];
         loadBudgetDetails(latest.id);
@@ -57,8 +55,7 @@ export default function BudgetsPage() {
       const res = await budgetApi.getBudgetWithDetails(budgetId);
       setSelectedBudget(res.data);
       if (res.data.expenses) {
-        const expenseRows = transformToExpenseRows(res.data.expenses);
-        setExpenses(expenseRows);
+        setExpenses(transformToExpenseRows(res.data.expenses));
       }
       setEditedCells(new Map());
       setValidationErrors(new Map());
@@ -79,7 +76,7 @@ export default function BudgetsPage() {
     setValidationErrors(newValidationErrors);
 
     const numValue = value.trim() === '' ? 0 : parseFloat(value);
-    const expense = expenses.find(e => e.id === expenseId);
+    const expense = expenses.find((e: ExpenseRow) => e.id === expenseId);
     const planValue = expense?.planValues.find(pv => pv.month === month);
     if (planValue) {
       const newEditedCells = new Map(editedCells);
@@ -93,7 +90,7 @@ export default function BudgetsPage() {
 
   const confirmRemoveRow = () => {
     if (!showDeleteDialog) return;
-    setExpenses(expenses.filter(e => e.id !== showDeleteDialog));
+    setExpenses(expenses.filter((e: ExpenseRow) => e.id !== showDeleteDialog));
     const newEditedCells = new Map(editedCells);
     for (let month = 1; month <= 12; month++) newEditedCells.delete(getCellKey(showDeleteDialog, month));
     setEditedCells(newEditedCells);
@@ -106,11 +103,11 @@ export default function BudgetsPage() {
       const res = await expenseApi.getByBudget(selectedBudget!.id);
       const expense = res.data.find((e: Expense) => e.code === expenseCode);
       if (!expense) return;
-      if (expenses.some(e => e.id === expense.id)) { alert('Este gasto ya está en la tabla'); return; }
+      if (expenses.some((e: ExpenseRow) => e.id === expense.id)) { alert('Este gasto ya está en la tabla'); return; }
       const planValuesRes = await planValueApi.getByExpense(expense.id);
       const planValues = [];
       for (let month = 1; month <= 12; month++) {
-        const existing = planValuesRes.data.find(pv => pv.month === month);
+        const existing = planValuesRes.data.find((pv: any) => pv.month === month);
         planValues.push(existing || { id: `new-${expense.id}-${month}`, expenseId: expense.id, month, transactionCurrency: 'USD', transactionValue: 0, usdValue: 0, conversionRate: 1, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
       }
       setExpenses([...expenses, { id: expense.id, code: expense.code, description: expense.shortDescription, planValues, isNew: true }]);
@@ -122,12 +119,11 @@ export default function BudgetsPage() {
     if (!selectedBudget) return;
     try {
       setIsSaving(true);
-      const planValueChanges = Array.from(editedCells.values()).map(cell => ({
+      const planValueChanges = Array.from(editedCells.values()).map((cell) => ({
         expenseId: cell.expenseId, month: cell.month, transactionValue: cell.value, transactionCurrency: cell.currency
       }));
       const res = await budgetApi.createNewVersion(selectedBudget.id, planValueChanges);
       await loadBudgetDetails(res.data.id);
-      await loadBudgets();
       alert(`Nueva versión ${res.data.version} creada exitosamente`);
     } catch (error: any) {
       if (error.response?.status === 403) alert('No tienes permisos para modificar este presupuesto');
@@ -140,24 +136,22 @@ export default function BudgetsPage() {
   const filteredExpenses = useMemo(() => {
     if (!searchText.trim()) return expenses;
     const s = searchText.toLowerCase();
-    return expenses.filter(e => e.code?.toLowerCase().includes(s) || e.description?.toLowerCase().includes(s));
+    return expenses.filter((e: ExpenseRow) => e.code?.toLowerCase().includes(s) || e.description?.toLowerCase().includes(s));
   }, [expenses, searchText]);
 
   // Calculate totals from filtered expenses
   const totals = useMemo(() => {
     const byCurrency: Record<string, number> = {};
-    let totalUSD = 0;
-    filteredExpenses.forEach(exp => {
-      exp.planValues.forEach(pv => {
+    filteredExpenses.forEach((exp: ExpenseRow) => {
+      exp.planValues.forEach((pv) => {
         const cellKey = getCellKey(exp.id, pv.month);
         const edited = editedCells.get(cellKey);
         const val = edited ? edited.value : Number(pv.transactionValue);
         const curr = pv.transactionCurrency || 'USD';
         byCurrency[curr] = (byCurrency[curr] || 0) + val;
-        totalUSD += Number(pv.usdValue) || val;
       });
     });
-    return { byCurrency, totalUSD };
+    return byCurrency;
   }, [filteredExpenses, editedCells]);
 
   if (isLoading && !selectedBudget) return <div className="text-center py-8">Cargando...</div>;
@@ -167,17 +161,16 @@ export default function BudgetsPage() {
       {selectedBudget && (
         <>
           <div className="bg-white rounded-lg shadow p-4">
-            {/* Search + controls row */}
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <input
                 type="text"
                 value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                placeholder="Buscar gasto..."
-                className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent w-48"
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchText(e.target.value)}
+                placeholder="Buscar por código o descripción..."
+                className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent w-56"
               />
               <div className="ml-auto flex items-center gap-3">
-                <p className="text-sm text-gray-500">{selectedBudget.year} - {selectedBudget.version}</p>
+                <p className="text-sm text-gray-500">{selectedBudget.year} - v{selectedBudget.version}</p>
                 {!canEdit && <p className="text-sm text-gray-500 flex items-center gap-1"><HiOutlineLockClosed className="w-4 h-4" /> Solo lectura</p>}
                 {hasUnsavedChanges && <span className="text-sm text-yellow-600 font-medium">⚠ Cambios sin guardar</span>}
                 {canEdit && (
@@ -188,19 +181,13 @@ export default function BudgetsPage() {
                 )}
               </div>
             </div>
-
-            {/* Dynamic totals indicators */}
             <div className="flex gap-4 flex-wrap">
-              {Object.entries(totals.byCurrency).map(([curr, val]) => (
+              {Object.entries(totals).map(([curr, val]) => (
                 <div key={curr} className="bg-blue-50 px-4 py-2 rounded-lg">
                   <span className="text-xs text-gray-500">Total {curr}</span>
-                  <p className="text-sm font-bold text-blue-800">${fmt(val)}</p>
+                  <p className="text-sm font-bold text-blue-800">${fmt(val as number)}</p>
                 </div>
               ))}
-              <div className="bg-green-50 px-4 py-2 rounded-lg">
-                <span className="text-xs text-gray-500">Total USD</span>
-                <p className="text-sm font-bold text-green-800">${fmt(totals.totalUSD)}</p>
-              </div>
             </div>
           </div>
 
@@ -214,18 +201,8 @@ export default function BudgetsPage() {
         </>
       )}
 
-      <ConfirmationDialog
-        isOpen={showConfirmDialog}
-        message="Esto creará una nueva versión del presupuesto como copia del actual con los cambios aplicados. ¿Continuar?"
-        onConfirm={() => { setShowConfirmDialog(false); handleSave(); }}
-        onCancel={() => setShowConfirmDialog(false)}
-      />
-      <ConfirmationDialog
-        isOpen={!!showDeleteDialog}
-        message="¿Estás seguro de eliminar esta fila del presupuesto?"
-        onConfirm={confirmRemoveRow}
-        onCancel={() => setShowDeleteDialog(null)}
-      />
+      <ConfirmationDialog isOpen={showConfirmDialog} message="Esto creará una nueva versión del presupuesto como copia del actual con los cambios aplicados. ¿Continuar?" onConfirm={() => { setShowConfirmDialog(false); handleSave(); }} onCancel={() => setShowConfirmDialog(false)} />
+      <ConfirmationDialog isOpen={!!showDeleteDialog} message="¿Estás seguro de eliminar esta fila del presupuesto?" onConfirm={confirmRemoveRow} onCancel={() => setShowDeleteDialog(null)} />
     </div>
   );
 }

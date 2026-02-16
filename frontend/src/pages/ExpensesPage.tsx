@@ -117,7 +117,7 @@ export default function ExpensesPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Gestión de Gastos</h1>
+        <div />
         <button onClick={() => setShowForm(!showForm)} className="btn-primary flex items-center gap-2">
           <HiOutlinePlusCircle className="w-5 h-5" />
           {showForm ? 'Cancelar' : 'Nuevo Gasto'}

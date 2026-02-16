@@ -140,7 +140,7 @@ export default function SavingsPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Módulo de Ahorros</h1>
+        <div />
         <button
           onClick={() => setShowForm(!showForm)}
           className="btn-primary flex items-center gap-2"

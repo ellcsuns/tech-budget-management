@@ -119,7 +119,7 @@ export default function RealTransactionsPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Transacciones Reales</h1>
+        <div />
         <div className="flex gap-2">
           <button onClick={() => setShowCommittedPicker(!showCommittedPicker)}
             className="btn-secondary flex items-center gap-2">

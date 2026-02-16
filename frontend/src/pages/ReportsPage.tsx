@@ -182,7 +182,7 @@ export default function ReportsPage() {
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">Reportes</h2>
+          <div />
           <button onClick={exportToExcel} className="btn-success flex items-center gap-2">
             <HiOutlineArrowDownTray className="w-5 h-5" /> Exportar Excel
           </button>

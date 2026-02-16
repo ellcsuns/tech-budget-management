@@ -66,7 +66,7 @@ export default function DetailedReportsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-800">Reportes Detallados</h1>
+
       {activeBudget && (
         <p className="text-sm text-gray-500">Presupuesto: {activeBudget.year} {activeBudget.version}</p>
       )}

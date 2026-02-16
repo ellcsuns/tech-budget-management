@@ -48,7 +48,6 @@ export default function BudgetComparePage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-800">Comparar Presupuestos</h1>
 
       <div className="bg-white rounded-lg shadow p-6">
         <div className="grid grid-cols-4 gap-4 items-end">

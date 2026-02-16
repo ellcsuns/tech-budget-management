@@ -112,7 +112,7 @@ export default function DeferralsPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-800">Diferidos</h1>
+        <div />
         <button
           onClick={() => setShowForm(!showForm)}
           className="btn-primary flex items-center gap-2"
