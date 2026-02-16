@@ -11,7 +11,8 @@ interface Translation {
 }
 
 export default function TranslationsPage() {
-  const _i18n = useI18n();
+  // i18n context available for future use
+  void useI18n();
   const [translations, setTranslations] = useState<Translation[]>([]);
   const [search, setSearch] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
