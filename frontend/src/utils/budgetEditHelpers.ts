@@ -95,7 +95,7 @@ export function calculateTotal(expenseRow: ExpenseRow, editedCells: Map<string, 
       total += editedCell.value;
     } else {
       const planValue = expenseRow.planValues.find(pv => pv.month === month);
-      total += planValue?.transactionValue || 0;
+      total += Number(planValue?.transactionValue) || 0;
     }
   }
   
