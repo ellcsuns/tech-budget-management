@@ -158,13 +158,22 @@ export class MasterDataService {
         code: data.code,
         name: data.name,
         description: data.description,
-        taxId: data.taxId
+        taxId: data.taxId,
+        allowedCurrency: {
+          connectOrCreate: {
+            where: { code: data.currencyCode },
+            create: { code: data.currencyCode, name: data.currencyCode }
+          }
+        }
       }
     });
   }
 
   async getFinancialCompanies(): Promise<FinancialCompany[]> {
     return await this.prisma.financialCompany.findMany({
+      include: {
+        allowedCurrency: true
+      },
       orderBy: {
         code: 'asc'
       }
@@ -192,9 +201,25 @@ export class MasterDataService {
       }
     }
 
+    const updateData: any = {
+      ...(data.code && { code: data.code }),
+      ...(data.name && { name: data.name }),
+      ...(data.description !== undefined && { description: data.description }),
+      ...(data.taxId !== undefined && { taxId: data.taxId }),
+    };
+
+    if (data.currencyCode) {
+      updateData.allowedCurrency = {
+        connectOrCreate: {
+          where: { code: data.currencyCode },
+          create: { code: data.currencyCode, name: data.currencyCode }
+        }
+      };
+    }
+
     return await this.prisma.financialCompany.update({
       where: { id },
-      data
+      data: updateData
     });
   }
 
@@ -234,12 +259,12 @@ export class MasterDataService {
         return !!expensesWithUserArea;
 
       case 'FINANCIAL_COMPANY':
-        const expensesWithFinancialCompany = await this.prisma.expense.findFirst({
+        const budgetLinesWithFinancialCompany = await this.prisma.budgetLine.findFirst({
           where: {
             financialCompanyId: id
           }
         });
-        return !!expensesWithFinancialCompany;
+        return !!budgetLinesWithFinancialCompany;
 
       default:
         return false;
