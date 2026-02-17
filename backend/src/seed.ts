@@ -426,7 +426,7 @@ async function main() {
   const analystRole = await prisma.role.create({ data: { name: 'Analista', description: 'Visualización y reportes' } });
   const approverRole = await prisma.role.create({ data: { name: 'Aprobador', description: 'Aprobación de cambios en presupuesto', approverTechDirectionIds: [techDirections[0].id, techDirections[1].id, techDirections[2].id] } });
 
-  const allMenuCodes = ['dashboard', 'budgets', 'expenses', 'transactions', 'budget-lines', 'committed-transactions', 'real-transactions', 'master-data', 'technology-directions', 'user-areas', 'financial-companies', 'tag-definitions', 'conversion-rates', 'users', 'roles', 'reports', 'deferrals', 'configuration', 'approvals', 'audit'];
+  const allMenuCodes = ['dashboard', 'budgets', 'expenses', 'transactions', 'plan-values', 'committed-transactions', 'real-transactions', 'master-data', 'technology-directions', 'user-areas', 'financial-companies', 'tag-definitions', 'conversion-rates', 'users', 'roles', 'reports', 'deferrals', 'configuration', 'approvals', 'audit'];
   for (const menuCode of allMenuCodes) {
     await prisma.permission.create({ data: { roleId: adminRole.id, menuCode, permissionType: PermissionType.VIEW } });
     await prisma.permission.create({ data: { roleId: adminRole.id, menuCode, permissionType: PermissionType.MODIFY } });
@@ -434,12 +434,12 @@ async function main() {
   for (const menuCode of allMenuCodes) {
     await prisma.permission.create({ data: { roleId: viewerRole.id, menuCode, permissionType: PermissionType.VIEW } });
   }
-  const budgetMenus = ['dashboard', 'budgets', 'expenses', 'transactions', 'budget-lines', 'committed-transactions', 'real-transactions', 'conversion-rates', 'reports', 'deferrals', 'approvals'];
+  const budgetMenus = ['dashboard', 'budgets', 'expenses', 'transactions', 'plan-values', 'committed-transactions', 'real-transactions', 'conversion-rates', 'reports', 'deferrals', 'approvals'];
   for (const menuCode of budgetMenus) {
     await prisma.permission.create({ data: { roleId: budgetManagerRole.id, menuCode, permissionType: PermissionType.VIEW } });
     await prisma.permission.create({ data: { roleId: budgetManagerRole.id, menuCode, permissionType: PermissionType.MODIFY } });
   }
-  const analystMenus = ['dashboard', 'budgets', 'expenses', 'transactions', 'budget-lines', 'committed-transactions', 'real-transactions', 'reports'];
+  const analystMenus = ['dashboard', 'budgets', 'expenses', 'transactions', 'plan-values', 'committed-transactions', 'real-transactions', 'reports'];
   for (const menuCode of analystMenus) {
     await prisma.permission.create({ data: { roleId: analystRole.id, menuCode, permissionType: PermissionType.VIEW } });
   }

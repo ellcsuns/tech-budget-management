@@ -19,7 +19,7 @@ export default function ApprovalsPage() {
       setLoading(true);
       setError(null);
       const res = await changeRequestApi.getPending();
-      setRequests(res.data || []);
+      setRequests(Array.isArray(res.data) ? res.data : []);
     } catch (err: any) {
       console.error('Error:', err);
       setError(err?.response?.data?.error || 'Error al cargar solicitudes pendientes');

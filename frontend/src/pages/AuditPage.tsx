@@ -23,9 +23,12 @@ export default function AuditPage() {
   const [showFilters, setShowFilters] = useState(true);
 
   useEffect(() => {
-    api.get('/users').then((r: any) => setUsers(r.data || [])).catch(() => {});
-    auditApi.getActions().then((r: any) => setActions(r.data || [])).catch(() => {});
-    auditApi.getEntities().then((r: any) => setEntities(r.data || [])).catch(() => {});
+    api.get('/users').then((r: any) => {
+      const data = r.data;
+      setUsers(Array.isArray(data) ? data : (data?.users || []));
+    }).catch(() => {});
+    auditApi.getActions().then((r: any) => setActions(Array.isArray(r.data) ? r.data : [])).catch(() => {});
+    auditApi.getEntities().then((r: any) => setEntities(Array.isArray(r.data) ? r.data : [])).catch(() => {});
   }, []);
 
   const loadLogs = useCallback(async () => {

@@ -26,9 +26,11 @@ import BudgetComparePage from './pages/BudgetComparePage';
 import DetailedReportsPage from './pages/DetailedReportsPage';
 import ApprovalsPage from './pages/ApprovalsPage';
 import AuditPage from './pages/AuditPage';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
   return (
+    <ErrorBoundary>
     <Router>
       <AuthProvider>
         <I18nProvider>
@@ -64,6 +66,7 @@ function App() {
         </I18nProvider>
       </AuthProvider>
     </Router>
+    </ErrorBoundary>
   );
 }
 
