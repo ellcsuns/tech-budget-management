@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { budgetApi, budgetLineApi, expenseApi, financialCompanyApi } from '../services/api';
+import { budgetApi, expenseApi, financialCompanyApi } from '../services/api';
 import type { Budget, BudgetLine } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { fmt } from '../utils/formatters';
