@@ -14,6 +14,7 @@ model Budget {
   id              String            @id @default(uuid())
   year            Int
   version         String
+  isActive        Boolean           @default(false)
   budgetLines     BudgetLine[]
   conversionRates ConversionRate[]
   createdAt       DateTime          @default(now())
@@ -21,6 +22,7 @@ model Budget {
   
   @@unique([year, version])
   @@index([year])
+  @@index([isActive])
 }
 
 // Expense model - Entidad maestra independiente

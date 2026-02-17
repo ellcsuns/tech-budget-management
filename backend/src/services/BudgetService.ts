@@ -8,15 +8,49 @@ export class BudgetService {
     this.prisma = prisma;
   }
 
-  async createBudget(data: BudgetInput): Promise<Budget> {
+  async createBudget(data: BudgetInput & { sourceBudgetId?: string }): Promise<Budget> {
     const existing = await this.prisma.budget.findUnique({
       where: { year_version: { year: data.year, version: data.version } }
     });
     if (existing) throw new Error(`Ya existe un presupuesto para el año ${data.year} versión ${data.version}`);
 
-    return await this.prisma.budget.create({
-      data: { year: data.year, version: data.version },
-      include: { budgetLines: true, conversionRates: true }
+    return await this.prisma.$transaction(async (tx: any) => {
+      const newBudget = await tx.budget.create({
+        data: { year: data.year, version: data.version, isActive: false }
+      });
+
+      // If sourceBudgetId provided, copy lines and conversion rates
+      if (data.sourceBudgetId) {
+        const source = await tx.budget.findUnique({
+          where: { id: data.sourceBudgetId },
+          include: { budgetLines: true, conversionRates: true }
+        });
+        if (source) {
+          for (const rate of source.conversionRates) {
+            await tx.conversionRate.create({
+              data: { budgetId: newBudget.id, currency: rate.currency, month: rate.month, rate: rate.rate }
+            });
+          }
+          for (const line of source.budgetLines) {
+            await tx.budgetLine.create({
+              data: {
+                budgetId: newBudget.id, expenseId: line.expenseId,
+                financialCompanyId: line.financialCompanyId,
+                technologyDirectionId: line.technologyDirectionId,
+                currency: line.currency,
+                planM1: line.planM1, planM2: line.planM2, planM3: line.planM3, planM4: line.planM4,
+                planM5: line.planM5, planM6: line.planM6, planM7: line.planM7, planM8: line.planM8,
+                planM9: line.planM9, planM10: line.planM10, planM11: line.planM11, planM12: line.planM12,
+              }
+            });
+          }
+        }
+      }
+
+      return await tx.budget.findUnique({
+        where: { id: newBudget.id },
+        include: { budgetLines: { include: { expense: true, financialCompany: true, technologyDirection: true } }, conversionRates: true }
+      }) as Budget;
     });
   }
 
@@ -61,6 +95,9 @@ export class BudgetService {
   }
 
   async deleteBudget(id: string): Promise<void> {
+    const budget = await this.prisma.budget.findUnique({ where: { id } });
+    if (!budget) throw new Error('Presupuesto no encontrado');
+    if (budget.isActive) throw new Error('No se puede eliminar el presupuesto vigente');
     await this.prisma.budget.delete({ where: { id } });
   }
 
@@ -72,16 +109,31 @@ export class BudgetService {
   }
 
   async getActiveBudget(): Promise<Budget | null> {
-    const currentYear = new Date().getFullYear();
-    let budget = await this.prisma.budget.findFirst({
-      where: { year: currentYear },
-      orderBy: { createdAt: 'desc' },
+    const active = await this.prisma.budget.findFirst({
+      where: { isActive: true },
       include: { budgetLines: { include: { expense: true, financialCompany: true, technologyDirection: true, transactions: true } }, conversionRates: true }
     });
-    if (budget) return budget;
+    if (active) return active;
+    // Fallback: most recent budget
     return await this.prisma.budget.findFirst({
       orderBy: [{ year: 'desc' }, { createdAt: 'desc' }],
       include: { budgetLines: { include: { expense: true, financialCompany: true, technologyDirection: true, transactions: true } }, conversionRates: true }
+    });
+  }
+
+  async setActiveBudget(id: string): Promise<Budget> {
+    const budget = await this.prisma.budget.findUnique({ where: { id } });
+    if (!budget) throw new Error('Presupuesto no encontrado');
+
+    return await this.prisma.$transaction(async (tx: any) => {
+      // Deactivate all budgets
+      await tx.budget.updateMany({ data: { isActive: false } });
+      // Activate the selected one
+      return await tx.budget.update({
+        where: { id },
+        data: { isActive: true },
+        include: { budgetLines: true, conversionRates: true }
+      });
     });
   }
 
@@ -115,13 +167,7 @@ export class BudgetService {
       const sourceBudget = await tx.budget.findUnique({
         where: { id: sourceBudgetId },
         include: {
-          budgetLines: {
-            include: {
-              expense: { include: { tagValues: { include: { tagDefinition: true } } } },
-              financialCompany: true,
-              technologyDirection: true
-            }
-          },
+          budgetLines: { include: { expense: true, financialCompany: true, technologyDirection: true } },
           conversionRates: true
         }
       });
@@ -133,36 +179,26 @@ export class BudgetService {
         data: { year: sourceBudget.year, version: nextVersion }
       });
 
-      // Copiar tasas de conversión
       for (const rate of sourceBudget.conversionRates) {
         await tx.conversionRate.create({
           data: { budgetId: newBudget.id, currency: rate.currency, month: rate.month, rate: rate.rate }
         });
       }
 
-      // Copiar BudgetLines
       for (const line of sourceBudget.budgetLines) {
-        const change = planValueChanges.find(c => c.budgetLineId === line.id);
-
+        const change = planValueChanges.find((c: any) => c.budgetLineId === line.id);
         await tx.budgetLine.create({
           data: {
-            budgetId: newBudget.id,
-            expenseId: line.expenseId,
+            budgetId: newBudget.id, expenseId: line.expenseId,
             financialCompanyId: line.financialCompanyId,
             technologyDirectionId: line.technologyDirectionId,
             currency: line.currency,
-            planM1: change?.planM1 ?? line.planM1,
-            planM2: change?.planM2 ?? line.planM2,
-            planM3: change?.planM3 ?? line.planM3,
-            planM4: change?.planM4 ?? line.planM4,
-            planM5: change?.planM5 ?? line.planM5,
-            planM6: change?.planM6 ?? line.planM6,
-            planM7: change?.planM7 ?? line.planM7,
-            planM8: change?.planM8 ?? line.planM8,
-            planM9: change?.planM9 ?? line.planM9,
-            planM10: change?.planM10 ?? line.planM10,
-            planM11: change?.planM11 ?? line.planM11,
-            planM12: change?.planM12 ?? line.planM12,
+            planM1: change?.planM1 ?? line.planM1, planM2: change?.planM2 ?? line.planM2,
+            planM3: change?.planM3 ?? line.planM3, planM4: change?.planM4 ?? line.planM4,
+            planM5: change?.planM5 ?? line.planM5, planM6: change?.planM6 ?? line.planM6,
+            planM7: change?.planM7 ?? line.planM7, planM8: change?.planM8 ?? line.planM8,
+            planM9: change?.planM9 ?? line.planM9, planM10: change?.planM10 ?? line.planM10,
+            planM11: change?.planM11 ?? line.planM11, planM12: change?.planM12 ?? line.planM12,
           }
         });
       }
@@ -175,37 +211,28 @@ export class BudgetService {
   }
 
   async getNextVersion(year: number): Promise<string> {
-    const budgets = await this.prisma.budget.findMany({
-      where: { year }, orderBy: { version: 'desc' }
+    const budgets = await this.prisma.budget.findMany({ where: { year }, orderBy: { version: 'desc' } });
+    if (budgets.length === 0) return 'v1';
+    const versions = budgets.map(b => {
+      const m = b.version.match(/v(\d+)/);
+      return m ? parseInt(m[1]) : 0;
     });
-    if (budgets.length === 0) return 'v1.0';
-    const lastVersion = budgets[0].version;
-    const match = lastVersion.match(/v(\d+)\.(\d+)/);
-    if (!match) return 'v1.0';
-    return `v${parseInt(match[1])}.${parseInt(match[2]) + 1}`;
+    return `v${Math.max(...versions) + 1}`;
   }
 
   async addBudgetLine(budgetId: string, expenseId: string, financialCompanyId: string, technologyDirectionId?: string) {
     const budget = await this.prisma.budget.findUnique({ where: { id: budgetId } });
     if (!budget) throw new Error('Presupuesto no encontrado');
-
     const expense = await this.prisma.expense.findUnique({ where: { id: expenseId } });
     if (!expense) throw new Error('Gasto no encontrado');
-
     const company = await this.prisma.financialCompany.findUnique({ where: { id: financialCompanyId } });
     if (!company) throw new Error('Empresa financiera no encontrada');
-
     const existing = await this.prisma.budgetLine.findUnique({
       where: { budgetId_expenseId_financialCompanyId: { budgetId, expenseId, financialCompanyId } }
     });
     if (existing) throw new Error('Ya existe una línea para este gasto y empresa en este presupuesto');
-
     return await this.prisma.budgetLine.create({
-      data: {
-        budgetId, expenseId, financialCompanyId,
-        technologyDirectionId,
-        currency: company.currencyCode,
-      },
+      data: { budgetId, expenseId, financialCompanyId, technologyDirectionId, currency: company.currencyCode },
       include: { expense: true, financialCompany: true, technologyDirection: true }
     });
   }

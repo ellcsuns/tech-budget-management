@@ -2,6 +2,7 @@ export interface Budget {
   id: string;
   year: number;
   version: string;
+  isActive: boolean;
   budgetLines?: BudgetLine[];
   conversionRates?: ConversionRate[];
   createdAt: string;

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { budgetApi, budgetLineApi, deferralApi } from '../services/api';
 import type { Budget, BudgetLine, Deferral } from '../types';
 import { HiOutlineTrash, HiOutlinePlusCircle } from 'react-icons/hi2';
+import { showToast } from '../components/Toast';
 
 const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
@@ -30,7 +31,10 @@ export default function DeferralsPage() {
     try {
       const res = await budgetApi.getAll();
       setBudgets(res.data);
-      if (res.data.length > 0) setSelectedBudget(res.data[res.data.length - 1].id);
+      if (res.data.length > 0) {
+        const active = res.data.find((b: any) => b.isActive);
+        setSelectedBudget((active || res.data[0]).id);
+      }
     } catch (error) { console.error('Error:', error); }
     finally { setLoading(false); }
   };
@@ -64,7 +68,7 @@ export default function DeferralsPage() {
     if (!selectedBudgetLine) return;
 
     if (parseInt(form.startMonth) >= parseInt(form.endMonth)) {
-      alert('El mes de inicio debe ser menor al mes de fin');
+      showToast('El mes de inicio debe ser menor al mes de fin', 'error');
       return;
     }
 
@@ -82,7 +86,7 @@ export default function DeferralsPage() {
       setSearchText('');
       loadData(selectedBudget);
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Error al crear diferido');
+      showToast(error.response?.data?.error || 'Error al crear diferido', 'error');
     }
   };
 

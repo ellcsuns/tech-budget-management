@@ -8,7 +8,10 @@ export function budgetRouter(prisma: PrismaClient) {
 
   router.post('/', async (req, res, next) => {
     try { res.status(201).json(await budgetService.createBudget(req.body)); }
-    catch (error) { next(error); }
+    catch (error: any) {
+      if (error.message?.includes('Ya existe')) return res.status(409).json({ error: error.message });
+      next(error);
+    }
   });
 
   router.get('/active', async (req, res, next) => {
@@ -17,6 +20,14 @@ export function budgetRouter(prisma: PrismaClient) {
       if (!budget) return res.status(404).json({ error: 'No active budget found' });
       res.json(budget);
     } catch (error) { next(error); }
+  });
+
+  router.post('/:id/set-active', async (req, res, next) => {
+    try { res.json(await budgetService.setActiveBudget(req.params.id)); }
+    catch (error: any) {
+      if (error.message?.includes('no encontrado')) return res.status(404).json({ error: error.message });
+      next(error);
+    }
   });
 
   router.get('/compare', async (req, res, next) => {
@@ -53,10 +64,12 @@ export function budgetRouter(prisma: PrismaClient) {
 
   router.delete('/:id', async (req, res, next) => {
     try { await budgetService.deleteBudget(req.params.id); res.status(204).send(); }
-    catch (error) { next(error); }
+    catch (error: any) {
+      if (error.message?.includes('vigente')) return res.status(400).json({ error: error.message });
+      next(error);
+    }
   });
 
-  // Create new version
   router.post('/:id/versions', async (req, res, next) => {
     try {
       const { planValueChanges } = req.body;
@@ -64,7 +77,6 @@ export function budgetRouter(prisma: PrismaClient) {
     } catch (error) { next(error); }
   });
 
-  // Add budget line
   router.post('/:id/budget-lines', async (req, res, next) => {
     try {
       const { expenseId, financialCompanyId, technologyDirectionId } = req.body;
@@ -76,7 +88,6 @@ export function budgetRouter(prisma: PrismaClient) {
     }
   });
 
-  // Remove budget line
   router.delete('/:id/budget-lines/:budgetLineId', async (req, res, next) => {
     try { await budgetService.removeBudgetLine(req.params.budgetLineId); res.status(204).send(); }
     catch (error) { next(error); }

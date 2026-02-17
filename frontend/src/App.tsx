@@ -27,10 +27,12 @@ import DetailedReportsPage from './pages/DetailedReportsPage';
 import ApprovalsPage from './pages/ApprovalsPage';
 import AuditPage from './pages/AuditPage';
 import ErrorBoundary from './components/ErrorBoundary';
+import ToastContainer from './components/Toast';
 
 function App() {
   return (
     <ErrorBoundary>
+    <ToastContainer />
     <Router>
       <AuthProvider>
         <I18nProvider>

@@ -99,7 +99,7 @@ async function main() {
   // ============================================
   console.log('💰 Creando presupuestos...');
 
-  const budget2025v1 = await prisma.budget.create({ data: { year: 2025, version: 'v1' } });
+  const budget2025v1 = await prisma.budget.create({ data: { year: 2025, version: 'v1', isActive: true } });
   const budget2025v2 = await prisma.budget.create({ data: { year: 2025, version: 'v2' } });
   const budget2026v1 = await prisma.budget.create({ data: { year: 2026, version: 'v1' } });
   const budgets = [budget2025v1, budget2025v2, budget2026v1];
@@ -424,7 +424,9 @@ async function main() {
   const viewerRole = await prisma.role.create({ data: { name: 'Visualizador', description: 'Solo lectura en todos los módulos' } });
   const budgetManagerRole = await prisma.role.create({ data: { name: 'Gestor de Presupuesto', description: 'Gestión completa de presupuestos y gastos' } });
   const analystRole = await prisma.role.create({ data: { name: 'Analista', description: 'Visualización y reportes' } });
-  const approverRole = await prisma.role.create({ data: { name: 'Aprobador', description: 'Aprobación de cambios en presupuesto', approverTechDirectionIds: [techDirections[0].id, techDirections[1].id, techDirections[2].id] } });
+  const approverRole = await prisma.role.create({ data: { name: 'Aprobador', description: 'Aprobación de cambios en presupuesto por áreas de tecnología asignadas', approverTechDirectionIds: [techDirections[0].id, techDirections[1].id, techDirections[2].id] } });
+  const approverInfraRole = await prisma.role.create({ data: { name: 'Aprobador Infraestructura', description: 'Aprobación de cambios solo para Infraestructura y Cloud', approverTechDirectionIds: [techDirections[0].id, techDirections[4].id] } });
+  const approverDevRole = await prisma.role.create({ data: { name: 'Aprobador Desarrollo', description: 'Aprobación de cambios solo para Desarrollo y DevOps', approverTechDirectionIds: [techDirections[1].id, techDirections[7].id] } });
 
   const allMenuCodes = ['dashboard', 'budgets', 'expenses', 'transactions', 'plan-values', 'committed-transactions', 'real-transactions', 'master-data', 'technology-directions', 'user-areas', 'financial-companies', 'tag-definitions', 'conversion-rates', 'users', 'roles', 'reports', 'deferrals', 'configuration', 'approvals', 'audit'];
   for (const menuCode of allMenuCodes) {
@@ -451,12 +453,28 @@ async function main() {
   }
   await prisma.permission.create({ data: { roleId: approverRole.id, menuCode: 'approvals', permissionType: PermissionType.APPROVE_BUDGET } });
 
+  // Approver Infra role permissions
+  for (const menuCode of approverMenus) {
+    await prisma.permission.create({ data: { roleId: approverInfraRole.id, menuCode, permissionType: PermissionType.VIEW } });
+  }
+  await prisma.permission.create({ data: { roleId: approverInfraRole.id, menuCode: 'approvals', permissionType: PermissionType.APPROVE_BUDGET } });
+
+  // Approver Dev role permissions
+  for (const menuCode of approverMenus) {
+    await prisma.permission.create({ data: { roleId: approverDevRole.id, menuCode, permissionType: PermissionType.VIEW } });
+  }
+  await prisma.permission.create({ data: { roleId: approverDevRole.id, menuCode: 'approvals', permissionType: PermissionType.APPROVE_BUDGET } });
+
   const adminUser = await prisma.user.create({ data: { username: 'admin', passwordHash: adminHash, email: 'admin@corp.com', fullName: 'Administrador del Sistema' } });
   const user1 = await prisma.user.create({ data: { username: 'jperez', passwordHash: userHash, email: 'jperez@corp.com', fullName: 'Juan Pérez', technologyDirectionId: techDirections[0].id } });
   const user2 = await prisma.user.create({ data: { username: 'mgarcia', passwordHash: userHash, email: 'mgarcia@corp.com', fullName: 'María García', technologyDirectionId: techDirections[1].id } });
   const user3 = await prisma.user.create({ data: { username: 'clopez', passwordHash: userHash, email: 'clopez@corp.com', fullName: 'Carlos López', technologyDirectionId: techDirections[2].id } });
   const user4 = await prisma.user.create({ data: { username: 'amartinez', passwordHash: userHash, email: 'amartinez@corp.com', fullName: 'Ana Martínez', technologyDirectionId: techDirections[3].id } });
   const user5 = await prisma.user.create({ data: { username: 'rsanchez', passwordHash: userHash, email: 'rsanchez@corp.com', fullName: 'Roberto Sánchez', technologyDirectionId: techDirections[4].id } });
+
+  // Approver users
+  const user6 = await prisma.user.create({ data: { username: 'ltorres', passwordHash: userHash, email: 'ltorres@corp.com', fullName: 'Laura Torres', technologyDirectionId: techDirections[0].id } });
+  const user7 = await prisma.user.create({ data: { username: 'pdiaz', passwordHash: userHash, email: 'pdiaz@corp.com', fullName: 'Pedro Díaz', technologyDirectionId: techDirections[1].id } });
 
   await prisma.userRole.create({ data: { userId: adminUser.id, roleId: adminRole.id } });
   await prisma.userRole.create({ data: { userId: user1.id, roleId: budgetManagerRole.id } });
@@ -465,6 +483,102 @@ async function main() {
   await prisma.userRole.create({ data: { userId: user4.id, roleId: viewerRole.id } });
   await prisma.userRole.create({ data: { userId: user5.id, roleId: analystRole.id } });
   await prisma.userRole.create({ data: { userId: user5.id, roleId: approverRole.id } });
+  await prisma.userRole.create({ data: { userId: user6.id, roleId: approverInfraRole.id } });
+  await prisma.userRole.create({ data: { userId: user7.id, roleId: approverDevRole.id } });
+
+  // ============================================
+  // CHANGE REQUESTS (Solicitudes de cambio dummy)
+  // ============================================
+  console.log('📋 Creando solicitudes de cambio de presupuesto...');
+
+  // BudgetLines con technologyDirectionId de INFRA (techDirections[0]) → las verá ltorres (approverInfraRole)
+  // BudgetLines con technologyDirectionId de DEV (techDirections[1]) → las verá pdiaz (approverDevRole)
+  // BudgetLines con technologyDirectionId de INFRA/DEV/SEC → las verá rsanchez (approverRole)
+  // admin (approveAllDirections) ve todas
+
+  const changeRequestsData = [
+    // Solicitudes para área INFRA (allBudgetLines[0] = INFRA-001, techDir=INFRA)
+    { blIdx: 0, requesterId: user1.id, comment: 'Incremento por migración a instancias más potentes en Q3',
+      proposed: { planM7: 20000, planM8: 20000, planM9: 18000 } },
+    { blIdx: 2, requesterId: user1.id, comment: 'Renovación de equipos del data center principal',
+      proposed: { planM5: 8000, planM6: 8000, planM7: 8000 } },
+    // Solicitudes para área CLOUD (techDirections[4]) → las verá ltorres (approverInfraRole tiene INFRA + CLOUD)
+    { blIdx: 3, requesterId: user2.id, comment: 'Ampliación de almacenamiento S3 por crecimiento de datos',
+      proposed: { planM4: 5000, planM5: 5500, planM6: 6000 } },
+    // Solicitudes para área DEV (allBudgetLines[5] = DEV-001, techDir=DEV)
+    { blIdx: 5, requesterId: user2.id, comment: 'Nuevas licencias JetBrains para equipo ampliado',
+      proposed: { planM6: 6000, planM7: 6000, planM8: 6000 } },
+    { blIdx: 6, requesterId: user1.id, comment: 'Upgrade GitHub Enterprise a plan con Copilot',
+      proposed: { planM5: 9000, planM6: 9000, planM7: 9000, planM8: 9000 } },
+    // Solicitud para área DEVOPS (techDirections[7]) → la verá pdiaz (approverDevRole tiene DEV + DEVOPS)
+    { blIdx: 23, requesterId: user2.id, comment: 'Escalamiento de cluster Kubernetes para Black Friday',
+      proposed: { planM10: 10000, planM11: 12000, planM12: 12000 } },
+    // Solicitud para área SEC (techDirections[2]) → la verá rsanchez (approverRole tiene INFRA+DEV+SEC)
+    { blIdx: 10, requesterId: user1.id, comment: 'Actualización urgente de firewalls por vulnerabilidad crítica',
+      proposed: { planM5: 12000, planM6: 12000 } },
+    // Más solicitudes variadas
+    { blIdx: 14, requesterId: user2.id, comment: 'Expansión del data warehouse para nuevo proyecto de analytics',
+      proposed: { planM7: 15000, planM8: 15000, planM9: 15000 } },
+  ];
+
+  for (const cr of changeRequestsData) {
+    if (cr.blIdx >= allBudgetLines.length) continue;
+    const bl = allBudgetLines[cr.blIdx];
+    // Build currentValues from the budgetLine plan values
+    const currentValues: Record<string, number> = {};
+    const budgetVals = monthlyBudgets[cr.blIdx];
+    for (let m = 1; m <= 12; m++) {
+      currentValues[`planM${m}`] = budgetVals[m - 1];
+    }
+    // Build proposedValues: start from current, override with proposed
+    const proposedValues: Record<string, number> = { ...currentValues };
+    for (const [key, val] of Object.entries(cr.proposed)) {
+      proposedValues[key] = val;
+    }
+    await prisma.budgetLineChangeRequest.create({
+      data: {
+        budgetLineId: bl.id,
+        requestedById: cr.requesterId,
+        status: 'PENDING',
+        currentValues,
+        proposedValues,
+        comment: cr.comment,
+      }
+    });
+  }
+
+  // Also add a couple of already-resolved requests for history
+  if (allBudgetLines.length > 1) {
+    const blResolved = allBudgetLines[1];
+    const currentValsResolved: Record<string, number> = {};
+    const bvResolved = monthlyBudgets[1];
+    for (let m = 1; m <= 12; m++) currentValsResolved[`planM${m}`] = bvResolved[m - 1];
+    const proposedValsResolved = { ...currentValsResolved, planM3: 10000, planM4: 10000 };
+    await prisma.budgetLineChangeRequest.create({
+      data: {
+        budgetLineId: blResolved.id,
+        requestedById: user1.id,
+        status: 'APPROVED',
+        currentValues: currentValsResolved,
+        proposedValues: proposedValsResolved,
+        comment: 'Incremento aprobado para migración Azure',
+        approvedById: adminUser.id,
+        resolvedAt: new Date(2025, 1, 15),
+      }
+    });
+    await prisma.budgetLineChangeRequest.create({
+      data: {
+        budgetLineId: allBudgetLines[7].id,
+        requestedById: user2.id,
+        status: 'REJECTED',
+        currentValues: (() => { const v: Record<string, number> = {}; const bv = monthlyBudgets[7]; for (let m = 1; m <= 12; m++) v[`planM${m}`] = bv[m - 1]; return v; })(),
+        proposedValues: (() => { const v: Record<string, number> = {}; const bv = monthlyBudgets[7]; for (let m = 1; m <= 12; m++) v[`planM${m}`] = bv[m - 1]; v.planM6 = 8000; v.planM7 = 8000; return v; })(),
+        comment: 'Rechazado: presupuesto de testing ya es suficiente',
+        approvedById: user5.id,
+        resolvedAt: new Date(2025, 2, 10),
+      }
+    });
+  }
 
   // ============================================
   // SAVINGS (using budgetLineId)
@@ -551,12 +665,15 @@ async function main() {
   console.log(`      - ${v2BudgetLines.length} líneas en 2025 v2`);
   console.log(`      - ~${docCounter} transacciones`);
   console.log('   👥 Usuarios:');
-  console.log('      - admin / belcorp123 (Administrador)');
+  console.log('      - admin / belcorp123 (Administrador - Aprobador Global)');
   console.log('      - jperez / user123 (Gestor de Presupuesto)');
   console.log('      - mgarcia / user123 (Gestor de Presupuesto)');
   console.log('      - clopez / user123 (Analista)');
   console.log('      - amartinez / user123 (Visualizador)');
-  console.log('      - rsanchez / user123 (Analista)');
+  console.log('      - rsanchez / user123 (Analista + Aprobador INFRA/DEV/SEC)');
+  console.log('      - ltorres / user123 (Aprobador Infraestructura + Cloud)');
+  console.log('      - pdiaz / user123 (Aprobador Desarrollo + DevOps)');
+  console.log('   📋 Solicitudes de cambio: 8 pendientes + 2 resueltas');
   console.log('   💵 Ahorros: 10 registros');
   console.log('   📆 Diferidos: 8 registros');
 }

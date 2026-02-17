@@ -3,6 +3,7 @@ import { reportApi, financialCompanyApi } from '../services/api';
 import { useActiveBudget } from '../contexts/ActiveBudgetContext';
 import { REPORT_DEFINITIONS } from '../config/reportDefinitions';
 import type { ReportDefinition } from '../config/reportDefinitions';
+import { showToast } from '../components/Toast';
 
 export default function DetailedReportsPage() {
   const { activeBudget } = useActiveBudget();
@@ -23,7 +24,7 @@ export default function DetailedReportsPage() {
       const res = await reportApi.get(selectedReport.id, { budgetId: activeBudget.id, ...filters });
       setData(res.data);
     } catch (err: any) {
-      alert(err.response?.data?.error || 'Error al generar reporte');
+      showToast(err.response?.data?.error || 'Error al generar reporte', 'error');
     } finally { setLoading(false); }
   };
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { transactionApi, budgetApi, budgetLineApi } from '../services/api';
 import type { BudgetLine } from '../types';
 import { HiOutlinePencilSquare, HiOutlineTrash, HiOutlinePlusCircle, HiOutlineClipboardDocumentList } from 'react-icons/hi2';
+import { showToast } from '../components/Toast';
 
 interface Transaction {
   id: string;
@@ -41,7 +42,8 @@ export default function RealTransactionsPage() {
     try {
       const budgetsRes = await budgetApi.getAll();
       if (budgetsRes.data.length > 0) {
-        const latest = budgetsRes.data[budgetsRes.data.length - 1];
+        const active = budgetsRes.data.find((b: any) => b.isActive);
+        const latest = active || budgetsRes.data[0];
         const linesRes = await budgetLineApi.getByBudget(latest.id);
         setBudgetLines(linesRes.data);
       }
@@ -111,14 +113,14 @@ export default function RealTransactionsPage() {
       setIsModalOpen(false);
       loadData();
     } catch (error: any) {
-      alert(error.response?.data?.error || error.response?.data?.message || 'Error al guardar transacción');
+      showToast(error.response?.data?.error || error.response?.data?.message || 'Error al guardar transacción', 'error');
     }
   };
 
   const handleDelete = async (transaction: Transaction) => {
     if (!confirm('¿Eliminar esta transacción?')) return;
     try { await transactionApi.delete(transaction.id); loadData(); }
-    catch (error) { alert('Error al eliminar transacción'); }
+    catch (error) { showToast('Error al eliminar transacción', 'error'); }
   };
 
   const getMonthFromDate = (dateStr: string) => {

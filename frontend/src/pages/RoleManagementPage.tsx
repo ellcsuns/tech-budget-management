@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { api, technologyDirectionApi } from '../services/api';
 import type { TechnologyDirection } from '../types';
 import { HiOutlinePencilSquare, HiOutlineTrash, HiOutlinePlusCircle } from 'react-icons/hi2';
+import { showToast } from '../components/Toast';
 
 interface Role {
   id: string;
@@ -86,7 +87,7 @@ export default function RoleManagementPage() {
         permissions: r.permissions || []
       });
       setIsModalOpen(true);
-    } catch (error) { alert('Error al cargar rol'); }
+    } catch (error) { showToast('Error al cargar rol', 'error'); }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -96,14 +97,14 @@ export default function RoleManagementPage() {
       else await api.post('/roles', formData);
       setIsModalOpen(false);
       loadRoles();
-    } catch (error: any) { alert(error.response?.data?.message || 'Error al guardar rol'); }
+    } catch (error: any) { showToast(error.response?.data?.message || 'Error al guardar rol', 'error'); }
   };
 
   const handleDelete = async (role: Role) => {
-    if (role.isSystem) { alert('No se puede eliminar un rol del sistema'); return; }
-    if (role.userCount > 0) { alert(`No se puede eliminar: tiene ${role.userCount} usuarios asignados`); return; }
+    if (role.isSystem) { showToast('No se puede eliminar un rol del sistema', 'error'); return; }
+    if (role.userCount > 0) { showToast(`No se puede eliminar: tiene ${role.userCount} usuarios asignados`, 'error'); return; }
     if (!confirm(`¿Eliminar el rol "${role.name}"?`)) return;
-    try { await api.delete(`/roles/${role.id}`); loadRoles(); } catch (error) { alert('Error al eliminar rol'); }
+    try { await api.delete(`/roles/${role.id}`); loadRoles(); } catch (error) { showToast('Error al eliminar rol', 'error'); }
   };
 
   const togglePermission = (menuCode: string, permissionType: string) => {

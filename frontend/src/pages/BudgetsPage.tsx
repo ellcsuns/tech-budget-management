@@ -6,21 +6,31 @@ import { fmt } from '../utils/formatters';
 import ConfirmationDialog from '../components/ConfirmationDialog';
 import BudgetTable from '../components/BudgetTable';
 import FilterPanel from '../components/FilterPanel';
-import { HiOutlineLockClosed, HiOutlinePlusCircle } from 'react-icons/hi2';
+import { HiOutlineLockClosed, HiOutlinePlusCircle, HiOutlineTrash, HiOutlineStar, HiOutlineDocumentDuplicate } from 'react-icons/hi2';
+import { showToast } from '../components/Toast';
 
 const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
 export default function BudgetsPage() {
+  const [allBudgets, setAllBudgets] = useState<Budget[]>([]);
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
   const [budgetLines, setBudgetLines] = useState<BudgetLine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState<string | null>(null);
+  const [showDeleteBudgetDialog, setShowDeleteBudgetDialog] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [addExpenseId, setAddExpenseId] = useState('');
   const [addCompanyId, setAddCompanyId] = useState('');
   const [allExpenses, setAllExpenses] = useState<any[]>([]);
   const [allCompanies, setAllCompanies] = useState<any[]>([]);
   const [allUserAreas, setAllUserAreas] = useState<UserArea[]>([]);
+
+  // Create budget modal
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newBudgetYear, setNewBudgetYear] = useState(new Date().getFullYear());
+  const [newBudgetVersion, setNewBudgetVersion] = useState('v1');
+  const [sourceBudgetId, setSourceBudgetId] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
 
   // Popup state
   const [editPopupLine, setEditPopupLine] = useState<BudgetLine | null>(null);
@@ -42,6 +52,7 @@ export default function BudgetsPage() {
 
   const { hasPermission } = useAuth();
   const canEdit = hasPermission('budgets', 'MODIFY');
+  const isAdmin = hasPermission('roles', 'MODIFY'); // Only admin can manage roles = admin check
 
   useEffect(() => { loadBudgets(); loadMasterData(); }, []);
 
@@ -59,9 +70,11 @@ export default function BudgetsPage() {
   const loadBudgets = async () => {
     try {
       const res = await budgetApi.getAll();
+      setAllBudgets(res.data);
       if (res.data.length > 0) {
-        const latest = res.data[res.data.length - 1];
-        loadBudgetDetails(latest.id);
+        const active = res.data.find((b: Budget) => b.isActive);
+        const target = active || res.data[0];
+        loadBudgetDetails(target.id);
       }
     } catch (error) { console.error('Error loading budgets:', error); }
     finally { setIsLoading(false); }
@@ -92,9 +105,16 @@ export default function BudgetsPage() {
   };
 
   const handleRemoveRow = (budgetLineId: string) => { setShowDeleteDialog(budgetLineId); };
-  const confirmRemoveRow = () => {
-    if (!showDeleteDialog) return;
-    setBudgetLines(budgetLines.filter(bl => bl.id !== showDeleteDialog));
+
+  const confirmRemoveRow = async () => {
+    if (!showDeleteDialog || !selectedBudget) return;
+    try {
+      await budgetApi.removeBudgetLine(selectedBudget.id, showDeleteDialog);
+      setBudgetLines(budgetLines.filter(bl => bl.id !== showDeleteDialog));
+      showToast('Línea eliminada correctamente', 'success');
+    } catch (error: any) {
+      showToast(error.response?.data?.error || 'Error al eliminar línea', 'error');
+    }
     setShowDeleteDialog(null);
   };
 
@@ -104,7 +124,49 @@ export default function BudgetsPage() {
       await budgetApi.addBudgetLine(selectedBudget.id, addExpenseId, addCompanyId);
       setShowAddForm(false); setAddExpenseId(''); setAddCompanyId('');
       loadBudgetDetails(selectedBudget.id);
-    } catch (error: any) { alert(error.response?.data?.error || 'Error al agregar línea'); }
+      showToast('Línea agregada correctamente', 'success');
+    } catch (error: any) { showToast(error.response?.data?.error || 'Error al agregar línea', 'error'); }
+  };
+
+  const handleCreateBudget = async () => {
+    setIsCreating(true);
+    try {
+      await budgetApi.create({ year: newBudgetYear, version: newBudgetVersion, sourceBudgetId: sourceBudgetId || undefined });
+      showToast('Presupuesto creado correctamente', 'success');
+      setShowCreateModal(false);
+      setSourceBudgetId('');
+      loadBudgets();
+    } catch (error: any) {
+      showToast(error.response?.data?.error || 'Error al crear presupuesto', 'error');
+    } finally { setIsCreating(false); }
+  };
+
+  const handleSetActive = async () => {
+    if (!selectedBudget) return;
+    try {
+      await budgetApi.setActive(selectedBudget.id);
+      showToast(`Presupuesto ${selectedBudget.year} ${selectedBudget.version} marcado como vigente`, 'success');
+      // Refresh budget list and current budget details
+      const res = await budgetApi.getAll();
+      setAllBudgets(res.data);
+      loadBudgetDetails(selectedBudget.id);
+    } catch (error: any) {
+      showToast(error.response?.data?.error || 'Error al marcar como vigente', 'error');
+    }
+  };
+
+  const handleDeleteBudget = async () => {
+    if (!selectedBudget) return;
+    try {
+      await budgetApi.delete(selectedBudget.id);
+      showToast('Presupuesto eliminado', 'success');
+      setShowDeleteBudgetDialog(false);
+      setSelectedBudget(null);
+      setBudgetLines([]);
+      loadBudgets();
+    } catch (error: any) {
+      showToast(error.response?.data?.error || 'Error al eliminar presupuesto', 'error');
+    }
   };
 
   const openEditPopup = (bl: BudgetLine) => {
@@ -115,34 +177,24 @@ export default function BudgetsPage() {
     setPopupComment('');
   };
 
-  // Submit change request from popup
   const submitChangeRequest = async () => {
     if (!editPopupLine) return;
     setIsSubmitting(true);
     try {
       const proposedValues: Record<string, number> = {};
-      for (let m = 1; m <= 12; m++) {
-        proposedValues[`planM${m}`] = parseFloat(popupValues[m]) || 0;
-      }
-      await changeRequestApi.create({
-        budgetLineId: editPopupLine.id,
-        proposedValues,
-        comment: popupComment || undefined,
-      });
-      alert('Solicitud de cambio enviada a aprobación exitosamente');
+      for (let m = 1; m <= 12; m++) proposedValues[`planM${m}`] = parseFloat(popupValues[m]) || 0;
+      await changeRequestApi.create({ budgetLineId: editPopupLine.id, proposedValues, comment: popupComment || undefined });
+      showToast('Solicitud de cambio enviada a aprobación exitosamente', 'success');
       setEditPopupLine(null);
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Error al enviar solicitud de cambio');
+      showToast(error.response?.data?.error || 'Error al enviar solicitud de cambio', 'error');
     } finally { setIsSubmitting(false); }
   };
 
-  // Check if popup has actual changes
   const popupHasChanges = useMemo(() => {
     if (!editPopupLine) return false;
     for (let m = 1; m <= 12; m++) {
-      const current = getPlanValue(editPopupLine, m);
-      const proposed = parseFloat(popupValues[m]) || 0;
-      if (current !== proposed) return true;
+      if (getPlanValue(editPopupLine, m) !== (parseFloat(popupValues[m]) || 0)) return true;
     }
     return false;
   }, [editPopupLine, popupValues]);
@@ -199,13 +251,54 @@ export default function BudgetsPage() {
 
   return (
     <div className="space-y-4">
+      {/* Budget selector + actions bar */}
+      <div className="bg-white rounded-lg shadow p-4">
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-600">Presupuesto:</label>
+            <select
+              value={selectedBudget?.id || ''}
+              onChange={(e) => { if (e.target.value) loadBudgetDetails(e.target.value); }}
+              className="border rounded px-3 py-1.5 text-sm min-w-[220px]"
+            >
+              {allBudgets.map(b => (
+                <option key={b.id} value={b.id}>
+                  {b.year} - {b.version}{b.isActive ? ' ★ Vigente' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {selectedBudget?.isActive && (
+            <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">★ Vigente</span>
+          )}
+
+          <div className="ml-auto flex items-center gap-2">
+            {isAdmin && selectedBudget && !selectedBudget.isActive && (
+              <button onClick={handleSetActive} className="flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-700 rounded text-sm hover:bg-green-100" title="Marcar como vigente">
+                <HiOutlineStar className="w-4 h-4" /> Marcar Vigente
+              </button>
+            )}
+            {isAdmin && (
+              <button onClick={() => setShowCreateModal(true)} className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded text-sm hover:bg-blue-100">
+                <HiOutlinePlusCircle className="w-4 h-4" /> Nuevo Presupuesto
+              </button>
+            )}
+            {isAdmin && selectedBudget && !selectedBudget.isActive && (
+              <button onClick={() => setShowDeleteBudgetDialog(true)} className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-700 rounded text-sm hover:bg-red-100" title="Eliminar presupuesto">
+                <HiOutlineTrash className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       {selectedBudget && (
         <>
           <div className="bg-white rounded-lg shadow p-4">
             <FilterPanel budgetLines={budgetLines} filters={filters} onFiltersChange={setFilters} />
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <div className="ml-auto flex items-center gap-3">
-                <p className="text-sm text-gray-500">{selectedBudget.year} - v{selectedBudget.version}</p>
                 {!canEdit && <p className="text-sm text-gray-500 flex items-center gap-1"><HiOutlineLockClosed className="w-4 h-4" /> Solo lectura</p>}
                 {canEdit && (
                   <button onClick={() => setShowAddForm(!showAddForm)} className="btn-secondary flex items-center gap-1 text-sm">
@@ -300,7 +393,7 @@ export default function BudgetsPage() {
                 budgetLines={filteredLines}
                 editedCells={new Map()}
                 validationErrors={new Map()}
-                canEdit={false}
+                canEdit={canEdit}
                 onCellEdit={() => {}}
                 onRemoveRow={handleRemoveRow}
                 onRowClick={canEdit ? openEditPopup : undefined}
@@ -311,7 +404,7 @@ export default function BudgetsPage() {
         </>
       )}
 
-      {/* Edit Popup - Vertical month layout with change request submission */}
+      {/* Edit Popup */}
       {editPopupLine && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6">
@@ -327,8 +420,6 @@ export default function BudgetsPage() {
               {editPopupLine.technologyDirection && <div><span className="text-gray-500">Dir. Tecnología:</span> {editPopupLine.technologyDirection.name}</div>}
               <div><span className="text-gray-500">Área Responsable:</span> {getAreaNames(editPopupLine)}</div>
             </div>
-
-            {/* Vertical month list with current vs proposed */}
             <div className="border rounded divide-y mb-4">
               <div className="flex items-center px-4 py-2 bg-gray-50 text-xs font-medium text-gray-500">
                 <span className="w-16">Mes</span>
@@ -344,28 +435,21 @@ export default function BudgetsPage() {
                     <label className="text-sm font-medium text-gray-600 w-16">{m}</label>
                     <span className="w-28 text-right text-sm text-gray-400">{fmt(currentVal)}</span>
                     <div className="flex-1 flex justify-end">
-                      <input
-                        type="number" step="0.01" value={popupValues[i + 1] || '0'}
+                      <input type="number" step="0.01" value={popupValues[i + 1] || '0'}
                         onChange={(e) => setPopupValues({ ...popupValues, [i + 1]: e.target.value })}
-                        className="w-36 border rounded px-3 py-1.5 text-sm text-right focus:ring-2 focus:ring-accent focus:border-accent"
-                      />
+                        className="w-36 border rounded px-3 py-1.5 text-sm text-right focus:ring-2 focus:ring-accent focus:border-accent" />
                     </div>
                   </div>
                 );
               })}
             </div>
-
-            {/* Comment */}
             <div className="mb-4">
               <label className="block text-xs font-medium text-gray-500 mb-1">Comentario (opcional)</label>
               <textarea value={popupComment} onChange={(e) => setPopupComment(e.target.value)}
                 className="w-full border rounded px-3 py-2 text-sm" rows={2} placeholder="Justificación del cambio..." />
             </div>
-
             <div className="flex justify-between items-center">
-              <div className="text-sm font-semibold">
-                Total: {fmt(popupTotal)} {editPopupLine.currency}
-              </div>
+              <div className="text-sm font-semibold">Total: {fmt(popupTotal)} {editPopupLine.currency}</div>
               <div className="flex gap-2">
                 <button onClick={() => setEditPopupLine(null)} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">Cancelar</button>
                 <button onClick={submitChangeRequest} disabled={!popupHasChanges || isSubmitting}
@@ -374,15 +458,58 @@ export default function BudgetsPage() {
                 </button>
               </div>
             </div>
+            {!popupHasChanges && <p className="text-xs text-gray-400 mt-2 text-center">Modifica al menos un valor para enviar la solicitud</p>}
+          </div>
+        </div>
+      )}
 
-            {!popupHasChanges && (
-              <p className="text-xs text-gray-400 mt-2 text-center">Modifica al menos un valor para enviar la solicitud</p>
-            )}
+      {/* Create Budget Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold">Nuevo Presupuesto</h2>
+              <button onClick={() => setShowCreateModal(false)} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Año</label>
+                <input type="number" value={newBudgetYear} onChange={e => setNewBudgetYear(parseInt(e.target.value))}
+                  className="w-full border rounded px-3 py-2 text-sm" min={2020} max={2040} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Versión</label>
+                <input type="text" value={newBudgetVersion} onChange={e => setNewBudgetVersion(e.target.value)}
+                  className="w-full border rounded px-3 py-2 text-sm" placeholder="v1" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <HiOutlineDocumentDuplicate className="w-4 h-4 inline mr-1" />
+                  Copiar desde presupuesto (opcional)
+                </label>
+                <select value={sourceBudgetId} onChange={e => setSourceBudgetId(e.target.value)}
+                  className="w-full border rounded px-3 py-2 text-sm">
+                  <option value="">Sin copia - presupuesto vacío</option>
+                  {allBudgets.map(b => (
+                    <option key={b.id} value={b.id}>{b.year} - {b.version}{b.isActive ? ' (Vigente)' : ''}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-400 mt-1">Se copiarán las líneas de presupuesto y tasas de conversión</p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button onClick={() => setShowCreateModal(false)} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">Cancelar</button>
+              <button onClick={handleCreateBudget} disabled={isCreating || !newBudgetVersion.trim()}
+                className="px-4 py-2 bg-accent text-white rounded hover:opacity-90 text-sm disabled:opacity-50">
+                {isCreating ? 'Creando...' : 'Crear Presupuesto'}
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       <ConfirmationDialog isOpen={!!showDeleteDialog} message="¿Estás seguro de eliminar esta línea del presupuesto?" onConfirm={confirmRemoveRow} onCancel={() => setShowDeleteDialog(null)} />
+      <ConfirmationDialog isOpen={showDeleteBudgetDialog} message={`¿Estás seguro de eliminar el presupuesto ${selectedBudget?.year} ${selectedBudget?.version}? Esta acción no se puede deshacer.`} onConfirm={handleDeleteBudget} onCancel={() => setShowDeleteBudgetDialog(false)} />
     </div>
   );
 }

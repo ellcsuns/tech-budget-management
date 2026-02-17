@@ -4,6 +4,7 @@ import type { Budget } from '../types';
 
 interface ActiveBudgetContextType {
   activeBudget: Budget | null;
+  allBudgets: Budget[];
   loading: boolean;
   refresh: () => Promise<void>;
 }
@@ -12,12 +13,17 @@ const ActiveBudgetContext = createContext<ActiveBudgetContextType | undefined>(u
 
 export function ActiveBudgetProvider({ children }: { children: ReactNode }) {
   const [activeBudget, setActiveBudget] = useState<Budget | null>(null);
+  const [allBudgets, setAllBudgets] = useState<Budget[]>([]);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     try {
-      const res = await budgetApi.getActive();
-      setActiveBudget(res.data);
+      const [activeRes, allRes] = await Promise.all([
+        budgetApi.getActive(),
+        budgetApi.getAll()
+      ]);
+      setActiveBudget(activeRes.data);
+      setAllBudgets(allRes.data);
     } catch {
       setActiveBudget(null);
     } finally {
@@ -28,7 +34,7 @@ export function ActiveBudgetProvider({ children }: { children: ReactNode }) {
   useEffect(() => { refresh(); }, [refresh]);
 
   return (
-    <ActiveBudgetContext.Provider value={{ activeBudget, loading, refresh }}>
+    <ActiveBudgetContext.Provider value={{ activeBudget, allBudgets, loading, refresh }}>
       {children}
     </ActiveBudgetContext.Provider>
   );

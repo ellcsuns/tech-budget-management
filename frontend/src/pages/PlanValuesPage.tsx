@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { budgetApi, budgetLineApi } from '../services/api';
 import { fmt, MONTH_NAMES } from '../utils/formatters';
 import type { BudgetLine } from '../types';
+import { showToast } from '../components/Toast';
 
 interface Budget {
   id: string;
@@ -25,7 +26,10 @@ export default function PlanValuesPage() {
     try {
       const res = await budgetApi.getAll();
       setBudgets(res.data);
-      if (res.data.length > 0) setSelectedBudgetId(res.data[0].id);
+      if (res.data.length > 0) {
+        const active = res.data.find((b: any) => b.isActive);
+        setSelectedBudgetId((active || res.data[0]).id);
+      }
     } catch (error) {
       console.error('Error loading budgets:', error);
     } finally {
@@ -78,7 +82,7 @@ export default function PlanValuesPage() {
   };
 
   const handleSaveChanges = async () => {
-    if (pendingChanges.size === 0) { alert('No hay cambios pendientes'); return; }
+    if (pendingChanges.size === 0) { showToast('No hay cambios pendientes', 'info'); return; }
     if (!confirm(`¿Guardar ${pendingChanges.size} cambios en valores plan?`)) return;
 
     try {
@@ -94,11 +98,11 @@ export default function PlanValuesPage() {
         await budgetLineApi.updatePlanValues(lineId, planData);
       }
 
-      alert('Valores plan actualizados exitosamente');
+      showToast('Valores plan actualizados exitosamente', 'success');
       setPendingChanges(new Map());
       loadBudgetData();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Error al guardar cambios');
+      showToast(error.response?.data?.message || 'Error al guardar cambios', 'error');
     }
   };
 

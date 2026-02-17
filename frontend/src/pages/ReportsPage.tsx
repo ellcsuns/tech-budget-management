@@ -19,7 +19,10 @@ export default function ReportsPage() {
     try {
       const response = await budgetApi.getAll();
       setBudgets(response.data);
-      if (response.data.length > 0) setSelectedBudget(response.data[response.data.length - 1].id);
+      if (response.data.length > 0) {
+        const active = response.data.find((b: any) => b.isActive);
+        setSelectedBudget((active || response.data[0]).id);
+      }
     } catch (error) { console.error('Error:', error); }
     finally { setLoading(false); }
   };

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { technologyDirectionApi, userAreaApi, financialCompanyApi } from '../services/api';
 import { HiOutlinePencilSquare, HiOutlineTrash, HiOutlinePlusCircle } from 'react-icons/hi2';
+import { showToast } from '../components/Toast';
 
 type TabType = 'tech' | 'areas' | 'companies';
 
@@ -56,7 +57,7 @@ export default function MasterDataPage() {
       setForm({ code: '', name: '', description: '', taxId: '' });
       loadData();
     } catch (error: any) {
-      alert(error.response?.data?.error || error.response?.data?.message || 'Error al guardar');
+      showToast(error.response?.data?.error || error.response?.data?.message || 'Error al guardar', 'error');
     }
   };
 
@@ -72,7 +73,7 @@ export default function MasterDataPage() {
       await getApi().delete(item.id);
       loadData();
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Error al eliminar. Puede estar en uso.');
+      showToast(error.response?.data?.error || 'Error al eliminar. Puede estar en uso.', 'error');
     }
   };
 

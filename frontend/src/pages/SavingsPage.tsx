@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { savingsApi, budgetApi, budgetLineApi } from '../services/api';
 import type { Saving, Budget, BudgetLine } from '../types';
 import { HiOutlineTrash, HiOutlinePlusCircle } from 'react-icons/hi2';
+import { showToast } from '../components/Toast';
 
 export default function SavingsPage() {
   const [savings, setSavings] = useState<Saving[]>([]);
@@ -34,7 +35,8 @@ export default function SavingsPage() {
       const res = await budgetApi.getAll();
       setBudgets(res.data);
       if (res.data.length > 0) {
-        const latest = res.data[res.data.length - 1];
+        const active = res.data.find((b: any) => b.isActive);
+        const latest = active || res.data[0];
         setSelectedBudget(latest.id);
       }
     } catch (error) { console.error('Error loading budgets:', error); }
@@ -66,23 +68,23 @@ export default function SavingsPage() {
       setShowForm(false);
       resetForm();
       loadSavings();
-    } catch (error: any) { alert(error.response?.data?.error || 'Error al crear ahorro'); }
+    } catch (error: any) { showToast(error.response?.data?.error || 'Error al crear ahorro', 'error'); }
   };
 
   const handleApproveSavings = async () => {
-    if (selectedSavings.size === 0) { alert('Selecciona al menos un ahorro para aprobar'); return; }
+    if (selectedSavings.size === 0) { showToast('Selecciona al menos un ahorro para aprobar', 'info'); return; }
     try {
       await savingsApi.approve(Array.from(selectedSavings));
       setSelectedSavings(new Set());
       loadSavings();
-      alert('Ahorros aprobados exitosamente');
-    } catch (error: any) { alert(error.response?.data?.error || 'Error al aprobar ahorros'); }
+      showToast('Ahorros aprobados exitosamente', 'success');
+    } catch (error: any) { showToast(error.response?.data?.error || 'Error al aprobar ahorros', 'error'); }
   };
 
   const handleDeleteSaving = async (id: string) => {
     if (!confirm('¿Estás seguro de eliminar este ahorro?')) return;
     try { await savingsApi.delete(id); loadSavings(); }
-    catch (error: any) { alert(error.response?.data?.error || 'Error al eliminar ahorro'); }
+    catch (error: any) { showToast(error.response?.data?.error || 'Error al eliminar ahorro', 'error'); }
   };
 
   const resetForm = () => {

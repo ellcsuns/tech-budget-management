@@ -22,7 +22,8 @@ export default function Dashboard() {
     try {
       const response = await budgetApi.getAll();
       if (response.data.length > 0) {
-        const latest = response.data[response.data.length - 1];
+        const active = response.data.find((b: any) => b.isActive);
+        const latest = active || response.data[0];
         await loadBudgetLines(latest.id);
       }
     } catch (error) {

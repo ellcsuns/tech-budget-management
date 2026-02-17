@@ -3,6 +3,7 @@ import { changeRequestApi } from '../services/api';
 import type { ChangeRequest } from '../types';
 import { fmt } from '../utils/formatters';
 import { HiOutlineCheckCircle, HiOutlineXMark } from 'react-icons/hi2';
+import { showToast } from '../components/Toast';
 
 const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
@@ -48,7 +49,7 @@ export default function ApprovalsPage() {
       await changeRequestApi.approve(id);
       setSelectedRequest(null);
       loadPending();
-    } catch (error: any) { alert(error.response?.data?.error || 'Error al aprobar'); }
+    } catch (error: any) { showToast(error.response?.data?.error || 'Error al aprobar', 'error'); }
     finally { setIsProcessing(false); }
   };
 
@@ -58,9 +59,9 @@ export default function ApprovalsPage() {
     try {
       setIsProcessing(true);
       await changeRequestApi.approveMultiple(Array.from(selectedIds));
-      alert(`${selectedIds.size} solicitud(es) aprobadas exitosamente`);
+      showToast(`${selectedIds.size} solicitud(es) aprobadas exitosamente`, 'success');
       loadPending();
-    } catch (error: any) { alert(error.response?.data?.error || 'Error al aprobar solicitudes'); }
+    } catch (error: any) { showToast(error.response?.data?.error || 'Error al aprobar solicitudes', 'error'); }
     finally { setIsProcessing(false); }
   };
 
@@ -71,7 +72,7 @@ export default function ApprovalsPage() {
       await changeRequestApi.reject(id);
       setSelectedRequest(null);
       loadPending();
-    } catch (error: any) { alert(error.response?.data?.error || 'Error al rechazar'); }
+    } catch (error: any) { showToast(error.response?.data?.error || 'Error al rechazar', 'error'); }
     finally { setIsProcessing(false); }
   };
 

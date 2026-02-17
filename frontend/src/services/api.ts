@@ -59,9 +59,10 @@ export const budgetApi = {
       data: { ...budgetRes.data, budgetLines: linesRes.data }
     };
   },
-  create: (data: { year: number; version: string }) => api.post<Budget>('/budgets', data),
+  create: (data: { year: number; version: string; sourceBudgetId?: string }) => api.post<Budget>('/budgets', data),
   update: (id: string, data: Partial<Budget>) => api.put<Budget>(`/budgets/${id}`, data),
   delete: (id: string) => api.delete(`/budgets/${id}`),
+  setActive: (id: string) => api.post<Budget>(`/budgets/${id}/set-active`),
   createNewVersion: (budgetId: string, planValueChanges: any[]) =>
     api.post(`/budgets/${budgetId}/versions`, { planValueChanges }),
   getActive: () => api.get<Budget>('/budgets/active'),

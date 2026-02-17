@@ -3,6 +3,7 @@ import { budgetApi } from '../services/api';
 import { classifyExpenses, calculateSummary, getDifferenceColor, generateDifferenceDescription } from '../utils/budgetComparison';
 import type { ComparisonRow, ComparisonSummary } from '../utils/budgetComparison';
 import type { Budget } from '../types';
+import { showToast } from '../components/Toast';
 
 export default function BudgetComparePage() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
@@ -35,7 +36,7 @@ export default function BudgetComparePage() {
       setRows(compRows);
       setSummary(calculateSummary(compRows));
     } catch (err: any) {
-      alert(err.response?.data?.error || 'Error al comparar');
+      showToast(err.response?.data?.error || 'Error al comparar', 'error');
     } finally { setLoading(false); }
   };
 

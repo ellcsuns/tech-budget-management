@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { HiOutlinePencilSquare, HiOutlinePauseCircle, HiOutlinePlayCircle, HiOutlinePlusCircle } from 'react-icons/hi2';
+import { showToast } from '../components/Toast';
 
 interface User {
   id: string;
@@ -66,7 +67,7 @@ export default function UserManagementPage() {
       setIsModalOpen(false);
       loadData();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Error al guardar usuario');
+      showToast(error.response?.data?.message || 'Error al guardar usuario', 'error');
     }
   };
 
@@ -75,7 +76,7 @@ export default function UserManagementPage() {
       await api.put(`/users/${user.id}/status`, { active: !user.active });
       loadData();
     } catch (error) {
-      alert('Error al cambiar estado del usuario');
+      showToast('Error al cambiar estado del usuario', 'error');
     }
   };
 

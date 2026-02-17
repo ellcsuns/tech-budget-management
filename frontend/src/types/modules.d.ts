@@ -36,4 +36,6 @@ declare module 'react-icons/hi2' {
   export const HiOutlineDocumentArrowDown: IconType;
   export const HiOutlineEye: IconType;
   export const HiOutlineEyeSlash: IconType;
+  export const HiOutlineDocumentDuplicate: IconType;
+  export const HiOutlineStar: IconType;
 }

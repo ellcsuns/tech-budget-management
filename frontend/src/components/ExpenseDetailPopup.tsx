@@ -3,6 +3,7 @@ import { expensesEnhancedApi, transactionApi, budgetApi, budgetLineApi } from '.
 import type { ExpenseWithTags, CustomTag, Transaction, BudgetLine } from '../types';
 import { HiOutlinePencilSquare, HiOutlineTrash } from 'react-icons/hi2';
 import { fmt } from '../utils/formatters';
+import { showToast } from './Toast';
 
 interface Props {
   expense: ExpenseWithTags;
@@ -30,7 +31,8 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnl
       setLoadingTxns(true);
       const budgetsRes = await budgetApi.getAll();
       if (budgetsRes.data.length > 0) {
-        const latest = budgetsRes.data[budgetsRes.data.length - 1];
+        const active = budgetsRes.data.find((b: any) => b.isActive);
+        const latest = active || budgetsRes.data[0];
         const linesRes = await budgetLineApi.getByBudget(latest.id);
         const expenseLines = linesRes.data.filter((bl: BudgetLine) => bl.expenseId === expense.id);
         setBudgetLines(expenseLines);
@@ -53,20 +55,20 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnl
   const handleAddTag = async (e: React.FormEvent) => {
     e.preventDefault();
     try { await expensesEnhancedApi.addTag(expense.id, tagForm); resetTagForm(); onUpdate?.(); }
-    catch (error: any) { alert(error.response?.data?.error || 'Error al agregar tag'); }
+    catch (error: any) { showToast(error.response?.data?.error || 'Error al agregar tag', 'error'); }
   };
 
   const handleUpdateTag = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingTag) return;
     try { await expensesEnhancedApi.updateTag(expense.id, editingTag.key, tagForm); resetTagForm(); onUpdate?.(); }
-    catch (error: any) { alert(error.response?.data?.error || 'Error al actualizar tag'); }
+    catch (error: any) { showToast(error.response?.data?.error || 'Error al actualizar tag', 'error'); }
   };
 
   const handleDeleteTag = async (tagKey: string) => {
     if (!confirm('¿Estás seguro de eliminar este tag?')) return;
     try { await expensesEnhancedApi.removeTag(expense.id, tagKey); onUpdate?.(); }
-    catch (error: any) { alert(error.response?.data?.error || 'Error al eliminar tag'); }
+    catch (error: any) { showToast(error.response?.data?.error || 'Error al eliminar tag', 'error'); }
   };
 
   const startEditTag = (tag: CustomTag) => {

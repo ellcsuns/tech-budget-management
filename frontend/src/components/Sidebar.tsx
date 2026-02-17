@@ -45,6 +45,7 @@ const menuItems: MenuItem[] = [
   { path: '/plan-values', labelKey: 'menu.planValues', fallback: 'Valores Plan', icon: HiOutlineChartBar, menuCode: 'plan-values' },
   { path: '/committed-transactions', labelKey: 'menu.committedTransactions', fallback: 'Trans. Comprometidas', icon: HiOutlineLockClosed, menuCode: 'committed-transactions' },
   { path: '/real-transactions', labelKey: 'menu.realTransactions', fallback: 'Trans. Reales', icon: HiOutlineCheckCircle, menuCode: 'real-transactions' },
+  { path: '/exchange-rates', labelKey: 'menu.exchangeRates', fallback: 'Tipos de Cambio', icon: HiOutlineCurrencyDollar, menuCode: 'conversion-rates' },
   { path: '/reports', labelKey: 'menu.reports', fallback: 'Reportes', icon: HiOutlineDocumentChartBar, menuCode: 'reports' },
   { path: '/detailed-reports', labelKey: 'menu.detailedReports', fallback: 'Reportes Detallados', icon: HiOutlineTableCells, menuCode: 'reports' },
   { path: '/configuration', labelKey: 'menu.configuration', fallback: 'Configuración', icon: HiOutlineCog6Tooth, menuCode: 'users', section: 'config' },

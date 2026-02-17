@@ -3,6 +3,7 @@ import { expensesEnhancedApi, technologyDirectionApi, userAreaApi } from '../ser
 import type { ExpenseWithTags, TechnologyDirection, UserArea } from '../types';
 import ExpenseDetailPopup from '../components/ExpenseDetailPopup';
 import { HiOutlineMagnifyingGlass, HiOutlineTrash, HiOutlineArrowPath, HiOutlinePlusCircle } from 'react-icons/hi2';
+import { showToast } from '../components/Toast';
 
 export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<ExpenseWithTags[]>([]);
@@ -69,7 +70,7 @@ export default function ExpensesPage() {
       resetForm();
       loadExpenses();
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Error al crear gasto');
+      showToast(error.response?.data?.error || 'Error al crear gasto', 'error');
     }
   };
 
@@ -79,7 +80,7 @@ export default function ExpensesPage() {
       await expensesEnhancedApi.delete(id);
       loadExpenses();
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Error al desactivar gasto');
+      showToast(error.response?.data?.error || 'Error al desactivar gasto', 'error');
     }
   };
 
@@ -88,7 +89,7 @@ export default function ExpensesPage() {
       await expensesEnhancedApi.reactivate(id);
       loadExpenses();
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Error al reactivar gasto');
+      showToast(error.response?.data?.error || 'Error al reactivar gasto', 'error');
     }
   };
 
