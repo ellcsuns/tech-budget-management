@@ -17,7 +17,7 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnl
   const [showTagForm, setShowTagForm] = useState(false);
   const [editingTag, setEditingTag] = useState<CustomTag | null>(null);
   const [tagForm, setTagForm] = useState({ key: '', value: '', valueType: 'TEXT' as 'TEXT' | 'NUMBER' | 'DATE' | 'SELECT' });
-  const [budgetLines, setBudgetLines] = useState<BudgetLine[]>([]);
+  const [, setBudgetLines] = useState<BudgetLine[]>([]);
   const [committedTxns, setCommittedTxns] = useState<Transaction[]>([]);
   const [realTxns, setRealTxns] = useState<Transaction[]>([]);
   const [loadingTxns, setLoadingTxns] = useState(true);

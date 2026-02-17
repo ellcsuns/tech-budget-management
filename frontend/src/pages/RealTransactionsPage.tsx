@@ -49,8 +49,8 @@ export default function RealTransactionsPage() {
         transactionApi.getByType('REAL'),
         transactionApi.getByType('COMMITTED')
       ]);
-      setTransactions(realRes.data || []);
-      setCommittedTransactions((committedRes.data || []).filter((t: any) => !t.isCompensated));
+      setTransactions((realRes.data || []) as Transaction[]);
+      setCommittedTransactions(((committedRes.data || []) as Transaction[]).filter((t: Transaction) => !t.isCompensated));
     } catch (error) { console.error('Error:', error); }
     finally { setIsLoading(false); }
   };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { budgetApi, expenseApi, financialCompanyApi } from '../services/api';
 import type { Budget, BudgetLine } from '../types';
 import { useAuth } from '../contexts/AuthContext';

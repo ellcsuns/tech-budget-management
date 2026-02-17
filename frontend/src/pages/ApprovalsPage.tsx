@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { changeRequestApi } from '../services/api';
 import type { ChangeRequest } from '../types';
 import { fmt } from '../utils/formatters';
-import { HiOutlineCheckCircle, HiOutlineXCircle } from 'react-icons/hi2';
+import { HiOutlineCheckCircle, HiOutlineXMark } from 'react-icons/hi2';
 
 const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
@@ -67,7 +67,7 @@ export default function ApprovalsPage() {
                         <HiOutlineCheckCircle className="w-5 h-5" />
                       </button>
                       <button onClick={(e) => { e.stopPropagation(); handleReject(req.id); }} className="text-red-600 hover:text-red-800" title="Rechazar">
-                        <HiOutlineXCircle className="w-5 h-5" />
+                        <HiOutlineXMark className="w-5 h-5" />
                       </button>
                     </div>
                   </td>

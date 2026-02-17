@@ -41,7 +41,7 @@ export default function CommittedTransactionsPage() {
         setBudgetLines(linesRes.data);
       }
       const transactionsRes = await transactionApi.getByType('COMMITTED');
-      setTransactions(transactionsRes.data || []);
+      setTransactions((transactionsRes.data || []) as Transaction[]);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
