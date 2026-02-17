@@ -94,6 +94,7 @@ export default function BudgetTable(props: BudgetTableProps) {
               <span className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-accent" onMouseDown={onMouseDown} />
             </th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Empresa</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Moneda</th>
             {MONTHS.map((month, idx) => (
               <th key={idx} className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{month}</th>
             ))}
@@ -113,6 +114,7 @@ export default function BudgetTable(props: BudgetTableProps) {
                   {bl.expense?.shortDescription}
                 </td>
                 <td className="px-4 py-2 text-sm text-gray-500 whitespace-nowrap">{bl.financialCompany?.name || '-'}</td>
+                <td className="px-4 py-2 text-sm text-gray-500 whitespace-nowrap">{bl.currency}</td>
                 {MONTHS.map((_, monthIdx) => {
                   const month = monthIdx + 1;
                   return (
@@ -140,7 +142,7 @@ export default function BudgetTable(props: BudgetTableProps) {
         </tbody>
         <tfoot className="bg-gray-100 font-bold">
           <tr>
-            <td className="px-4 py-3 text-sm" colSpan={3}>Total</td>
+            <td className="px-4 py-3 text-sm" colSpan={4}>Total</td>
             {monthlyTotals.map((t, i) => (
               <td key={i} className="px-4 py-3 text-sm text-right border border-gray-200">{fmt(t)}</td>
             ))}

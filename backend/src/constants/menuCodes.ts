@@ -17,7 +17,8 @@ export const MENU_CODES = {
   ROLES: 'roles',
   REPORTS: 'reports',
   DEFERRALS: 'deferrals',
-  CONFIGURATION: 'configuration'
+  CONFIGURATION: 'configuration',
+  APPROVALS: 'approvals'
 } as const;
 
 export type MenuCode = typeof MENU_CODES[keyof typeof MENU_CODES];

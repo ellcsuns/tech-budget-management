@@ -15,6 +15,7 @@ export interface LoginResult {
     username: string;
     email: string;
     fullName: string;
+    technologyDirectionId?: string | null;
   };
   permissions: Array<{ menuCode: string; permissionType: PermissionType }>;
   expiresAt: Date;
@@ -133,7 +134,8 @@ export class AuthService {
         id: user.id,
         username: user.username,
         email: user.email,
-        fullName: user.fullName
+        fullName: user.fullName,
+        technologyDirectionId: user.technologyDirectionId
       },
       permissions,
       expiresAt
@@ -299,7 +301,7 @@ export class AuthService {
     }
 
     // Create admin user
-    const passwordHash = await this.passwordService.hashPassword('admin');
+    const passwordHash = await this.passwordService.hashPassword('belcorp123');
 
     await this.prisma.user.create({
       data: {
@@ -315,7 +317,7 @@ export class AuthService {
       }
     });
 
-    console.log('✅ Default admin user created (username: admin, password: admin)');
+    console.log('✅ Default admin user created (username: admin, password: belcorp123)');
     console.log('⚠️  Please change the default password after first login');
   }
 }

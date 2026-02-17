@@ -10,6 +10,7 @@ async function main() {
   console.log('🗑️  Limpiando datos existentes...');
   await prisma.translation.deleteMany();
   await prisma.systemConfig.deleteMany();
+  await prisma.budgetLineChangeRequest.deleteMany();
   await prisma.deferral.deleteMany();
   await prisma.saving.deleteMany();
   await prisma.tagValue.deleteMany();
@@ -260,11 +261,15 @@ async function main() {
     const vals = monthlyBudgets[expIdx];
     const companyIdx = exp.compIdx ?? 0;
     const company = financialCompanies[companyIdx];
+    // Assign technologyDirectionId from expense's first tech direction
+    const techDirIds = exp.technologyDirections || [];
+    const techDirId = techDirIds.length > 0 ? techDirIds[0] : null;
     const bl = await prisma.budgetLine.create({
       data: {
         budgetId: budget2025v1.id,
         expenseId: exp.id,
         financialCompanyId: company.id,
+        technologyDirectionId: techDirId,
         currency: company.currencyCode || 'USD',
         planM1: vals[0], planM2: vals[1], planM3: vals[2], planM4: vals[3],
         planM5: vals[4], planM6: vals[5], planM7: vals[6], planM8: vals[7],
@@ -281,11 +286,14 @@ async function main() {
     const vals = monthlyBudgets[expIdx].map(v => Math.round(v * (0.9 + Math.random() * 0.2)));
     const companyIdx = exp.compIdx ?? 0;
     const company = financialCompanies[companyIdx];
+    const techDirIds2 = exp.technologyDirections || [];
+    const techDirId2 = techDirIds2.length > 0 ? techDirIds2[0] : null;
     const bl = await prisma.budgetLine.create({
       data: {
         budgetId: budget2025v2.id,
         expenseId: exp.id,
         financialCompanyId: company.id,
+        technologyDirectionId: techDirId2,
         currency: company.currencyCode || 'USD',
         planM1: vals[0], planM2: vals[1], planM3: vals[2], planM4: vals[3],
         planM5: vals[4], planM6: vals[5], planM7: vals[6], planM8: vals[7],
@@ -301,11 +309,14 @@ async function main() {
     const vals = monthlyBudgets[expIdx].map(v => Math.round(v * 1.15));
     const companyIdx = exp.compIdx ?? 0;
     const company = financialCompanies[companyIdx];
+    const techDirIds3 = exp.technologyDirections || [];
+    const techDirId3 = techDirIds3.length > 0 ? techDirIds3[0] : null;
     await prisma.budgetLine.create({
       data: {
         budgetId: budget2026v1.id,
         expenseId: exp.id,
         financialCompanyId: company.id,
+        technologyDirectionId: techDirId3,
         currency: company.currencyCode || 'USD',
         planM1: vals[0], planM2: vals[1], planM3: vals[2], planM4: vals[3],
         planM5: vals[4], planM6: vals[5], planM7: vals[6], planM8: vals[7],
@@ -405,15 +416,16 @@ async function main() {
 
   const { PasswordService } = await import('./services/PasswordService');
   const passwordService = new PasswordService();
-  const adminHash = await passwordService.hashPassword('admin123');
+  const adminHash = await passwordService.hashPassword('belcorp123');
   const userHash = await passwordService.hashPassword('user123');
 
-  const adminRole = await prisma.role.create({ data: { name: 'Administrador', description: 'Acceso completo al sistema', isSystem: true } });
+  const adminRole = await prisma.role.create({ data: { name: 'Administrador', description: 'Acceso completo al sistema', isSystem: true, approveAllDirections: true } });
   const viewerRole = await prisma.role.create({ data: { name: 'Visualizador', description: 'Solo lectura en todos los módulos' } });
   const budgetManagerRole = await prisma.role.create({ data: { name: 'Gestor de Presupuesto', description: 'Gestión completa de presupuestos y gastos' } });
   const analystRole = await prisma.role.create({ data: { name: 'Analista', description: 'Visualización y reportes' } });
+  const approverRole = await prisma.role.create({ data: { name: 'Aprobador', description: 'Aprobación de cambios en presupuesto', approverTechDirectionIds: [techDirections[0].id, techDirections[1].id, techDirections[2].id] } });
 
-  const allMenuCodes = ['dashboard', 'budgets', 'expenses', 'transactions', 'budget-lines', 'committed-transactions', 'real-transactions', 'master-data', 'technology-directions', 'user-areas', 'financial-companies', 'tag-definitions', 'conversion-rates', 'users', 'roles', 'reports', 'deferrals', 'configuration'];
+  const allMenuCodes = ['dashboard', 'budgets', 'expenses', 'transactions', 'budget-lines', 'committed-transactions', 'real-transactions', 'master-data', 'technology-directions', 'user-areas', 'financial-companies', 'tag-definitions', 'conversion-rates', 'users', 'roles', 'reports', 'deferrals', 'configuration', 'approvals'];
   for (const menuCode of allMenuCodes) {
     await prisma.permission.create({ data: { roleId: adminRole.id, menuCode, permissionType: PermissionType.VIEW } });
     await prisma.permission.create({ data: { roleId: adminRole.id, menuCode, permissionType: PermissionType.MODIFY } });
@@ -421,7 +433,7 @@ async function main() {
   for (const menuCode of allMenuCodes) {
     await prisma.permission.create({ data: { roleId: viewerRole.id, menuCode, permissionType: PermissionType.VIEW } });
   }
-  const budgetMenus = ['dashboard', 'budgets', 'expenses', 'transactions', 'budget-lines', 'committed-transactions', 'real-transactions', 'conversion-rates', 'reports', 'deferrals'];
+  const budgetMenus = ['dashboard', 'budgets', 'expenses', 'transactions', 'budget-lines', 'committed-transactions', 'real-transactions', 'conversion-rates', 'reports', 'deferrals', 'approvals'];
   for (const menuCode of budgetMenus) {
     await prisma.permission.create({ data: { roleId: budgetManagerRole.id, menuCode, permissionType: PermissionType.VIEW } });
     await prisma.permission.create({ data: { roleId: budgetManagerRole.id, menuCode, permissionType: PermissionType.MODIFY } });
@@ -431,12 +443,19 @@ async function main() {
     await prisma.permission.create({ data: { roleId: analystRole.id, menuCode, permissionType: PermissionType.VIEW } });
   }
 
+  // Approver role permissions
+  const approverMenus = ['dashboard', 'budgets', 'approvals'];
+  for (const menuCode of approverMenus) {
+    await prisma.permission.create({ data: { roleId: approverRole.id, menuCode, permissionType: PermissionType.VIEW } });
+  }
+  await prisma.permission.create({ data: { roleId: approverRole.id, menuCode: 'approvals', permissionType: PermissionType.APPROVE_BUDGET } });
+
   const adminUser = await prisma.user.create({ data: { username: 'admin', passwordHash: adminHash, email: 'admin@corp.com', fullName: 'Administrador del Sistema' } });
-  const user1 = await prisma.user.create({ data: { username: 'jperez', passwordHash: userHash, email: 'jperez@corp.com', fullName: 'Juan Pérez' } });
-  const user2 = await prisma.user.create({ data: { username: 'mgarcia', passwordHash: userHash, email: 'mgarcia@corp.com', fullName: 'María García' } });
-  const user3 = await prisma.user.create({ data: { username: 'clopez', passwordHash: userHash, email: 'clopez@corp.com', fullName: 'Carlos López' } });
-  const user4 = await prisma.user.create({ data: { username: 'amartinez', passwordHash: userHash, email: 'amartinez@corp.com', fullName: 'Ana Martínez' } });
-  const user5 = await prisma.user.create({ data: { username: 'rsanchez', passwordHash: userHash, email: 'rsanchez@corp.com', fullName: 'Roberto Sánchez' } });
+  const user1 = await prisma.user.create({ data: { username: 'jperez', passwordHash: userHash, email: 'jperez@corp.com', fullName: 'Juan Pérez', technologyDirectionId: techDirections[0].id } });
+  const user2 = await prisma.user.create({ data: { username: 'mgarcia', passwordHash: userHash, email: 'mgarcia@corp.com', fullName: 'María García', technologyDirectionId: techDirections[1].id } });
+  const user3 = await prisma.user.create({ data: { username: 'clopez', passwordHash: userHash, email: 'clopez@corp.com', fullName: 'Carlos López', technologyDirectionId: techDirections[2].id } });
+  const user4 = await prisma.user.create({ data: { username: 'amartinez', passwordHash: userHash, email: 'amartinez@corp.com', fullName: 'Ana Martínez', technologyDirectionId: techDirections[3].id } });
+  const user5 = await prisma.user.create({ data: { username: 'rsanchez', passwordHash: userHash, email: 'rsanchez@corp.com', fullName: 'Roberto Sánchez', technologyDirectionId: techDirections[4].id } });
 
   await prisma.userRole.create({ data: { userId: adminUser.id, roleId: adminRole.id } });
   await prisma.userRole.create({ data: { userId: user1.id, roleId: budgetManagerRole.id } });
@@ -444,6 +463,7 @@ async function main() {
   await prisma.userRole.create({ data: { userId: user3.id, roleId: analystRole.id } });
   await prisma.userRole.create({ data: { userId: user4.id, roleId: viewerRole.id } });
   await prisma.userRole.create({ data: { userId: user5.id, roleId: analystRole.id } });
+  await prisma.userRole.create({ data: { userId: user5.id, roleId: approverRole.id } });
 
   // ============================================
   // SAVINGS (using budgetLineId)
@@ -530,7 +550,7 @@ async function main() {
   console.log(`      - ${v2BudgetLines.length} líneas en 2025 v2`);
   console.log(`      - ~${docCounter} transacciones`);
   console.log('   👥 Usuarios:');
-  console.log('      - admin / admin123 (Administrador)');
+  console.log('      - admin / belcorp123 (Administrador)');
   console.log('      - jperez / user123 (Gestor de Presupuesto)');
   console.log('      - mgarcia / user123 (Gestor de Presupuesto)');
   console.log('      - clopez / user123 (Analista)');

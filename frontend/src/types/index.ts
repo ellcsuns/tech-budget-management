@@ -27,6 +27,7 @@ export interface BudgetLine {
   budgetId: string;
   expenseId: string;
   financialCompanyId: string;
+  technologyDirectionId?: string;
   currency: string;
   planM1: number;
   planM2: number;
@@ -42,6 +43,7 @@ export interface BudgetLine {
   planM12: number;
   expense?: Expense;
   financialCompany?: FinancialCompany;
+  technologyDirection?: TechnologyDirection;
   transactions?: Transaction[];
   createdAt: string;
   updatedAt: string;
@@ -49,7 +51,7 @@ export interface BudgetLine {
 
 export interface Transaction {
   id: string;
-  budgetLineId: string;
+  budgetLineId?: string;
   financialCompanyId: string;
   type: 'COMMITTED' | 'REAL';
   serviceDate: string;
@@ -258,4 +260,23 @@ export interface Deferral {
     username: string;
     fullName: string;
   };
+}
+
+
+// Change Request Types
+export interface ChangeRequest {
+  id: string;
+  budgetLineId: string;
+  requestedById: string;
+  approvedById?: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  currentValues: Record<string, number>;
+  proposedValues: Record<string, number>;
+  comment?: string;
+  resolvedAt?: string;
+  budgetLine?: BudgetLine & { budget?: Budget };
+  requestedBy?: { id: string; username: string; fullName: string };
+  approvedBy?: { id: string; username: string; fullName: string };
+  createdAt: string;
+  updatedAt: string;
 }

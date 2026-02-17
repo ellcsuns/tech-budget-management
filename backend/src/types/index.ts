@@ -41,6 +41,7 @@ export interface BudgetLineInput {
   budgetId: string;
   expenseId: string;
   financialCompanyId: string;
+  technologyDirectionId?: string;
   planM1?: number;
   planM2?: number;
   planM3?: number;
@@ -71,7 +72,7 @@ export interface MonthlyPlanValues {
 }
 
 export interface TransactionInput {
-  budgetLineId: string;
+  budgetLineId?: string;
   financialCompanyId: string;
   type: TransactionType;
   serviceDate: Date | string;
@@ -116,3 +117,9 @@ export interface ConversionRateInput {
 }
 
 export { TransactionType, TagInputType };
+
+export interface ChangeRequestInput {
+  budgetLineId: string;
+  proposedValues: MonthlyPlanValues;
+  comment?: string;
+}

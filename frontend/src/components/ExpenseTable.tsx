@@ -224,6 +224,8 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
                 Descripción{sortIcon('description')}
                 <span className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-accent" onMouseDown={onMouseDown} />
               </th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Moneda</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Empresa</th>
               {months.map((month) => (
                 <th key={month} colSpan={[filters.visibleColumns.budget, filters.visibleColumns.committed, filters.visibleColumns.real, true].filter(Boolean).length} className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border-l">
                   {month}
@@ -233,6 +235,8 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
             </tr>
             <tr>
               <th className="sticky left-0 bg-gray-50 z-10"></th>
+              <th></th>
+              <th></th>
               {months.map((month) => (
                 <React.Fragment key={month}>
                   {filters.visibleColumns.budget && <th className="px-2 py-2 text-xs text-gray-500">Ppto</th>}
@@ -258,6 +262,8 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
               return (
                 <tr key={bl.id} onClick={() => handleExpenseClick(bl.expenseId)} className="hover:bg-gray-50 cursor-pointer">
                   <td className="px-4 py-3 text-sm text-gray-900 sticky left-0 bg-white z-10" style={{ width: descWidth, maxWidth: descWidth, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bl.expense?.shortDescription}</td>
+                  <td className="px-3 py-3 text-sm text-gray-500 whitespace-nowrap">{bl.currency}</td>
+                  <td className="px-3 py-3 text-sm text-gray-500 whitespace-nowrap">{bl.financialCompany?.code || '-'}</td>
                   {monthlyValues.map((value) => (
                     <React.Fragment key={value.month}>
                       {filters.visibleColumns.budget && <td className="px-2 py-3 text-sm text-right text-gray-900">{value.budget > 0 ? fmt(value.budget) : '-'}</td>}
@@ -279,6 +285,8 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
           <tfoot className="bg-gray-100 font-bold">
             <tr>
               <td className="px-4 py-3 text-sm sticky left-0 bg-gray-100 z-10">Total</td>
+              <td></td>
+              <td></td>
               {monthlyGrandTotals.map(t => {
                 const diff = t.budget - (t.committed + t.real);
                 return (

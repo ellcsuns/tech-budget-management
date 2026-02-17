@@ -19,6 +19,7 @@ import { deferralsRouter } from './routes/deferrals';
 import { translationRouter } from './routes/translationRoutes';
 import { configRouter } from './routes/configRoutes';
 import { reportRouter } from './routes/reportRoutes';
+import { changeRequestRouter } from './routes/changeRequestRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/requestLogger';
 import { AuthService } from './services/AuthService';
@@ -66,6 +67,7 @@ app.use('/api/deferrals', deferralsRouter(prisma));
 app.use('/api/translations', translationRouter(prisma));
 app.use('/api/config', configRouter(prisma));
 app.use('/api/reports', reportRouter(prisma));
+app.use('/api/change-requests', changeRequestRouter(prisma));
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

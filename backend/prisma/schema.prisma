@@ -45,43 +45,47 @@ model Expense {
 
 // BudgetLine model - Vincula gasto con presupuesto y empresa financiera
 model BudgetLine {
-  id                  String           @id @default(uuid())
-  budgetId            String
-  budget              Budget           @relation(fields: [budgetId], references: [id], onDelete: Cascade)
-  expenseId           String
-  expense             Expense          @relation(fields: [expenseId], references: [id], onDelete: Cascade)
-  financialCompanyId  String
-  financialCompany    FinancialCompany @relation(fields: [financialCompanyId], references: [id])
-  currency            String
-  planM1              Decimal          @default(0) @db.Decimal(15, 2)
-  planM2              Decimal          @default(0) @db.Decimal(15, 2)
-  planM3              Decimal          @default(0) @db.Decimal(15, 2)
-  planM4              Decimal          @default(0) @db.Decimal(15, 2)
-  planM5              Decimal          @default(0) @db.Decimal(15, 2)
-  planM6              Decimal          @default(0) @db.Decimal(15, 2)
-  planM7              Decimal          @default(0) @db.Decimal(15, 2)
-  planM8              Decimal          @default(0) @db.Decimal(15, 2)
-  planM9              Decimal          @default(0) @db.Decimal(15, 2)
-  planM10             Decimal          @default(0) @db.Decimal(15, 2)
-  planM11             Decimal          @default(0) @db.Decimal(15, 2)
-  planM12             Decimal          @default(0) @db.Decimal(15, 2)
-  transactions        Transaction[]
-  savings             Saving[]
-  deferrals           Deferral[]
-  createdAt           DateTime         @default(now())
-  updatedAt           DateTime         @updatedAt
+  id                      String                  @id @default(uuid())
+  budgetId                String
+  budget                  Budget                  @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  expenseId               String
+  expense                 Expense                 @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  financialCompanyId      String
+  financialCompany        FinancialCompany        @relation(fields: [financialCompanyId], references: [id])
+  technologyDirectionId   String?
+  technologyDirection     TechnologyDirection?    @relation(fields: [technologyDirectionId], references: [id])
+  currency                String
+  planM1                  Decimal                 @default(0) @db.Decimal(15, 2)
+  planM2                  Decimal                 @default(0) @db.Decimal(15, 2)
+  planM3                  Decimal                 @default(0) @db.Decimal(15, 2)
+  planM4                  Decimal                 @default(0) @db.Decimal(15, 2)
+  planM5                  Decimal                 @default(0) @db.Decimal(15, 2)
+  planM6                  Decimal                 @default(0) @db.Decimal(15, 2)
+  planM7                  Decimal                 @default(0) @db.Decimal(15, 2)
+  planM8                  Decimal                 @default(0) @db.Decimal(15, 2)
+  planM9                  Decimal                 @default(0) @db.Decimal(15, 2)
+  planM10                 Decimal                 @default(0) @db.Decimal(15, 2)
+  planM11                 Decimal                 @default(0) @db.Decimal(15, 2)
+  planM12                 Decimal                 @default(0) @db.Decimal(15, 2)
+  transactions            Transaction[]
+  savings                 Saving[]
+  deferrals               Deferral[]
+  changeRequests          BudgetLineChangeRequest[]
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
 
   @@unique([budgetId, expenseId, financialCompanyId])
   @@index([budgetId])
   @@index([expenseId])
   @@index([financialCompanyId])
+  @@index([technologyDirectionId])
 }
 
 // Transaction model
 model Transaction {
   id                      String            @id @default(uuid())
-  budgetLineId            String
-  budgetLine              BudgetLine        @relation(fields: [budgetLineId], references: [id], onDelete: Cascade)
+  budgetLineId            String?
+  budgetLine              BudgetLine?       @relation(fields: [budgetLineId], references: [id], onDelete: SetNull)
   financialCompanyId      String
   financialCompany        FinancialCompany  @relation(fields: [financialCompanyId], references: [id])
   type                    TransactionType
@@ -130,12 +134,14 @@ model ConversionRate {
 
 // TechnologyDirection model
 model TechnologyDirection {
-  id          String   @id @default(uuid())
-  code        String   @unique
+  id          String       @id @default(uuid())
+  code        String       @unique
   name        String
   description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  budgetLines BudgetLine[]
+  users       User[]       @relation("UserTechDirection")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
 
 // UserArea model
@@ -214,34 +220,41 @@ model TagValue {
 // ============================================
 
 model User {
-  id           String      @id @default(uuid())
-  username     String      @unique
-  passwordHash String
-  email        String      @unique
-  fullName     String
-  active       Boolean     @default(true)
-  lastLoginAt  DateTime?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  userRoles    UserRole[]
-  sessions     Session[]
-  savings      Saving[]
-  deferrals    Deferral[]
+  id                      String                  @id @default(uuid())
+  username                String                  @unique
+  passwordHash            String
+  email                   String                  @unique
+  fullName                String
+  active                  Boolean                 @default(true)
+  technologyDirectionId   String?
+  technologyDirection     TechnologyDirection?    @relation("UserTechDirection", fields: [technologyDirectionId], references: [id])
+  lastLoginAt             DateTime?
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
+  userRoles               UserRole[]
+  sessions                Session[]
+  savings                 Saving[]
+  deferrals               Deferral[]
+  changeRequests          BudgetLineChangeRequest[] @relation("ChangeRequestCreator")
+  approvedRequests        BudgetLineChangeRequest[] @relation("ChangeRequestApprover")
   
   @@index([username])
   @@index([email])
   @@index([active])
+  @@index([technologyDirectionId])
 }
 
 model Role {
-  id          String       @id @default(uuid())
-  name        String       @unique
-  description String
-  isSystem    Boolean      @default(false)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  userRoles   UserRole[]
-  permissions Permission[]
+  id                       String       @id @default(uuid())
+  name                     String       @unique
+  description              String
+  isSystem                 Boolean      @default(false)
+  approveAllDirections     Boolean      @default(false)
+  approverTechDirectionIds String[]
+  createdAt                DateTime     @default(now())
+  updatedAt                DateTime     @updatedAt
+  userRoles                UserRole[]
+  permissions              Permission[]
   
   @@index([name])
 }
@@ -275,6 +288,9 @@ model Permission {
 enum PermissionType {
   VIEW
   MODIFY
+  VIEW_OWN
+  MODIFY_OWN
+  APPROVE_BUDGET
 }
 
 model Session {
@@ -288,6 +304,38 @@ model Session {
   @@index([userId])
   @@index([expiresAt])
   @@index([token])
+}
+
+// ============================================
+// Budget Line Change Requests (Approval Workflow)
+// ============================================
+
+model BudgetLineChangeRequest {
+  id              String                    @id @default(uuid())
+  budgetLineId    String
+  budgetLine      BudgetLine                @relation(fields: [budgetLineId], references: [id], onDelete: Cascade)
+  requestedById   String
+  requestedBy     User                      @relation("ChangeRequestCreator", fields: [requestedById], references: [id])
+  approvedById    String?
+  approvedBy      User?                     @relation("ChangeRequestApprover", fields: [approvedById], references: [id])
+  status          ChangeRequestStatus       @default(PENDING)
+  currentValues   Json
+  proposedValues  Json
+  comment         String?
+  resolvedAt      DateTime?
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+
+  @@index([budgetLineId])
+  @@index([requestedById])
+  @@index([approvedById])
+  @@index([status])
+}
+
+enum ChangeRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 // ============================================

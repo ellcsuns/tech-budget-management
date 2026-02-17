@@ -67,8 +67,8 @@ export function budgetRouter(prisma: PrismaClient) {
   // Add budget line
   router.post('/:id/budget-lines', async (req, res, next) => {
     try {
-      const { expenseId, financialCompanyId } = req.body;
-      res.status(201).json(await budgetService.addBudgetLine(req.params.id, expenseId, financialCompanyId));
+      const { expenseId, financialCompanyId, technologyDirectionId } = req.body;
+      res.status(201).json(await budgetService.addBudgetLine(req.params.id, expenseId, financialCompanyId, technologyDirectionId));
     } catch (error: any) {
       if (error.message?.includes('Ya existe')) return res.status(409).json({ error: error.message });
       if (error.message?.includes('no encontrad')) return res.status(404).json({ error: error.message });

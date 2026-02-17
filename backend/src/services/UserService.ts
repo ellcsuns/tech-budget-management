@@ -7,12 +7,14 @@ export interface CreateUserDTO {
   email: string;
   fullName: string;
   roleIds: string[];
+  technologyDirectionId?: string;
 }
 
 export interface UpdateUserDTO {
   email?: string;
   fullName?: string;
   roleIds?: string[];
+  technologyDirectionId?: string | null;
 }
 
 export interface UserFilters {
@@ -90,6 +92,7 @@ export class UserService {
         passwordHash,
         email: data.email,
         fullName: data.fullName,
+        technologyDirectionId: data.technologyDirectionId,
         userRoles: {
           create: data.roleIds.map(roleId => ({ roleId }))
         }
@@ -157,7 +160,8 @@ export class UserService {
       where: { id: userId },
       data: {
         email: data.email,
-        fullName: data.fullName
+        fullName: data.fullName,
+        technologyDirectionId: data.technologyDirectionId,
       },
       include: {
         userRoles: {

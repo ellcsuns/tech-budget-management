@@ -9,7 +9,7 @@ export class TransactionService {
   }
 
   async createTransaction(data: TransactionInput): Promise<Transaction> {
-    if (!data.budgetLineId || !data.financialCompanyId || !data.type || !data.serviceDate ||
+    if (!data.financialCompanyId || !data.type || !data.serviceDate ||
         !data.postingDate || !data.referenceDocumentNumber || !data.externalPlatformLink ||
         !data.transactionCurrency || data.transactionValue === undefined) {
       throw new Error('Todos los campos requeridos deben ser proporcionados');
@@ -17,45 +17,56 @@ export class TransactionService {
 
     const postingDateObj = new Date(data.postingDate);
     const serviceDateObj = new Date(data.serviceDate);
-    const month = postingDateObj.getMonth() + 1; // Derivar mes de postingDate
+    const month = postingDateObj.getMonth() + 1;
 
-    // Validar que la línea de presupuesto existe
-    const budgetLine = await this.prisma.budgetLine.findUnique({
-      where: { id: data.budgetLineId },
-      include: { budget: true }
-    });
-    if (!budgetLine) throw new Error('Línea de presupuesto no encontrada');
+    // Validar línea de presupuesto si se proporciona
+    let budgetId: string | null = null;
+    if (data.budgetLineId) {
+      const budgetLine = await this.prisma.budgetLine.findUnique({
+        where: { id: data.budgetLineId },
+        include: { budget: true }
+      });
+      if (!budgetLine) throw new Error('Línea de presupuesto no encontrada');
+      budgetId = budgetLine.budgetId;
+    }
 
     // Validar que la empresa financiera existe
     const company = await this.prisma.financialCompany.findUnique({ where: { id: data.financialCompanyId } });
     if (!company) throw new Error('Empresa financiera no encontrada');
 
-    // Validar unicidad de referenceDocumentNumber por budgetLine
-    const existing = await this.prisma.transaction.findUnique({
-      where: {
-        budgetLineId_referenceDocumentNumber: {
-          budgetLineId: data.budgetLineId,
-          referenceDocumentNumber: data.referenceDocumentNumber
+    // Validar unicidad de referenceDocumentNumber por budgetLine (solo si tiene budgetLine)
+    if (data.budgetLineId) {
+      const existing = await this.prisma.transaction.findUnique({
+        where: {
+          budgetLineId_referenceDocumentNumber: {
+            budgetLineId: data.budgetLineId,
+            referenceDocumentNumber: data.referenceDocumentNumber
+          }
         }
-      }
-    });
-    if (existing) throw new Error(`Ya existe una transacción con el número de documento ${data.referenceDocumentNumber}`);
+      });
+      if (existing) throw new Error(`Ya existe una transacción con el número de documento ${data.referenceDocumentNumber}`);
+    }
 
     if (month < 1 || month > 12) throw new Error('El mes debe estar entre 1 y 12');
 
-    // Obtener tasa de conversión
-    const conversionRate = await this.prisma.conversionRate.findUnique({
-      where: {
-        budgetId_currency_month: {
-          budgetId: budgetLine.budgetId,
-          currency: data.transactionCurrency,
-          month
+    // Obtener tasa de conversión (necesita un budgetId)
+    let usdValue = data.transactionValue;
+    let convRate = 1.0;
+    if (budgetId) {
+      const conversionRate = await this.prisma.conversionRate.findUnique({
+        where: {
+          budgetId_currency_month: {
+            budgetId,
+            currency: data.transactionCurrency,
+            month
+          }
         }
+      });
+      if (conversionRate) {
+        convRate = Number(conversionRate.rate);
+        usdValue = data.transactionValue * convRate;
       }
-    });
-    if (!conversionRate) throw new Error(`No se encontró tasa de conversión para ${data.transactionCurrency} en el mes ${month}`);
-
-    const usdValue = data.transactionValue * Number(conversionRate.rate);
+    }
 
     // Lógica de compensación: si es REAL y referencia una comprometida
     if (data.type === TransactionType.REAL && data.committedTransactionId) {
@@ -69,7 +80,7 @@ export class TransactionService {
     return await this.prisma.$transaction(async (tx: any) => {
       const transaction = await tx.transaction.create({
         data: {
-          budgetLineId: data.budgetLineId,
+          budgetLineId: data.budgetLineId || null,
           financialCompanyId: data.financialCompanyId,
           type: data.type,
           serviceDate: serviceDateObj,
@@ -79,7 +90,7 @@ export class TransactionService {
           transactionCurrency: data.transactionCurrency,
           transactionValue: data.transactionValue,
           usdValue,
-          conversionRate: conversionRate.rate,
+          conversionRate: convRate,
           month,
           compensatedById: data.committedTransactionId || null,
           isCompensated: false

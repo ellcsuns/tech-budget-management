@@ -37,6 +37,7 @@ export class BudgetLineService {
         budgetId: data.budgetId,
         expenseId: data.expenseId,
         financialCompanyId: data.financialCompanyId,
+        technologyDirectionId: data.technologyDirectionId || null,
         currency,
         planM1: data.planM1 || 0,
         planM2: data.planM2 || 0,
@@ -51,7 +52,7 @@ export class BudgetLineService {
         planM11: data.planM11 || 0,
         planM12: data.planM12 || 0,
       },
-      include: { expense: true, financialCompany: true, budget: true }
+      include: { expense: true, financialCompany: true, budget: true, technologyDirection: true }
     });
   }
 
@@ -61,6 +62,7 @@ export class BudgetLineService {
       include: {
         expense: { include: { tagValues: { include: { tagDefinition: true } } } },
         financialCompany: true,
+        technologyDirection: true,
         transactions: true
       },
       orderBy: { expense: { code: 'asc' } }
@@ -73,6 +75,7 @@ export class BudgetLineService {
       include: {
         expense: true,
         financialCompany: true,
+        technologyDirection: true,
         budget: true,
         transactions: true
       }

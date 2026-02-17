@@ -12,7 +12,8 @@ import type {
   Saving,
   ExpenseWithTags,
   CustomTag,
-  Deferral
+  Deferral,
+  ChangeRequest
 } from '../types';
 
 const API_BASE_URL = '/api';
@@ -66,8 +67,8 @@ export const budgetApi = {
   getActive: () => api.get<Budget>('/budgets/active'),
   compare: (budgetAId: string, budgetBId: string) =>
     api.get(`/budgets/compare?budgetA=${budgetAId}&budgetB=${budgetBId}`),
-  addBudgetLine: (budgetId: string, expenseId: string, financialCompanyId: string) =>
-    api.post(`/budgets/${budgetId}/budget-lines`, { expenseId, financialCompanyId }),
+  addBudgetLine: (budgetId: string, expenseId: string, financialCompanyId: string, technologyDirectionId?: string) =>
+    api.post(`/budgets/${budgetId}/budget-lines`, { expenseId, financialCompanyId, technologyDirectionId }),
   removeBudgetLine: (budgetId: string, budgetLineId: string) =>
     api.delete(`/budgets/${budgetId}/budget-lines/${budgetLineId}`)
 };
@@ -221,6 +222,15 @@ export const reportApi = {
     const p = new URLSearchParams(filters);
     return api.get(`/reports/${type}?${p.toString()}`);
   }
+};
+
+// Change Request API
+export const changeRequestApi = {
+  create: (data: { budgetLineId: string; proposedValues: Record<string, number>; comment?: string }) =>
+    api.post<ChangeRequest>('/change-requests', data),
+  getPending: () => api.get<ChangeRequest[]>('/change-requests/pending'),
+  approve: (id: string) => api.post<ChangeRequest>(`/change-requests/${id}/approve`),
+  reject: (id: string) => api.post<ChangeRequest>(`/change-requests/${id}/reject`),
 };
 
 // Keep planValueApi for backward compat (redirects to budget-lines)

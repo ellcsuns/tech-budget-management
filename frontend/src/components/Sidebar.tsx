@@ -21,6 +21,7 @@ import {
   HiOutlineScale,
   HiOutlineTableCells,
   HiOutlineLanguage,
+  HiOutlineClipboardDocumentCheck,
 } from 'react-icons/hi2';
 import { IconType } from 'react-icons';
 
@@ -39,6 +40,7 @@ const menuItems: MenuItem[] = [
   { path: '/budget-compare', labelKey: 'menu.compareBudgets', fallback: 'Comparar Presupuestos', icon: HiOutlineScale, menuCode: 'budgets' },
   { path: '/savings', labelKey: 'menu.savings', fallback: 'Ahorros', icon: HiOutlineCurrencyDollar, menuCode: 'budgets' },
   { path: '/deferrals', labelKey: 'menu.deferrals', fallback: 'Diferidos', icon: HiOutlineCalendarDays, menuCode: 'budgets' },
+  { path: '/approvals', labelKey: 'menu.approvals', fallback: 'Aprobaciones', icon: HiOutlineClipboardDocumentCheck, menuCode: 'approvals' },
   { path: '/expenses', labelKey: 'menu.expenses', fallback: 'Gastos', icon: HiOutlineDocumentText, menuCode: 'expenses' },
   { path: '/plan-values', labelKey: 'menu.planValues', fallback: 'Valores Plan', icon: HiOutlineChartBar, menuCode: 'plan-values' },
   { path: '/committed-transactions', labelKey: 'menu.committedTransactions', fallback: 'Trans. Comprometidas', icon: HiOutlineLockClosed, menuCode: 'committed-transactions' },

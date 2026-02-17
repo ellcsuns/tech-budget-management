@@ -28,6 +28,7 @@ export class BudgetService {
           include: {
             expense: { include: { tagValues: { include: { tagDefinition: true } } } },
             financialCompany: true,
+            technologyDirection: true,
             transactions: true
           }
         },
@@ -75,12 +76,12 @@ export class BudgetService {
     let budget = await this.prisma.budget.findFirst({
       where: { year: currentYear },
       orderBy: { createdAt: 'desc' },
-      include: { budgetLines: { include: { expense: true, financialCompany: true, transactions: true } }, conversionRates: true }
+      include: { budgetLines: { include: { expense: true, financialCompany: true, technologyDirection: true, transactions: true } }, conversionRates: true }
     });
     if (budget) return budget;
     return await this.prisma.budget.findFirst({
       orderBy: [{ year: 'desc' }, { createdAt: 'desc' }],
-      include: { budgetLines: { include: { expense: true, financialCompany: true, transactions: true } }, conversionRates: true }
+      include: { budgetLines: { include: { expense: true, financialCompany: true, technologyDirection: true, transactions: true } }, conversionRates: true }
     });
   }
 
@@ -89,14 +90,14 @@ export class BudgetService {
       this.prisma.budget.findUnique({
         where: { id: budgetAId },
         include: {
-          budgetLines: { include: { expense: true, financialCompany: true } },
+          budgetLines: { include: { expense: true, financialCompany: true, technologyDirection: true } },
           conversionRates: true
         }
       }),
       this.prisma.budget.findUnique({
         where: { id: budgetBId },
         include: {
-          budgetLines: { include: { expense: true, financialCompany: true } },
+          budgetLines: { include: { expense: true, financialCompany: true, technologyDirection: true } },
           conversionRates: true
         }
       })
@@ -117,7 +118,8 @@ export class BudgetService {
           budgetLines: {
             include: {
               expense: { include: { tagValues: { include: { tagDefinition: true } } } },
-              financialCompany: true
+              financialCompany: true,
+              technologyDirection: true
             }
           },
           conversionRates: true
@@ -147,6 +149,7 @@ export class BudgetService {
             budgetId: newBudget.id,
             expenseId: line.expenseId,
             financialCompanyId: line.financialCompanyId,
+            technologyDirectionId: line.technologyDirectionId,
             currency: line.currency,
             planM1: change?.planM1 ?? line.planM1,
             planM2: change?.planM2 ?? line.planM2,
@@ -166,7 +169,7 @@ export class BudgetService {
 
       return await tx.budget.findUnique({
         where: { id: newBudget.id },
-        include: { budgetLines: { include: { expense: true, financialCompany: true } }, conversionRates: true }
+        include: { budgetLines: { include: { expense: true, financialCompany: true, technologyDirection: true } }, conversionRates: true }
       }) as Budget;
     });
   }
@@ -182,7 +185,7 @@ export class BudgetService {
     return `v${parseInt(match[1])}.${parseInt(match[2]) + 1}`;
   }
 
-  async addBudgetLine(budgetId: string, expenseId: string, financialCompanyId: string) {
+  async addBudgetLine(budgetId: string, expenseId: string, financialCompanyId: string, technologyDirectionId?: string) {
     const budget = await this.prisma.budget.findUnique({ where: { id: budgetId } });
     if (!budget) throw new Error('Presupuesto no encontrado');
 
@@ -200,9 +203,10 @@ export class BudgetService {
     return await this.prisma.budgetLine.create({
       data: {
         budgetId, expenseId, financialCompanyId,
+        technologyDirectionId,
         currency: company.currencyCode,
       },
-      include: { expense: true, financialCompany: true }
+      include: { expense: true, financialCompany: true, technologyDirection: true }
     });
   }
 
