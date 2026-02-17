@@ -237,6 +237,7 @@ model User {
   deferrals               Deferral[]
   changeRequests          BudgetLineChangeRequest[] @relation("ChangeRequestCreator")
   approvedRequests        BudgetLineChangeRequest[] @relation("ChangeRequestApprover")
+  auditLogs               AuditLog[]
   
   @@index([username])
   @@index([email])
@@ -336,6 +337,27 @@ enum ChangeRequestStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+// ============================================
+// Audit Log
+// ============================================
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action      String
+  entity      String
+  entityId    String?
+  details     Json?
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([entity])
+  @@index([createdAt])
 }
 
 // ============================================

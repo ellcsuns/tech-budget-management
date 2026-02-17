@@ -22,6 +22,7 @@ import {
   HiOutlineTableCells,
   HiOutlineLanguage,
   HiOutlineClipboardDocumentCheck,
+  HiOutlineClipboardDocumentList,
 } from 'react-icons/hi2';
 import { IconType } from 'react-icons';
 
@@ -52,6 +53,7 @@ const menuItems: MenuItem[] = [
   { path: '/users', labelKey: 'menu.users', fallback: 'Usuarios', icon: HiOutlineUserGroup, menuCode: 'users', section: 'config' },
   { path: '/roles', labelKey: 'menu.roles', fallback: 'Roles', icon: HiOutlineShieldCheck, menuCode: 'roles', section: 'config' },
   { path: '/translations', labelKey: 'menu.translations', fallback: 'Traducciones', icon: HiOutlineLanguage, menuCode: 'users', section: 'config' },
+  { path: '/audit', labelKey: 'menu.audit', fallback: 'Auditoría', icon: HiOutlineClipboardDocumentList, menuCode: 'audit', section: 'config' },
 ];
 
 export default function Sidebar() {

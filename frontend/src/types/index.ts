@@ -280,3 +280,21 @@ export interface ChangeRequest {
   createdAt: string;
   updatedAt: string;
 }
+
+
+// Audit Log Types
+export interface AuditLog {
+  id: string;
+  userId?: string;
+  action: string;
+  entity: string;
+  entityId?: string;
+  details?: any;
+  ipAddress?: string;
+  createdAt: string;
+  user?: {
+    id: string;
+    username: string;
+    fullName: string;
+  };
+}

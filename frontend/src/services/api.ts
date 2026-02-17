@@ -233,6 +233,17 @@ export const changeRequestApi = {
   reject: (id: string) => api.post<ChangeRequest>(`/change-requests/${id}/reject`),
 };
 
+// Audit API
+export const auditApi = {
+  getLogs: (filters?: { userId?: string; action?: string; entity?: string; dateFrom?: string; dateTo?: string; page?: number; pageSize?: number }) => {
+    const params = new URLSearchParams();
+    if (filters) Object.entries(filters).forEach(([key, value]) => { if (value !== undefined && value !== null) params.append(key, String(value)); });
+    return api.get(`/audit?${params.toString()}`);
+  },
+  getActions: () => api.get<string[]>('/audit/actions'),
+  getEntities: () => api.get<string[]>('/audit/entities'),
+};
+
 // Keep planValueApi for backward compat (redirects to budget-lines)
 export const planValueApi = {
   getByExpense: (expenseId: string) => api.get(`/budget-lines?expenseId=${expenseId}`),

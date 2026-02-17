@@ -226,8 +226,8 @@ export class TransactionService {
       return { transactionCurrency: '', transactionValue: 0, usdValue: 0, conversionRate: 0, month };
     }
 
-    const totalTransactionValue = transactions.reduce((sum, t) => sum + Number(t.transactionValue), 0);
-    const totalUsdValue = transactions.reduce((sum, t) => sum + Number(t.usdValue), 0);
+    const totalTransactionValue = transactions.reduce((sum: number, t: any) => sum + Number(t.transactionValue), 0);
+    const totalUsdValue = transactions.reduce((sum: number, t: any) => sum + Number(t.usdValue), 0);
 
     return {
       transactionCurrency: transactions[0].transactionCurrency,
@@ -247,8 +247,8 @@ export class TransactionService {
       return { transactionCurrency: '', transactionValue: 0, usdValue: 0, conversionRate: 0, month };
     }
 
-    const totalTransactionValue = transactions.reduce((sum, t) => sum + Number(t.transactionValue), 0);
-    const totalUsdValue = transactions.reduce((sum, t) => sum + Number(t.usdValue), 0);
+    const totalTransactionValue = transactions.reduce((sum: number, t: any) => sum + Number(t.transactionValue), 0);
+    const totalUsdValue = transactions.reduce((sum: number, t: any) => sum + Number(t.usdValue), 0);
 
     return {
       transactionCurrency: transactions[0].transactionCurrency,

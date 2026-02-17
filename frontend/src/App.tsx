@@ -25,6 +25,7 @@ import TranslationsPage from './pages/TranslationsPage';
 import BudgetComparePage from './pages/BudgetComparePage';
 import DetailedReportsPage from './pages/DetailedReportsPage';
 import ApprovalsPage from './pages/ApprovalsPage';
+import AuditPage from './pages/AuditPage';
 
 function App() {
   return (
@@ -56,6 +57,7 @@ function App() {
               <Route path="/configuration" element={<ProtectedRoute menuCode="users" permissionType="VIEW"><Layout><ConfigurationPage /></Layout></ProtectedRoute>} />
               <Route path="/translations" element={<ProtectedRoute menuCode="users" permissionType="VIEW"><Layout><TranslationsPage /></Layout></ProtectedRoute>} />
               <Route path="/approvals" element={<ProtectedRoute menuCode="approvals" permissionType="VIEW"><Layout><ApprovalsPage /></Layout></ProtectedRoute>} />
+              <Route path="/audit" element={<ProtectedRoute menuCode="audit" permissionType="VIEW"><Layout><AuditPage /></Layout></ProtectedRoute>} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </ActiveBudgetProvider>

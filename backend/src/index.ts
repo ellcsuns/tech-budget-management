@@ -20,9 +20,12 @@ import { translationRouter } from './routes/translationRoutes';
 import { configRouter } from './routes/configRoutes';
 import { reportRouter } from './routes/reportRoutes';
 import { changeRequestRouter } from './routes/changeRequestRoutes';
+import { auditRouter } from './routes/auditRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/requestLogger';
+import { createAuditLogger } from './middleware/auditLogger';
 import { AuthService } from './services/AuthService';
+import { AuditService } from './services/AuditService';
 import { PasswordService } from './services/PasswordService';
 import { UserService } from './services/UserService';
 import { RoleService } from './services/RoleService';
@@ -40,9 +43,12 @@ const authService = new AuthService(prisma, passwordService, userService, roleSe
 
 authService.ensureDefaultAdmin().catch(console.error);
 
+const auditService = new AuditService(prisma);
+
 app.use(cors());
 app.use(express.json());
 app.use(requestLogger);
+app.use(createAuditLogger(auditService));
 
 // Auth Routes
 app.use('/api/auth', authRouter(prisma));
@@ -68,6 +74,7 @@ app.use('/api/translations', translationRouter(prisma));
 app.use('/api/config', configRouter(prisma));
 app.use('/api/reports', reportRouter(prisma));
 app.use('/api/change-requests', changeRequestRouter(prisma));
+app.use('/api/audit', auditRouter(prisma));
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

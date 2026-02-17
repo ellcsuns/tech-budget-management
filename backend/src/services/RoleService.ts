@@ -4,12 +4,16 @@ import { isValidMenuCode } from '../constants/menuCodes';
 export interface CreateRoleDTO {
   name: string;
   description: string;
+  approveAllDirections?: boolean;
+  approverTechDirectionIds?: string[];
   permissions: PermissionConfigDTO[];
 }
 
 export interface UpdateRoleDTO {
   name?: string;
   description?: string;
+  approveAllDirections?: boolean;
+  approverTechDirectionIds?: string[];
   permissions?: PermissionConfigDTO[];
 }
 
@@ -53,6 +57,8 @@ export class RoleService {
       data: {
         name: data.name,
         description: data.description,
+        approveAllDirections: data.approveAllDirections || false,
+        approverTechDirectionIds: data.approverTechDirectionIds || [],
         permissions: {
           create: normalizedPermissions.map(p => ({
             menuCode: p.menuCode,
@@ -122,7 +128,9 @@ export class RoleService {
       where: { id: roleId },
       data: {
         name: data.name,
-        description: data.description
+        description: data.description,
+        approveAllDirections: data.approveAllDirections,
+        approverTechDirectionIds: data.approverTechDirectionIds
       },
       include: {
         permissions: true
@@ -258,15 +266,12 @@ export class RoleService {
    * Validate permissions
    */
   private validatePermissions(permissions: PermissionConfigDTO[]): void {
+    const validTypes = Object.values(PermissionType);
     for (const permission of permissions) {
       if (!isValidMenuCode(permission.menuCode)) {
         throw new Error(`Invalid menu code: ${permission.menuCode}`);
       }
-
-      if (
-        permission.permissionType !== PermissionType.VIEW &&
-        permission.permissionType !== PermissionType.MODIFY
-      ) {
+      if (!validTypes.includes(permission.permissionType)) {
         throw new Error(`Invalid permission type: ${permission.permissionType}`);
       }
     }
@@ -287,6 +292,10 @@ export class RoleService {
       // If MODIFY permission, also add VIEW
       if (permission.permissionType === PermissionType.MODIFY) {
         permissionMap.get(permission.menuCode)!.add(PermissionType.VIEW);
+      }
+      // If MODIFY_OWN permission, also add VIEW_OWN
+      if (permission.permissionType === PermissionType.MODIFY_OWN) {
+        permissionMap.get(permission.menuCode)!.add(PermissionType.VIEW_OWN);
       }
     }
 

@@ -12,12 +12,13 @@ interface BudgetTableProps {
   canEdit: boolean;
   onCellEdit: (budgetLineId: string, month: number, value: string) => void;
   onRemoveRow: (budgetLineId: string) => void;
+  onRowClick?: (bl: BudgetLine) => void;
 }
 
 const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
 export default function BudgetTable(props: BudgetTableProps) {
-  const { budgetLines, editedCells, validationErrors, canEdit, onCellEdit, onRemoveRow } = props;
+  const { budgetLines, editedCells, validationErrors, canEdit, onCellEdit, onRemoveRow, onRowClick } = props;
   const [descWidth, setDescWidth] = useState(180);
   const resizing = useRef(false);
   const startX = useRef(0);
@@ -108,7 +109,7 @@ export default function BudgetTable(props: BudgetTableProps) {
           {budgetLines.map((bl) => {
             const lineTotal = getLineTotal(bl);
             return (
-              <tr key={bl.id} className="hover:bg-gray-50 group">
+              <tr key={bl.id} className="hover:bg-gray-50 group cursor-pointer" onClick={() => onRowClick?.(bl)}>
                 <td className="px-4 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">{bl.expense?.code}</td>
                 <td className="px-4 py-2 text-sm text-gray-700" style={{ width: descWidth, maxWidth: descWidth, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {bl.expense?.shortDescription}

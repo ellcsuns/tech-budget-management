@@ -11,7 +11,7 @@ interface User {
 
 interface Permission {
   menuCode: string;
-  permissionType: 'VIEW' | 'MODIFY';
+  permissionType: 'VIEW' | 'MODIFY' | 'VIEW_OWN' | 'MODIFY_OWN' | 'APPROVE_BUDGET';
 }
 
 interface AuthContextType {
@@ -21,7 +21,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
-  hasPermission: (menuCode: string, permissionType: 'VIEW' | 'MODIFY') => boolean;
+  hasPermission: (menuCode: string, permissionType: 'VIEW' | 'MODIFY' | 'VIEW_OWN' | 'MODIFY_OWN' | 'APPROVE_BUDGET') => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setPermissions([]);
   };
 
-  const hasPermission = (menuCode: string, permissionType: 'VIEW' | 'MODIFY'): boolean => {
+  const hasPermission = (menuCode: string, permissionType: 'VIEW' | 'MODIFY' | 'VIEW_OWN' | 'MODIFY_OWN' | 'APPROVE_BUDGET'): boolean => {
     return permissions.some(
       p => p.menuCode === menuCode && p.permissionType === permissionType
     );
