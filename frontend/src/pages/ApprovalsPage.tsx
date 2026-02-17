@@ -38,6 +38,7 @@ export default function ApprovalsPage() {
 
   return (
     <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-gray-800">Aprobaciones Pendientes</h1>
       {requests.length === 0 ? (
         <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">No hay solicitudes pendientes de aprobación</div>
       ) : (

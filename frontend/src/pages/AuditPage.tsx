@@ -72,6 +72,7 @@ export default function AuditPage() {
 
   return (
     <div>
+      <h1 className="text-2xl font-bold text-gray-800 mb-6">Auditoría</h1>
       <div className="flex justify-between items-center mb-4">
         <div className="text-sm text-gray-500">{total} registros encontrados</div>
         <button onClick={() => setShowFilters(!showFilters)} className="flex items-center gap-1 text-sm text-accent hover:underline">

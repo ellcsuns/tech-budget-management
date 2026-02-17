@@ -1,15 +1,31 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, PermissionType } from '@prisma/client';
 import { ChangeRequestService } from '../services/ChangeRequestService';
+import { AuthService } from '../services/AuthService';
+import { PasswordService } from '../services/PasswordService';
+import { UserService } from '../services/UserService';
+import { RoleService } from '../services/RoleService';
+import { PermissionService } from '../services/PermissionService';
+import { createAuthenticateJWT } from '../middleware/authenticateJWT';
+import { createRequirePermission } from '../middleware/requirePermission';
+import { MENU_CODES } from '../constants/menuCodes';
 
 export function changeRequestRouter(prisma: PrismaClient) {
   const router = Router();
   const service = new ChangeRequestService(prisma);
 
-  router.post('/', async (req: any, res, next) => {
+  const passwordService = new PasswordService();
+  const userService = new UserService(prisma, passwordService);
+  const roleService = new RoleService(prisma);
+  const authService = new AuthService(prisma, passwordService, userService, roleService);
+  const permissionService = new PermissionService(prisma);
+
+  const authenticateJWT = createAuthenticateJWT(authService);
+  const requirePermission = createRequirePermission(permissionService);
+
+  router.post('/', authenticateJWT, requirePermission(MENU_CODES.APPROVALS, PermissionType.CREATE), async (req, res, next) => {
     try {
-      const userId = req.user?.userId;
-      if (!userId) return res.status(401).json({ error: 'No autenticado' });
+      const userId = req.user!.userId;
       const result = await service.createChangeRequest(req.body, userId);
       res.status(201).json(result);
     } catch (error: any) {
@@ -18,18 +34,16 @@ export function changeRequestRouter(prisma: PrismaClient) {
     }
   });
 
-  router.get('/pending', async (req: any, res, next) => {
+  router.get('/pending', authenticateJWT, requirePermission(MENU_CODES.APPROVALS, PermissionType.VIEW), async (req, res, next) => {
     try {
-      const userId = req.user?.userId;
-      if (!userId) return res.status(401).json({ error: 'No autenticado' });
+      const userId = req.user!.userId;
       res.json(await service.getPendingForApprover(userId));
     } catch (error) { next(error); }
   });
 
-  router.post('/:id/approve', async (req: any, res, next) => {
+  router.post('/:id/approve', authenticateJWT, requirePermission(MENU_CODES.APPROVALS, PermissionType.APPROVE), async (req, res, next) => {
     try {
-      const userId = req.user?.userId;
-      if (!userId) return res.status(401).json({ error: 'No autenticado' });
+      const userId = req.user!.userId;
       res.json(await service.approveRequest(req.params.id, userId));
     } catch (error: any) {
       if (error.message?.includes('no encontrad') || error.message?.includes('ya fue')) return res.status(400).json({ error: error.message });
@@ -37,10 +51,9 @@ export function changeRequestRouter(prisma: PrismaClient) {
     }
   });
 
-  router.post('/:id/reject', async (req: any, res, next) => {
+  router.post('/:id/reject', authenticateJWT, requirePermission(MENU_CODES.APPROVALS, PermissionType.APPROVE), async (req, res, next) => {
     try {
-      const userId = req.user?.userId;
-      if (!userId) return res.status(401).json({ error: 'No autenticado' });
+      const userId = req.user!.userId;
       res.json(await service.rejectRequest(req.params.id, userId));
     } catch (error: any) {
       if (error.message?.includes('no encontrad') || error.message?.includes('ya fue')) return res.status(400).json({ error: error.message });
