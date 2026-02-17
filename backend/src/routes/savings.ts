@@ -34,8 +34,8 @@ export function savingsRouter(prisma: PrismaClient) {
     try {
       const filters: any = {};
 
-      if (req.query.expenseId) {
-        filters.expenseId = req.query.expenseId as string;
+      if (req.query.budgetLineId) {
+        filters.budgetLineId = req.query.budgetLineId as string;
       }
 
       if (req.query.budgetId) {

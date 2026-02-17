@@ -2,7 +2,7 @@ export interface Budget {
   id: string;
   year: number;
   version: string;
-  expenses?: Expense[];
+  budgetLines?: BudgetLine[];
   conversionRates?: ConversionRate[];
   createdAt: string;
   updatedAt: string;
@@ -10,26 +10,47 @@ export interface Budget {
 
 export interface Expense {
   id: string;
-  budgetId: string;
   code: string;
   shortDescription: string;
   longDescription: string;
   technologyDirections: string[];
   userAreas: string[];
-  financialCompanyId: string;
-  financialCompany?: FinancialCompany;
   parentExpenseId?: string;
-  transactions?: Transaction[];
-  planValues?: PlanValue[];
-  tagValues?: TagValue[];
   active?: boolean;
+  tagValues?: TagValue[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BudgetLine {
+  id: string;
+  budgetId: string;
+  expenseId: string;
+  financialCompanyId: string;
+  currency: string;
+  planM1: number;
+  planM2: number;
+  planM3: number;
+  planM4: number;
+  planM5: number;
+  planM6: number;
+  planM7: number;
+  planM8: number;
+  planM9: number;
+  planM10: number;
+  planM11: number;
+  planM12: number;
+  expense?: Expense;
+  financialCompany?: FinancialCompany;
+  transactions?: Transaction[];
   createdAt: string;
   updatedAt: string;
 }
 
 export interface Transaction {
   id: string;
-  expenseId: string;
+  budgetLineId: string;
+  financialCompanyId: string;
   type: 'COMMITTED' | 'REAL';
   serviceDate: string;
   postingDate: string;
@@ -40,20 +61,18 @@ export interface Transaction {
   usdValue: number;
   conversionRate: number;
   month: number;
+  compensatedById?: string;
+  isCompensated: boolean;
+  budgetLine?: BudgetLine;
+  financialCompany?: FinancialCompany;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface PlanValue {
+export interface AllowedCurrency {
   id: string;
-  expenseId: string;
-  month: number;
-  transactionCurrency: string;
-  transactionValue: number;
-  usdValue: number;
-  conversionRate: number;
-  createdAt: string;
-  updatedAt: string;
+  code: string;
+  name: string;
 }
 
 export interface ConversionRate {
@@ -90,6 +109,7 @@ export interface FinancialCompany {
   name: string;
   description?: string;
   taxId?: string;
+  currencyCode: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -133,10 +153,10 @@ export interface TableFilters {
   };
 }
 
-// Budget Editing Types
+// Budget Editing Types - now based on BudgetLine
 export interface BudgetEditState {
   selectedBudget: Budget | null;
-  expenses: ExpenseRow[];
+  budgetLines: BudgetLineRow[];
   editedCells: Map<string, CellEdit>;
   hasUnsavedChanges: boolean;
   validationErrors: Map<string, string>;
@@ -144,12 +164,35 @@ export interface BudgetEditState {
   isSaving: boolean;
 }
 
+export interface BudgetLineRow {
+  id: string;
+  expenseCode: string;
+  expenseDescription: string;
+  financialCompanyName: string;
+  currency: string;
+  planValues: { month: number; value: number }[];
+  isNew: boolean;
+}
+
+// Keep ExpenseRow for backward compat
 export interface ExpenseRow {
   id: string;
   code: string;
   description: string;
   planValues: PlanValue[];
   isNew: boolean;
+}
+
+export interface PlanValue {
+  id: string;
+  expenseId: string;
+  month: number;
+  transactionCurrency: string;
+  transactionValue: number;
+  usdValue: number;
+  conversionRate: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CellEdit {
@@ -170,8 +213,7 @@ export interface PlanValueChange {
 // Savings Types
 export interface Saving {
   id: string;
-  expenseId: string;
-  budgetId: string;
+  budgetLineId: string;
   totalAmount: number;
   description: string;
   status: 'PENDING' | 'APPROVED';
@@ -180,8 +222,7 @@ export interface Saving {
   approvedAt?: string;
   createdAt: string;
   updatedAt: string;
-  expense?: Expense;
-  budget?: Budget;
+  budgetLine?: BudgetLine;
   user?: {
     id: string;
     username: string;
@@ -203,8 +244,7 @@ export interface ExpenseWithTags extends Expense {
 // Deferral Types
 export interface Deferral {
   id: string;
-  expenseId: string;
-  budgetId: string;
+  budgetLineId: string;
   description: string;
   totalAmount: number;
   startMonth: number;
@@ -212,8 +252,7 @@ export interface Deferral {
   createdBy: string;
   createdAt: string;
   updatedAt: string;
-  expense?: Expense;
-  budget?: Budget;
+  budgetLine?: BudgetLine;
   user?: {
     id: string;
     username: string;

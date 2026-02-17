@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { budgetApi, expenseApi } from '../services/api';
-import type { Budget, Expense } from '../types';
+import { budgetApi, budgetLineApi } from '../services/api';
+import type { Budget, BudgetLine } from '../types';
 import { HiOutlineArrowDownTray } from 'react-icons/hi2';
 
 const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -9,11 +9,11 @@ const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'
 export default function ReportsPage() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [selectedBudget, setSelectedBudget] = useState<string>('');
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [budgetLines, setBudgetLines] = useState<BudgetLine[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { loadBudgets(); }, []);
-  useEffect(() => { if (selectedBudget) loadExpenses(selectedBudget); }, [selectedBudget]);
+  useEffect(() => { if (selectedBudget) loadBudgetLines(selectedBudget); }, [selectedBudget]);
 
   const loadBudgets = async () => {
     try {
@@ -24,72 +24,87 @@ export default function ReportsPage() {
     finally { setLoading(false); }
   };
 
-  const loadExpenses = async (budgetId: string) => {
+  const loadBudgetLines = async (budgetId: string) => {
     try {
       setLoading(true);
-      const response = await expenseApi.getByBudget(budgetId);
-      setExpenses(response.data);
+      const response = await budgetLineApi.getByBudget(budgetId);
+      setBudgetLines(response.data);
     } catch (error) { console.error('Error:', error); }
     finally { setLoading(false); }
   };
 
-  // Helper: get monthly values for an expense
-  const getMonthlyValues = (expense: Expense) => {
+  // Helper: get plan value for a month from BudgetLine
+  const getPlan = (line: BudgetLine, month: number): number => {
+    const field = `planM${month}` as keyof BudgetLine;
+    return Number(line[field]) || 0;
+  };
+
+  // Helper: get monthly values for a budget line
+  const getMonthlyValues = (line: BudgetLine) => {
     const values: { month: number; budget: number; committed: number; real: number }[] = [];
     for (let m = 1; m <= 12; m++) {
-      const pv = expense.planValues?.find(p => p.month === m);
-      const committed = expense.transactions?.filter(t => t.month === m && t.type === 'COMMITTED').reduce((s, t) => s + Number(t.transactionValue), 0) || 0;
-      const real = expense.transactions?.filter(t => t.month === m && t.type === 'REAL').reduce((s, t) => s + Number(t.transactionValue), 0) || 0;
-      values.push({ month: m, budget: pv ? Number(pv.transactionValue) : 0, committed, real });
+      const committed = line.transactions?.filter(t => t.month === m && t.type === 'COMMITTED').reduce((s, t) => s + Number(t.transactionValue), 0) || 0;
+      const real = line.transactions?.filter(t => t.month === m && t.type === 'REAL').reduce((s, t) => s + Number(t.transactionValue), 0) || 0;
+      values.push({ month: m, budget: getPlan(line, m), committed, real });
     }
     return values;
   };
 
-  // 1. Budget by Category (pie-like)
-  const categoryData = expenses.map(e => ({
-    name: e.shortDescription,
-    value: e.planValues?.reduce((s, pv) => s + Number(pv.transactionValue), 0) || 0
-  })).filter(d => d.value > 0).sort((a, b) => b.value - a.value);
+  // Line total plan
+  const linePlanTotal = (line: BudgetLine): number => {
+    let t = 0; for (let m = 1; m <= 12; m++) t += getPlan(line, m); return t;
+  };
+
+  // 1. Budget by Category (pie-like) - group by expense description
+  const categoryMap = new Map<string, number>();
+  budgetLines.forEach(line => {
+    const desc = line.expense?.shortDescription || 'Sin descripción';
+    categoryMap.set(desc, (categoryMap.get(desc) || 0) + linePlanTotal(line));
+  });
+  const categoryData = Array.from(categoryMap.entries()).map(([name, value]) => ({ name, value })).filter(d => d.value > 0).sort((a, b) => b.value - a.value);
   const totalCategory = categoryData.reduce((s, d) => s + d.value, 0);
 
   // 2. Budget vs Committed vs Real totals
-  const totalBudget = expenses.reduce((s, e) => s + (e.planValues?.reduce((ss, pv) => ss + Number(pv.transactionValue), 0) || 0), 0);
-  const totalCommitted = expenses.reduce((s, e) => s + (e.transactions?.filter(t => t.type === 'COMMITTED').reduce((ss, t) => ss + Number(t.transactionValue), 0) || 0), 0);
-  const totalReal = expenses.reduce((s, e) => s + (e.transactions?.filter(t => t.type === 'REAL').reduce((ss, t) => ss + Number(t.transactionValue), 0) || 0), 0);
+  const totalBudget = budgetLines.reduce((s, l) => s + linePlanTotal(l), 0);
+  const totalCommitted = budgetLines.reduce((s, l) => s + (l.transactions?.filter(t => t.type === 'COMMITTED').reduce((ss, t) => ss + Number(t.transactionValue), 0) || 0), 0);
+  const totalReal = budgetLines.reduce((s, l) => s + (l.transactions?.filter(t => t.type === 'REAL').reduce((ss, t) => ss + Number(t.transactionValue), 0) || 0), 0);
   const maxBVR = Math.max(totalBudget, totalCommitted, totalReal, 1);
 
   // 3. Monthly budget trend
-  const monthlyBudget = MONTHS.map((_, i) => expenses.reduce((s, e) => {
-    const pv = e.planValues?.find(p => p.month === i + 1);
-    return s + (pv ? Number(pv.transactionValue) : 0);
-  }, 0));
+  const monthlyBudget = MONTHS.map((_, i) => budgetLines.reduce((s, l) => s + getPlan(l, i + 1), 0));
   const maxMonthlyBudget = Math.max(...monthlyBudget, 1);
 
   // 4. Monthly committed trend
-  const monthlyCommitted = MONTHS.map((_, i) => expenses.reduce((s, e) =>
-    s + (e.transactions?.filter(t => t.month === i + 1 && t.type === 'COMMITTED').reduce((ss, t) => ss + Number(t.transactionValue), 0) || 0), 0));
+  const monthlyCommitted = MONTHS.map((_, i) => budgetLines.reduce((s, l) =>
+    s + (l.transactions?.filter(t => t.month === i + 1 && t.type === 'COMMITTED').reduce((ss, t) => ss + Number(t.transactionValue), 0) || 0), 0));
   const maxMonthlyCommitted = Math.max(...monthlyCommitted, 1);
 
   // 5. Monthly real trend
-  const monthlyReal = MONTHS.map((_, i) => expenses.reduce((s, e) =>
-    s + (e.transactions?.filter(t => t.month === i + 1 && t.type === 'REAL').reduce((ss, t) => ss + Number(t.transactionValue), 0) || 0), 0));
+  const monthlyReal = MONTHS.map((_, i) => budgetLines.reduce((s, l) =>
+    s + (l.transactions?.filter(t => t.month === i + 1 && t.type === 'REAL').reduce((ss, t) => ss + Number(t.transactionValue), 0) || 0), 0));
   const maxMonthlyReal = Math.max(...monthlyReal, 1);
 
   // 6. Budget by user area
   const areaMap = new Map<string, number>();
-  expenses.forEach(e => {
-    const total = e.planValues?.reduce((s, pv) => s + Number(pv.transactionValue), 0) || 0;
-    (e.userAreas || []).forEach(a => areaMap.set(a, (areaMap.get(a) || 0) + total));
+  budgetLines.forEach(l => {
+    const total = linePlanTotal(l);
+    (l.expense?.userAreas || []).forEach(a => areaMap.set(a, (areaMap.get(a) || 0) + total));
   });
   const areaData = Array.from(areaMap.entries()).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
   const maxArea = Math.max(...areaData.map(d => d.value), 1);
 
-  // 7. Execution % by expense (committed+real / budget)
-  const executionData = expenses.map(e => {
-    const budget = e.planValues?.reduce((s, pv) => s + Number(pv.transactionValue), 0) || 0;
-    const executed = (e.transactions?.reduce((s, t) => s + Number(t.transactionValue), 0) || 0);
-    return { name: e.code, pct: budget > 0 ? (executed / budget) * 100 : 0 };
-  }).filter(d => d.pct > 0).sort((a, b) => b.pct - a.pct).slice(0, 10);
+  // 7. Execution % by expense code (committed+real / budget)
+  const execMap = new Map<string, { budget: number; executed: number }>();
+  budgetLines.forEach(l => {
+    const code = l.expense?.code || l.id;
+    const prev = execMap.get(code) || { budget: 0, executed: 0 };
+    prev.budget += linePlanTotal(l);
+    prev.executed += l.transactions?.reduce((s, t) => s + Number(t.transactionValue), 0) || 0;
+    execMap.set(code, prev);
+  });
+  const executionData = Array.from(execMap.entries()).map(([name, d]) => ({
+    name, pct: d.budget > 0 ? (d.executed / d.budget) * 100 : 0
+  })).filter(d => d.pct > 0).sort((a, b) => b.pct - a.pct).slice(0, 10);
 
   // 8. Top 10 expenses by budget
   const top10 = [...categoryData].slice(0, 10);
@@ -103,27 +118,32 @@ export default function ReportsPage() {
   const maxComparison = Math.max(...monthlyComparison.map(d => Math.max(d.budget, d.executed)), 1);
 
   // 10. Savings potential (budget - committed - real, positive only)
-  const savingsData = expenses.map(e => {
-    const budget = e.planValues?.reduce((s, pv) => s + Number(pv.transactionValue), 0) || 0;
-    const spent = e.transactions?.reduce((s, t) => s + Number(t.transactionValue), 0) || 0;
-    return { name: e.code, value: Math.max(budget - spent, 0) };
-  }).filter(d => d.value > 0).sort((a, b) => b.value - a.value).slice(0, 10);
+  const savingsMap = new Map<string, { budget: number; spent: number }>();
+  budgetLines.forEach(l => {
+    const code = l.expense?.code || l.id;
+    const prev = savingsMap.get(code) || { budget: 0, spent: 0 };
+    prev.budget += linePlanTotal(l);
+    prev.spent += l.transactions?.reduce((s, t) => s + Number(t.transactionValue), 0) || 0;
+    savingsMap.set(code, prev);
+  });
+  const savingsData = Array.from(savingsMap.entries()).map(([name, d]) => ({
+    name, value: Math.max(d.budget - d.spent, 0)
+  })).filter(d => d.value > 0).sort((a, b) => b.value - a.value).slice(0, 10);
   const maxSavings = Math.max(...savingsData.map(d => d.value), 1);
 
   // Excel export
   const exportToExcel = () => {
     const rows: string[][] = [];
-    // Header
     rows.push(['Código', 'Descripción', 'Empresa', ...MONTHS.map(m => `Ppto ${m}`), 'Total Ppto',
       ...MONTHS.map(m => `Comp ${m}`), 'Total Comp', ...MONTHS.map(m => `Real ${m}`), 'Total Real', 'Diferencia']);
 
-    expenses.forEach(e => {
-      const mv = getMonthlyValues(e);
+    budgetLines.forEach(l => {
+      const mv = getMonthlyValues(l);
       const tBudget = mv.reduce((s, v) => s + v.budget, 0);
       const tComm = mv.reduce((s, v) => s + v.committed, 0);
       const tReal = mv.reduce((s, v) => s + v.real, 0);
       rows.push([
-        e.code, e.shortDescription, e.financialCompany?.name || '',
+        l.expense?.code || '', l.expense?.shortDescription || '', l.financialCompany?.name || '',
         ...mv.map(v => v.budget.toString()), tBudget.toString(),
         ...mv.map(v => v.committed.toString()), tComm.toString(),
         ...mv.map(v => v.real.toString()), tReal.toString(),
@@ -131,7 +151,6 @@ export default function ReportsPage() {
       ]);
     });
 
-    // Totals row
     rows.push(['TOTAL', '', '',
       ...MONTHS.map((_, i) => monthlyBudget[i].toString()), totalBudget.toString(),
       ...MONTHS.map((_, i) => monthlyCommitted[i].toString()), totalCommitted.toString(),
@@ -139,7 +158,6 @@ export default function ReportsPage() {
       (totalBudget - totalCommitted - totalReal).toString()
     ]);
 
-    // Convert to CSV with BOM for Excel
     const csv = '\uFEFF' + rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);

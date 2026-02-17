@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { api, transactionApi, expenseApi, budgetApi } from '../services/api';
+import { transactionApi, budgetApi, budgetLineApi } from '../services/api';
+import type { BudgetLine } from '../types';
 import { HiOutlinePencilSquare, HiOutlineTrash, HiOutlinePlusCircle, HiOutlineClipboardDocumentList } from 'react-icons/hi2';
 
 interface Transaction {
   id: string;
-  expenseId: string;
+  budgetLineId: string;
+  financialCompanyId: string;
   type: 'COMMITTED' | 'REAL';
   serviceDate: string;
   postingDate: string;
@@ -14,24 +16,22 @@ interface Transaction {
   transactionValue: number;
   usdValue: number;
   month: number;
-}
-
-interface Expense {
-  id: string;
-  code: string;
-  shortDescription: string;
+  isCompensated: boolean;
+  compensatedById?: string;
+  budgetLine?: BudgetLine;
 }
 
 export default function RealTransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [committedTransactions, setCommittedTransactions] = useState<Transaction[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [budgetLines, setBudgetLines] = useState<BudgetLine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [showCommittedPicker, setShowCommittedPicker] = useState(false);
+  const [selectedCommittedId, setSelectedCommittedId] = useState('');
   const [formData, setFormData] = useState({
-    expenseId: '', serviceDate: '', postingDate: '', referenceDocumentNumber: '',
+    budgetLineId: '', financialCompanyId: '', serviceDate: '', postingDate: '', referenceDocumentNumber: '',
     externalPlatformLink: '', transactionCurrency: 'USD', transactionValue: ''
   });
 
@@ -41,30 +41,35 @@ export default function RealTransactionsPage() {
     try {
       const budgetsRes = await budgetApi.getAll();
       if (budgetsRes.data.length > 0) {
-        const expensesRes = await expenseApi.getByBudget(budgetsRes.data[0].id);
-        setExpenses(expensesRes.data);
+        const latest = budgetsRes.data[budgetsRes.data.length - 1];
+        const linesRes = await budgetLineApi.getByBudget(latest.id);
+        setBudgetLines(linesRes.data);
       }
       const [realRes, committedRes] = await Promise.all([
-        api.get('/transactions?type=REAL'),
-        api.get('/transactions?type=COMMITTED')
+        transactionApi.getByType('REAL'),
+        transactionApi.getByType('COMMITTED')
       ]);
       setTransactions(realRes.data || []);
-      setCommittedTransactions(committedRes.data || []);
+      setCommittedTransactions((committedRes.data || []).filter((t: any) => !t.isCompensated));
     } catch (error) { console.error('Error:', error); }
     finally { setIsLoading(false); }
   };
 
   const handleCreate = () => {
     setSelectedTransaction(null);
-    setFormData({ expenseId: '', serviceDate: '', postingDate: '', referenceDocumentNumber: '', externalPlatformLink: '', transactionCurrency: 'USD', transactionValue: '' });
+    setSelectedCommittedId('');
+    setFormData({ budgetLineId: '', financialCompanyId: '', serviceDate: '', postingDate: '', referenceDocumentNumber: '', externalPlatformLink: '', transactionCurrency: 'USD', transactionValue: '' });
     setShowCommittedPicker(false);
     setIsModalOpen(true);
   };
 
   const handleCreateFromCommitted = (committed: Transaction) => {
     setSelectedTransaction(null);
+    setSelectedCommittedId(committed.id);
+    const bl = budgetLines.find(b => b.id === committed.budgetLineId);
     setFormData({
-      expenseId: committed.expenseId,
+      budgetLineId: committed.budgetLineId,
+      financialCompanyId: committed.financialCompanyId || bl?.financialCompanyId || '',
       serviceDate: committed.serviceDate.split('T')[0],
       postingDate: committed.postingDate.split('T')[0],
       referenceDocumentNumber: committed.referenceDocumentNumber + '-REAL',
@@ -78,8 +83,10 @@ export default function RealTransactionsPage() {
 
   const handleEdit = (transaction: Transaction) => {
     setSelectedTransaction(transaction);
+    setSelectedCommittedId('');
     setFormData({
-      expenseId: transaction.expenseId,
+      budgetLineId: transaction.budgetLineId,
+      financialCompanyId: transaction.financialCompanyId,
       serviceDate: transaction.serviceDate.split('T')[0],
       postingDate: transaction.postingDate.split('T')[0],
       referenceDocumentNumber: transaction.referenceDocumentNumber,
@@ -93,7 +100,12 @@ export default function RealTransactionsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const data = { ...formData, type: 'REAL' as const, transactionValue: parseFloat(formData.transactionValue) };
+      const data: any = {
+        ...formData,
+        type: 'REAL' as const,
+        transactionValue: parseFloat(formData.transactionValue)
+      };
+      if (selectedCommittedId) data.committedTransactionId = selectedCommittedId;
       if (selectedTransaction) await transactionApi.update(selectedTransaction.id, data);
       else await transactionApi.create(data);
       setIsModalOpen(false);
@@ -114,6 +126,12 @@ export default function RealTransactionsPage() {
     return months[new Date(dateStr).getMonth()] || '-';
   };
 
+  const getBudgetLineLabel = (blId: string) => {
+    const bl = budgetLines.find(b => b.id === blId);
+    if (!bl) return '-';
+    return `${bl.expense?.code || ''} - ${bl.financialCompany?.name || ''}`;
+  };
+
   if (isLoading) return <div className="text-center py-8">Cargando...</div>;
 
   return (
@@ -121,8 +139,7 @@ export default function RealTransactionsPage() {
       <div className="flex justify-between items-center mb-6">
         <div />
         <div className="flex gap-2">
-          <button onClick={() => setShowCommittedPicker(!showCommittedPicker)}
-            className="btn-secondary flex items-center gap-2">
+          <button onClick={() => setShowCommittedPicker(!showCommittedPicker)} className="btn-secondary flex items-center gap-2">
             <HiOutlineClipboardDocumentList className="w-5 h-5" />
             {showCommittedPicker ? 'Ocultar Comprometidas' : 'Desde Comprometida'}
           </button>
@@ -132,15 +149,14 @@ export default function RealTransactionsPage() {
         </div>
       </div>
 
-      {/* Committed transactions picker */}
       {showCommittedPicker && committedTransactions.length > 0 && (
         <div className="bg-yellow-50 rounded-lg shadow p-4 mb-6">
-          <h3 className="text-sm font-bold text-yellow-800 mb-3">Selecciona una transacción comprometida para crear la real:</h3>
+          <h3 className="text-sm font-bold text-yellow-800 mb-3">Selecciona una transacción comprometida no compensada:</h3>
           <div className="max-h-48 overflow-y-auto">
             <table className="w-full text-sm">
               <thead className="bg-yellow-100">
                 <tr>
-                  <th className="px-3 py-2 text-left">Gasto</th>
+                  <th className="px-3 py-2 text-left">Línea Presupuesto</th>
                   <th className="px-3 py-2 text-left">Ref. Doc</th>
                   <th className="px-3 py-2 text-right">Valor</th>
                   <th className="px-3 py-2 text-left">Moneda</th>
@@ -148,20 +164,17 @@ export default function RealTransactionsPage() {
                 </tr>
               </thead>
               <tbody>
-                {committedTransactions.map(ct => {
-                  const expense = expenses.find(e => e.id === ct.expenseId);
-                  return (
-                    <tr key={ct.id} className="border-t hover:bg-yellow-100">
-                      <td className="px-3 py-2">{expense?.code || '-'}</td>
-                      <td className="px-3 py-2">{ct.referenceDocumentNumber}</td>
-                      <td className="px-3 py-2 text-right">{ct.transactionValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                      <td className="px-3 py-2">{ct.transactionCurrency}</td>
-                      <td className="px-3 py-2 text-center">
-                        <button onClick={() => handleCreateFromCommitted(ct)} className="text-accent hover:opacity-70 text-xs font-medium">Usar →</button>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {committedTransactions.map(ct => (
+                  <tr key={ct.id} className="border-t hover:bg-yellow-100">
+                    <td className="px-3 py-2">{getBudgetLineLabel(ct.budgetLineId)}</td>
+                    <td className="px-3 py-2">{ct.referenceDocumentNumber}</td>
+                    <td className="px-3 py-2 text-right">{ct.transactionValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="px-3 py-2">{ct.transactionCurrency}</td>
+                    <td className="px-3 py-2 text-center">
+                      <button onClick={() => handleCreateFromCommitted(ct)} className="text-accent hover:opacity-70 text-xs font-medium">Usar →</button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -172,7 +185,7 @@ export default function RealTransactionsPage() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Gasto</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Línea Presupuesto</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha Servicio</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha Imputación</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ref. Documento</th>
@@ -183,24 +196,21 @@ export default function RealTransactionsPage() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {transactions.map((transaction) => {
-              const expense = expenses.find(e => e.id === transaction.expenseId);
-              return (
-                <tr key={transaction.id}>
-                  <td className="px-6 py-4 text-sm text-gray-900">{expense?.code} - {expense?.shortDescription}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{new Date(transaction.serviceDate).toLocaleDateString()}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{new Date(transaction.postingDate).toLocaleDateString()}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{transaction.referenceDocumentNumber}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{transaction.transactionCurrency}</td>
-                  <td className="px-6 py-4 text-sm text-right text-gray-900">{transaction.transactionValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                  <td className="px-6 py-4 text-sm text-center text-gray-500">{getMonthFromDate(transaction.serviceDate)}</td>
-                  <td className="px-6 py-4 text-sm text-center space-x-2">
-                    <button onClick={() => handleEdit(transaction)} className="icon-btn" title="Editar"><HiOutlinePencilSquare className="w-5 h-5" /></button>
-                    <button onClick={() => handleDelete(transaction)} className="icon-btn-danger" title="Eliminar"><HiOutlineTrash className="w-5 h-5" /></button>
-                  </td>
-                </tr>
-              );
-            })}
+            {transactions.map((transaction) => (
+              <tr key={transaction.id}>
+                <td className="px-6 py-4 text-sm text-gray-900">{getBudgetLineLabel(transaction.budgetLineId)}</td>
+                <td className="px-6 py-4 text-sm text-gray-500">{new Date(transaction.serviceDate).toLocaleDateString()}</td>
+                <td className="px-6 py-4 text-sm text-gray-500">{new Date(transaction.postingDate).toLocaleDateString()}</td>
+                <td className="px-6 py-4 text-sm text-gray-500">{transaction.referenceDocumentNumber}</td>
+                <td className="px-6 py-4 text-sm text-gray-500">{transaction.transactionCurrency}</td>
+                <td className="px-6 py-4 text-sm text-right text-gray-900">{transaction.transactionValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td className="px-6 py-4 text-sm text-center text-gray-500">{getMonthFromDate(transaction.serviceDate)}</td>
+                <td className="px-6 py-4 text-sm text-center space-x-2">
+                  <button onClick={() => handleEdit(transaction)} className="icon-btn" title="Editar"><HiOutlinePencilSquare className="w-5 h-5" /></button>
+                  <button onClick={() => handleDelete(transaction)} className="icon-btn-danger" title="Eliminar"><HiOutlineTrash className="w-5 h-5" /></button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -209,13 +219,17 @@ export default function RealTransactionsPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
             <h2 className="text-2xl font-bold mb-4">{selectedTransaction ? 'Editar Transacción' : 'Nueva Transacción Real'}</h2>
+            {selectedCommittedId && <p className="text-sm text-blue-600 mb-3">Compensando transacción comprometida</p>}
             <form onSubmit={handleSubmit}>
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Gasto</label>
-                  <select value={formData.expenseId} onChange={(e) => setFormData({ ...formData, expenseId: e.target.value })} className="w-full px-3 py-2 border rounded-md" required>
-                    <option value="">Seleccione un gasto</option>
-                    {expenses.map(expense => (<option key={expense.id} value={expense.id}>{expense.code} - {expense.shortDescription}</option>))}
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Línea de Presupuesto</label>
+                  <select value={formData.budgetLineId} onChange={(e) => {
+                    const bl = budgetLines.find(b => b.id === e.target.value);
+                    setFormData({ ...formData, budgetLineId: e.target.value, financialCompanyId: bl?.financialCompanyId || '' });
+                  }} className="w-full px-3 py-2 border rounded-md" required>
+                    <option value="">Seleccione</option>
+                    {budgetLines.map(bl => (<option key={bl.id} value={bl.id}>{bl.expense?.code} - {bl.expense?.shortDescription} ({bl.financialCompany?.name})</option>))}
                   </select>
                 </div>
                 <div>

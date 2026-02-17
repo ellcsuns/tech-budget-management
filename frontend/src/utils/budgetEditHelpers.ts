@@ -1,59 +1,58 @@
 /**
- * Helper functions for budget editing
+ * Helper functions for budget editing (BudgetLine model)
  */
 
-import { Expense, ExpenseRow, PlanValue } from '../types';
+import { BudgetLine, BudgetLineRow, ExpenseRow, PlanValue } from '../types';
 
-/**
- * Generate a unique key for a budget cell
- * @param expenseId - The expense ID
- * @param month - The month (1-12)
- * @returns A unique key string
- */
-export function getCellKey(expenseId: string, month: number): string {
-  return `${expenseId}-${month}`;
+export function getCellKey(id: string, month: number): string {
+  return `${id}-${month}`;
 }
 
-/**
- * Validate a cell value
- * @param value - The value to validate
- * @returns Validation result with isValid flag and optional error message
- */
 export function validateCellValue(value: string): { isValid: boolean; error?: string } {
-  // Empty values are treated as 0 (valid)
-  if (value.trim() === '') {
-    return { isValid: true };
-  }
-
-  // Check if numeric
+  if (value.trim() === '') return { isValid: true };
   const numValue = parseFloat(value);
-  if (isNaN(numValue)) {
-    return { isValid: false, error: 'Value must be a number' };
-  }
-
-  // Check if non-negative
-  if (numValue < 0) {
-    return { isValid: false, error: 'Value must be greater than or equal to 0' };
-  }
-
+  if (isNaN(numValue)) return { isValid: false, error: 'Value must be a number' };
+  if (numValue < 0) return { isValid: false, error: 'Value must be greater than or equal to 0' };
   return { isValid: true };
 }
 
+export function getPlanValue(bl: BudgetLine, month: number): number {
+  const key = `planM${month}` as keyof BudgetLine;
+  return Number(bl[key]) || 0;
+}
+
 /**
- * Transform API expenses into ExpenseRow format with 12-month plan values
- * @param expenses - Array of expenses from API
- * @returns Array of ExpenseRow objects
+ * Transform BudgetLines into BudgetLineRow format
  */
-export function transformToExpenseRows(expenses: Expense[]): ExpenseRow[] {
+export function transformToBudgetLineRows(budgetLines: BudgetLine[]): BudgetLineRow[] {
+  return budgetLines.map(bl => {
+    const planValues: { month: number; value: number }[] = [];
+    for (let month = 1; month <= 12; month++) {
+      planValues.push({ month, value: getPlanValue(bl, month) });
+    }
+    return {
+      id: bl.id,
+      expenseCode: bl.expense?.code || '',
+      expenseDescription: bl.expense?.shortDescription || '',
+      financialCompanyName: bl.financialCompany?.name || '',
+      currency: bl.currency,
+      planValues,
+      isNew: false
+    };
+  });
+}
+
+/**
+ * Legacy: Transform API expenses into ExpenseRow format (backward compat)
+ */
+export function transformToExpenseRows(expenses: any[]): ExpenseRow[] {
   return expenses.map(expense => {
-    // Ensure we have plan values for all 12 months
     const planValues: PlanValue[] = [];
     for (let month = 1; month <= 12; month++) {
-      const existingPlanValue = expense.planValues?.find(pv => pv.month === month);
+      const existingPlanValue = expense.planValues?.find((pv: any) => pv.month === month);
       if (existingPlanValue) {
         planValues.push(existingPlanValue);
       } else {
-        // Create placeholder with zero values
         planValues.push({
           id: `placeholder-${expense.id}-${month}`,
           expenseId: expense.id,
@@ -67,7 +66,6 @@ export function transformToExpenseRows(expenses: Expense[]): ExpenseRow[] {
         });
       }
     }
-
     return {
       id: expense.id,
       code: expense.code,
@@ -78,19 +76,11 @@ export function transformToExpenseRows(expenses: Expense[]): ExpenseRow[] {
   });
 }
 
-/**
- * Calculate the total of all monthly values for an expense row
- * @param expenseRow - The expense row
- * @param editedCells - Map of edited cells
- * @returns Total value
- */
 export function calculateTotal(expenseRow: ExpenseRow, editedCells: Map<string, any>): number {
   let total = 0;
-  
   for (let month = 1; month <= 12; month++) {
     const cellKey = getCellKey(expenseRow.id, month);
     const editedCell = editedCells.get(cellKey);
-    
     if (editedCell && editedCell.isValid) {
       total += editedCell.value;
     } else {
@@ -98,8 +88,19 @@ export function calculateTotal(expenseRow: ExpenseRow, editedCells: Map<string, 
       total += Number(planValue?.transactionValue) || 0;
     }
   }
-  
   return total;
 }
 
-
+export function calculateBudgetLineTotal(bl: BudgetLine, editedCells: Map<string, any>): number {
+  let total = 0;
+  for (let month = 1; month <= 12; month++) {
+    const cellKey = getCellKey(bl.id, month);
+    const editedCell = editedCells.get(cellKey);
+    if (editedCell) {
+      total += editedCell.value;
+    } else {
+      total += getPlanValue(bl, month);
+    }
+  }
+  return total;
+}

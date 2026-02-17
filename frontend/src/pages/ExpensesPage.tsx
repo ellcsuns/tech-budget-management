@@ -1,15 +1,13 @@
 import { useState, useEffect } from 'react';
-import { expensesEnhancedApi, budgetApi, technologyDirectionApi, userAreaApi, financialCompanyApi } from '../services/api';
-import type { ExpenseWithTags, Budget, TechnologyDirection, UserArea, FinancialCompany } from '../types';
+import { expensesEnhancedApi, technologyDirectionApi, userAreaApi } from '../services/api';
+import type { ExpenseWithTags, TechnologyDirection, UserArea } from '../types';
 import ExpenseDetailPopup from '../components/ExpenseDetailPopup';
 import { HiOutlineMagnifyingGlass, HiOutlineTrash, HiOutlineArrowPath, HiOutlinePlusCircle } from 'react-icons/hi2';
 
 export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<ExpenseWithTags[]>([]);
-  const [budgets, setBudgets] = useState<Budget[]>([]);
   const [techDirections, setTechDirections] = useState<TechnologyDirection[]>([]);
   const [userAreas, setUserAreas] = useState<UserArea[]>([]);
-  const [financialCompanies, setFinancialCompanies] = useState<FinancialCompany[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [showInactive, setShowInactive] = useState(false);
@@ -18,13 +16,11 @@ export default function ExpensesPage() {
   const [showForm, setShowForm] = useState(false);
 
   const [formData, setFormData] = useState({
-    budgetId: '',
     code: '',
     shortDescription: '',
     longDescription: '',
     technologyDirections: [] as string[],
     userAreas: [] as string[],
-    financialCompanyId: '',
     parentExpenseId: ''
   });
 
@@ -37,16 +33,12 @@ export default function ExpensesPage() {
 
   const loadMasterData = async () => {
     try {
-      const [budgetsRes, techRes, areasRes, companiesRes] = await Promise.all([
-        budgetApi.getAll(),
+      const [techRes, areasRes] = await Promise.all([
         technologyDirectionApi.getAll(),
-        userAreaApi.getAll(),
-        financialCompanyApi.getAll()
+        userAreaApi.getAll()
       ]);
-      setBudgets(budgetsRes.data);
       setTechDirections(techRes.data);
       setUserAreas(areasRes.data);
-      setFinancialCompanies(companiesRes.data);
     } catch (error) {
       console.error('Error loading master data:', error);
     }
@@ -111,7 +103,7 @@ export default function ExpensesPage() {
   };
 
   const resetForm = () => {
-    setFormData({ budgetId: '', code: '', shortDescription: '', longDescription: '', technologyDirections: [], userAreas: [], financialCompanyId: '', parentExpenseId: '' });
+    setFormData({ code: '', shortDescription: '', longDescription: '', technologyDirections: [], userAreas: [], parentExpenseId: '' });
   };
 
   return (
@@ -140,23 +132,14 @@ export default function ExpensesPage() {
         </div>
       </div>
 
-      {/* Form */}
+      {/* Form - No budgetId, no financialCompanyId */}
       {showForm && (
         <div className="bg-white p-6 rounded shadow mb-6">
           <h2 className="text-xl font-bold mb-4">Crear Nuevo Gasto</h2>
           <form onSubmit={handleCreateExpense}>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Presupuesto *</label>
-                <select value={formData.budgetId} onChange={(e) => setFormData({ ...formData, budgetId: e.target.value })} className="w-full border rounded px-3 py-2" required>
-                  <option value="">Seleccionar</option>
-                  {budgets.map(b => (<option key={b.id} value={b.id}>{b.year} - v{b.version}</option>))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Código *</label>
-                <input type="text" value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} className="w-full border rounded px-3 py-2" required />
-              </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">Código *</label>
+              <input type="text" value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} className="w-full border rounded px-3 py-2" required />
             </div>
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">Descripción Corta *</label>
@@ -180,13 +163,6 @@ export default function ExpensesPage() {
                 </select>
               </div>
             </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Empresa Financiera *</label>
-              <select value={formData.financialCompanyId} onChange={(e) => setFormData({ ...formData, financialCompanyId: e.target.value })} className="w-full border rounded px-3 py-2" required>
-                <option value="">Seleccionar</option>
-                {financialCompanies.map(fc => (<option key={fc.id} value={fc.id}>{fc.name}</option>))}
-              </select>
-            </div>
             <div className="flex gap-2">
               <button type="submit" className="btn-success">Crear Gasto</button>
               <button type="button" onClick={() => setShowForm(false)} className="btn-cancel">Cancelar</button>
@@ -195,7 +171,7 @@ export default function ExpensesPage() {
         </div>
       )}
 
-      {/* Expenses Table */}
+      {/* Expenses Table - No Empresa/Moneda columns */}
       <div className="bg-white rounded shadow">
         {isLoading ? (
           <div className="p-8 text-center">Cargando...</div>
@@ -207,8 +183,6 @@ export default function ExpensesPage() {
               <tr>
                 <th className="p-3 text-left">Código</th>
                 <th className="p-3 text-left">Descripción</th>
-                <th className="p-3 text-left">Empresa</th>
-                <th className="p-3 text-left">Moneda</th>
                 <th className="p-3 text-left">Tags</th>
                 <th className="p-3 text-center">Estado</th>
                 <th className="p-3 text-center">Acciones</th>
@@ -219,8 +193,6 @@ export default function ExpensesPage() {
                 <tr key={expense.id} className={`border-t hover:bg-gray-50 ${!(expense as any).active ? 'opacity-50' : ''}`}>
                   <td className="p-3">{expense.code}</td>
                   <td className="p-3">{expense.shortDescription}</td>
-                  <td className="p-3">{expense.financialCompany?.name || '-'}</td>
-                  <td className="p-3">{expense.planValues?.[0]?.transactionCurrency || '-'}</td>
                   <td className="p-3">
                     {expense.customTags.length > 0 ? (
                       <div className="flex flex-wrap gap-1">

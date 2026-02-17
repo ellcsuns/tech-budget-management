@@ -1,11 +1,11 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
-import type { Expense, ExpenseWithTags } from '../types';
+import type { BudgetLine, ExpenseWithTags } from '../types';
 import { expensesEnhancedApi } from '../services/api';
 import { fmt } from '../utils/formatters';
 import ExpenseDetailPopup from './ExpenseDetailPopup';
 
 interface ExpenseTableProps {
-  expenses: Expense[];
+  budgetLines: BudgetLine[];
   viewMode: 'PLAN' | 'COMPARISON';
   filters: any;
   readOnly?: boolean;
@@ -15,7 +15,7 @@ interface ExpenseTableProps {
 type SortField = 'code' | 'description' | 'total' | `month-${number}`;
 type SortDir = 'asc' | 'desc';
 
-export default function ExpenseTable({ expenses, viewMode, filters, readOnly = false, onTotalsChange }: ExpenseTableProps) {
+export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly = false, onTotalsChange }: ExpenseTableProps) {
   const [selectedExpense, setSelectedExpense] = useState<ExpenseWithTags | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [descWidth, setDescWidth] = useState(180);
@@ -39,17 +39,28 @@ export default function ExpenseTable({ expenses, viewMode, filters, readOnly = f
 
   const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-  const getMonthlyValues = (expense: Expense) => {
+  const getPlanValue = (bl: BudgetLine, month: number): number => {
+    const key = `planM${month}` as keyof BudgetLine;
+    return Number(bl[key]) || 0;
+  };
+
+  const getPlanTotal = (bl: BudgetLine): number => {
+    let total = 0;
+    for (let m = 1; m <= 12; m++) total += getPlanValue(bl, m);
+    return total;
+  };
+
+  const getMonthlyValues = (bl: BudgetLine) => {
     const values: any[] = [];
     for (let month = 1; month <= 12; month++) {
-      const planValue = expense.planValues?.find(pv => pv.month === month);
-      const committedTransactions = expense.transactions?.filter(t => t.month === month && t.type === 'COMMITTED');
-      const realTransactions = expense.transactions?.filter(t => t.month === month && t.type === 'REAL');
+      const budget = getPlanValue(bl, month);
+      const committedTxns = bl.transactions?.filter(t => t.month === month && t.type === 'COMMITTED' && !t.isCompensated) || [];
+      const realTxns = bl.transactions?.filter(t => t.month === month && t.type === 'REAL') || [];
       values.push({
         month,
-        budget: planValue ? Number(planValue.transactionValue) : 0,
-        committed: committedTransactions?.reduce((sum, t) => sum + Number(t.transactionValue), 0) || 0,
-        real: realTransactions?.reduce((sum, t) => sum + Number(t.transactionValue), 0) || 0
+        budget,
+        committed: committedTxns.reduce((sum, t) => sum + Number(t.transactionValue), 0),
+        real: realTxns.reduce((sum, t) => sum + Number(t.transactionValue), 0)
       });
     }
     return values;
@@ -57,26 +68,22 @@ export default function ExpenseTable({ expenses, viewMode, filters, readOnly = f
 
   const calcTotal = (values: any[], type: 'budget' | 'committed' | 'real') => values.reduce((s, v) => s + (v[type] || 0), 0);
 
-  const filteredExpenses = useMemo(() => expenses.filter(expense => {
+  const filteredLines = useMemo(() => budgetLines.filter(bl => {
     if (filters.searchText && filters.searchText.trim()) {
       const search = filters.searchText.toLowerCase();
-      const matchCode = expense.code?.toLowerCase().includes(search);
-      const matchDesc = expense.shortDescription?.toLowerCase().includes(search);
-      const matchLong = (expense as any).longDescription?.toLowerCase().includes(search);
-      if (!matchCode && !matchDesc && !matchLong) return false;
+      const matchCode = bl.expense?.code?.toLowerCase().includes(search);
+      const matchDesc = bl.expense?.shortDescription?.toLowerCase().includes(search);
+      if (!matchCode && !matchDesc) return false;
     }
     if (filters.currencies && filters.currencies.length > 0) {
-      const hasCurrency = expense.planValues?.some(pv => filters.currencies.includes(pv.transactionCurrency)) ||
-                         expense.transactions?.some(t => filters.currencies.includes(t.transactionCurrency));
-      if (!hasCurrency) return false;
+      if (!filters.currencies.includes(bl.currency)) return false;
     }
     if (filters.financialCompanyIds && filters.financialCompanyIds.length > 0) {
-      if (!filters.financialCompanyIds.includes(expense.financialCompanyId)) return false;
+      if (!filters.financialCompanyIds.includes(bl.financialCompanyId)) return false;
     }
     return true;
-  }), [expenses, filters]);
+  }), [budgetLines, filters]);
 
-  // Sorting
   const toggleSort = (field: SortField) => {
     if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
     else { setSortField(field); setSortDir('asc'); }
@@ -87,24 +94,22 @@ export default function ExpenseTable({ expenses, viewMode, filters, readOnly = f
     return sortDir === 'asc' ? ' ↑' : ' ↓';
   };
 
-  const sortedExpenses = useMemo(() => {
-    if (!sortField) return filteredExpenses;
-    return [...filteredExpenses].sort((a, b) => {
+  const sortedLines = useMemo(() => {
+    if (!sortField) return filteredLines;
+    return [...filteredLines].sort((a, b) => {
       let va: any, vb: any;
-      if (sortField === 'code') { va = a.code || ''; vb = b.code || ''; }
-      else if (sortField === 'description') { va = a.shortDescription || ''; vb = b.shortDescription || ''; }
-      else if (sortField === 'total') { va = calcTotal(getMonthlyValues(a), 'budget'); vb = calcTotal(getMonthlyValues(b), 'budget'); }
+      if (sortField === 'code') { va = a.expense?.code || ''; vb = b.expense?.code || ''; }
+      else if (sortField === 'description') { va = a.expense?.shortDescription || ''; vb = b.expense?.shortDescription || ''; }
+      else if (sortField === 'total') { va = getPlanTotal(a); vb = getPlanTotal(b); }
       else if (sortField.startsWith('month-')) {
         const m = parseInt(sortField.split('-')[1]);
-        va = getMonthlyValues(a).find(v => v.month === m)?.budget || 0;
-        vb = getMonthlyValues(b).find(v => v.month === m)?.budget || 0;
+        va = getPlanValue(a, m); vb = getPlanValue(b, m);
       }
       if (typeof va === 'string') { const cmp = va.localeCompare(vb); return sortDir === 'asc' ? cmp : -cmp; }
       return sortDir === 'asc' ? va - vb : vb - va;
     });
-  }, [filteredExpenses, sortField, sortDir]);
+  }, [filteredLines, sortField, sortDir]);
 
-  // Resizable description column
   const onMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     resizing.current = true;
@@ -116,38 +121,35 @@ export default function ExpenseTable({ expenses, viewMode, filters, readOnly = f
     document.addEventListener('mouseup', onUp);
   }, [descWidth]);
 
-  // Grand totals for indicators
   const grandTotals = useMemo(() => {
     let budget = 0, committed = 0, real = 0;
-    filteredExpenses.forEach(exp => {
-      const mv = getMonthlyValues(exp);
+    filteredLines.forEach(bl => {
+      const mv = getMonthlyValues(bl);
       budget += calcTotal(mv, 'budget');
       committed += calcTotal(mv, 'committed');
       real += calcTotal(mv, 'real');
     });
     const diff = budget - (committed + real);
     return { budget, committed, real, diff };
-  }, [filteredExpenses]);
+  }, [filteredLines]);
 
-  // Notify parent of totals changes
   React.useEffect(() => {
     if (onTotalsChange) onTotalsChange(grandTotals);
   }, [grandTotals]);
 
-  // Monthly grand totals for footer row
   const monthlyGrandTotals = useMemo(() => {
     const totals: any[] = [];
     for (let month = 1; month <= 12; month++) {
       let budget = 0, committed = 0, real = 0;
-      filteredExpenses.forEach(exp => {
-        const mv = getMonthlyValues(exp);
+      filteredLines.forEach(bl => {
+        const mv = getMonthlyValues(bl);
         const v = mv.find(x => x.month === month);
         if (v) { budget += v.budget; committed += v.committed; real += v.real; }
       });
       totals.push({ month, budget, committed, real });
     }
     return totals;
-  }, [filteredExpenses]);
+  }, [filteredLines]);
 
   const onlyBudgetVisible = filters.visibleColumns?.budget && !filters.visibleColumns?.committed && !filters.visibleColumns?.real;
   const getDiffColor = (diff: number) => {
@@ -177,16 +179,16 @@ export default function ExpenseTable({ expenses, viewMode, filters, readOnly = f
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {sortedExpenses.map((expense) => {
-                const monthlyValues = getMonthlyValues(expense);
-                const total = calcTotal(monthlyValues, 'budget');
+              {sortedLines.map((bl) => {
+                const total = getPlanTotal(bl);
                 return (
-                  <tr key={expense.id} onClick={() => handleExpenseClick(expense.id)} className="hover:bg-gray-50 cursor-pointer">
-                    <td className="px-4 py-3 text-sm text-gray-900">{expense.code}</td>
-                    <td className="px-4 py-3 text-sm text-gray-900" style={{ width: descWidth, maxWidth: descWidth, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{expense.shortDescription}</td>
-                    {monthlyValues.map((value) => (
-                      <td key={value.month} className="px-4 py-3 text-sm text-right text-gray-900">{value.budget > 0 ? fmt(value.budget) : ''}</td>
-                    ))}
+                  <tr key={bl.id} onClick={() => handleExpenseClick(bl.expenseId)} className="hover:bg-gray-50 cursor-pointer">
+                    <td className="px-4 py-3 text-sm text-gray-900">{bl.expense?.code}</td>
+                    <td className="px-4 py-3 text-sm text-gray-900" style={{ width: descWidth, maxWidth: descWidth, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bl.expense?.shortDescription}</td>
+                    {months.map((_, i) => {
+                      const val = getPlanValue(bl, i + 1);
+                      return <td key={i} className="px-4 py-3 text-sm text-right text-gray-900">{val > 0 ? fmt(val) : ''}</td>;
+                    })}
                     <td className="px-4 py-3 text-sm text-right font-semibold text-gray-900">{fmt(total)}</td>
                   </tr>
                 );
@@ -248,14 +250,14 @@ export default function ExpenseTable({ expenses, viewMode, filters, readOnly = f
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {sortedExpenses.map((expense) => {
-              const monthlyValues = getMonthlyValues(expense);
+            {sortedLines.map((bl) => {
+              const monthlyValues = getMonthlyValues(bl);
               const totalBudget = calcTotal(monthlyValues, 'budget');
               const totalCommitted = calcTotal(monthlyValues, 'committed');
               const totalReal = calcTotal(monthlyValues, 'real');
               return (
-                <tr key={expense.id} onClick={() => handleExpenseClick(expense.id)} className="hover:bg-gray-50 cursor-pointer">
-                  <td className="px-4 py-3 text-sm text-gray-900 sticky left-0 bg-white z-10" style={{ width: descWidth, maxWidth: descWidth, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{expense.shortDescription}</td>
+                <tr key={bl.id} onClick={() => handleExpenseClick(bl.expenseId)} className="hover:bg-gray-50 cursor-pointer">
+                  <td className="px-4 py-3 text-sm text-gray-900 sticky left-0 bg-white z-10" style={{ width: descWidth, maxWidth: descWidth, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bl.expense?.shortDescription}</td>
                   {monthlyValues.map((value) => (
                     <React.Fragment key={value.month}>
                       {filters.visibleColumns.budget && <td className="px-2 py-3 text-sm text-right text-gray-900">{value.budget > 0 ? fmt(value.budget) : '-'}</td>}

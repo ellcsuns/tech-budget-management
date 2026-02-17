@@ -51,8 +51,8 @@ export function deferralsRouter(prisma: PrismaClient) {
       const userId = req.user?.userId;
       if (!userId) return res.status(401).json({ error: 'User not authenticated' });
 
-      const { expenseId, budgetId, description, totalAmount, startMonth, endMonth } = req.body;
-      if (!expenseId || !budgetId || !description || !totalAmount || !startMonth || !endMonth) {
+      const { budgetLineId, description, totalAmount, startMonth, endMonth } = req.body;
+      if (!budgetLineId || !description || !totalAmount || !startMonth || !endMonth) {
         return res.status(400).json({ error: 'Todos los campos son requeridos' });
       }
 
@@ -61,7 +61,7 @@ export function deferralsRouter(prisma: PrismaClient) {
       }
 
       const deferral = await deferralService.create({
-        expenseId, budgetId, description, totalAmount, startMonth: parseInt(startMonth), endMonth: parseInt(endMonth), createdBy: userId
+        budgetLineId, description, totalAmount, startMonth: parseInt(startMonth), endMonth: parseInt(endMonth), createdBy: userId
       });
       res.status(201).json(deferral);
     } catch (error) {

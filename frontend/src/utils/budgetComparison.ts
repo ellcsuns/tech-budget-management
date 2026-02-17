@@ -11,6 +11,7 @@ export interface ComparisonSummary {
 export interface ComparisonRow {
   expenseCode: string;
   expenseDescription: string;
+  companyName: string;
   status: 'new' | 'removed' | 'modified' | 'unchanged';
   monthlyA: number[];
   monthlyB: number[];
@@ -33,29 +34,58 @@ export function calculateSummary(rows: ComparisonRow[]): ComparisonSummary {
   };
 }
 
+function getBudgetLineKey(bl: any): string {
+  return `${bl.expense?.code || bl.expenseId}-${bl.financialCompanyId}`;
+}
+
+function getMonthlyFromBudgetLine(bl: any): number[] {
+  if (!bl) return Array(12).fill(0);
+  const vals = Array(12).fill(0);
+  for (let m = 1; m <= 12; m++) {
+    vals[m - 1] = Number(bl[`planM${m}`]) || 0;
+  }
+  return vals;
+}
+
 export function classifyExpenses(budgetA: any, budgetB: any): ComparisonRow[] {
-  const expA = budgetA.expenses || [];
-  const expB = budgetB.expenses || [];
-  const mapA = new Map(expA.map((e: any) => [e.code, e]));
-  const mapB = new Map(expB.map((e: any) => [e.code, e]));
-  const allCodes = new Set([...mapA.keys(), ...mapB.keys()]);
+  const linesA = budgetA.budgetLines || budgetA.expenses || [];
+  const linesB = budgetB.budgetLines || budgetB.expenses || [];
+
+  // Build maps by key
+  const mapA = new Map<string, any>();
+  const mapB = new Map<string, any>();
+
+  for (const bl of linesA) {
+    const key = bl.expense?.code ? getBudgetLineKey(bl) : bl.code;
+    mapA.set(key, bl);
+  }
+  for (const bl of linesB) {
+    const key = bl.expense?.code ? getBudgetLineKey(bl) : bl.code;
+    mapB.set(key, bl);
+  }
+
+  const allKeys = new Set([...mapA.keys(), ...mapB.keys()]);
   const rows: ComparisonRow[] = [];
 
-  for (const code of allCodes) {
-    const a = mapA.get(code);
-    const b = mapB.get(code);
-    const monthlyA = getMonthlyValues(a);
-    const monthlyB = getMonthlyValues(b);
+  for (const key of allKeys) {
+    const a = mapA.get(key);
+    const b = mapB.get(key);
+
+    const monthlyA = a ? (a.planM1 !== undefined ? getMonthlyFromBudgetLine(a) : getMonthlyFromPlanValues(a)) : Array(12).fill(0);
+    const monthlyB = b ? (b.planM1 !== undefined ? getMonthlyFromBudgetLine(b) : getMonthlyFromPlanValues(b)) : Array(12).fill(0);
     const totalA = monthlyA.reduce((s, v) => s + v, 0);
     const totalB = monthlyB.reduce((s, v) => s + v, 0);
+
     let status: ComparisonRow['status'] = 'unchanged';
     if (!a) status = 'new';
     else if (!b) status = 'removed';
     else if (totalA !== totalB || monthlyA.some((v, i) => v !== monthlyB[i])) status = 'modified';
 
+    const desc = (b || a);
     rows.push({
-      expenseCode: code as string,
-      expenseDescription: ((b || a) as any)?.shortDescription || '',
+      expenseCode: desc?.expense?.code || desc?.code || (key as string),
+      expenseDescription: desc?.expense?.shortDescription || desc?.shortDescription || '',
+      companyName: desc?.financialCompany?.name || '',
       status, monthlyA, monthlyB, totalA, totalB,
       difference: totalB - totalA,
       percentChange: totalA !== 0 ? ((totalB - totalA) / totalA) * 100 : 0
@@ -64,11 +94,11 @@ export function classifyExpenses(budgetA: any, budgetB: any): ComparisonRow[] {
   return rows;
 }
 
-function getMonthlyValues(expense: any): number[] {
+function getMonthlyFromPlanValues(expense: any): number[] {
   if (!expense) return Array(12).fill(0);
   const vals = Array(12).fill(0);
   for (const pv of (expense.planValues || [])) {
-    if (pv.month >= 1 && pv.month <= 12) vals[pv.month - 1] = Number(pv.usdValue);
+    if (pv.month >= 1 && pv.month <= 12) vals[pv.month - 1] = Number(pv.usdValue || pv.transactionValue);
   }
   return vals;
 }
@@ -83,13 +113,13 @@ export function generateDifferenceDescription(rows: ComparisonRow[], budgetA: an
   const lines: string[] = [];
   lines.push(`Comparación: ${budgetA.year} ${budgetA.version} vs ${budgetB.version}`);
   const summary = calculateSummary(rows);
-  lines.push(`Total A: $${summary.totalA.toLocaleString()} | Total B: $${summary.totalB.toLocaleString()} | Diferencia: $${summary.difference.toLocaleString()} (${summary.percentChange.toFixed(1)}%)`);
-  if (summary.newExpenses > 0) lines.push(`Gastos nuevos: ${summary.newExpenses}`);
-  if (summary.removedExpenses > 0) lines.push(`Gastos eliminados: ${summary.removedExpenses}`);
+  lines.push(`Total A: ${summary.totalA.toLocaleString()} | Total B: ${summary.totalB.toLocaleString()} | Diferencia: ${summary.difference.toLocaleString()} (${summary.percentChange.toFixed(1)}%)`);
+  if (summary.newExpenses > 0) lines.push(`Líneas nuevas: ${summary.newExpenses}`);
+  if (summary.removedExpenses > 0) lines.push(`Líneas eliminadas: ${summary.removedExpenses}`);
   lines.push('');
   for (const r of rows.filter(r => r.status !== 'unchanged')) {
     const label = r.status === 'new' ? '[NUEVO]' : r.status === 'removed' ? '[ELIMINADO]' : '[MODIFICADO]';
-    lines.push(`${label} ${r.expenseCode} - ${r.expenseDescription}: $${r.totalA.toLocaleString()} → $${r.totalB.toLocaleString()} (${r.difference >= 0 ? '+' : ''}$${r.difference.toLocaleString()})`);
+    lines.push(`${label} ${r.expenseCode} - ${r.expenseDescription}: ${r.totalA.toLocaleString()} → ${r.totalB.toLocaleString()} (${r.difference >= 0 ? '+' : ''}${r.difference.toLocaleString()})`);
   }
   return lines.join('\n');
 }

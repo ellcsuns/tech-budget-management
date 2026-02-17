@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { financialCompanyApi } from '../services/api';
-import type { Expense, FinancialCompany } from '../types';
+import type { BudgetLine, FinancialCompany } from '../types';
 import { HiOutlineXMark } from 'react-icons/hi2';
 
 interface FilterPanelProps {
-  expenses: Expense[];
+  budgetLines: BudgetLine[];
   filters: {
     currencies?: string[];
     financialCompanyIds?: string[];
@@ -18,7 +18,7 @@ interface FilterPanelProps {
   onFiltersChange: (filters: any) => void;
 }
 
-export default function FilterPanel({ expenses, filters, onFiltersChange }: FilterPanelProps) {
+export default function FilterPanel({ budgetLines, filters, onFiltersChange }: FilterPanelProps) {
   const [financialCompanies, setFinancialCompanies] = useState<FinancialCompany[]>([]);
 
   useEffect(() => { loadFinancialCompanies(); }, []);
@@ -33,10 +33,7 @@ export default function FilterPanel({ expenses, filters, onFiltersChange }: Filt
   };
 
   const currencies = Array.from(new Set(
-    expenses.flatMap(e => [
-      ...(e.planValues?.map(pv => pv.transactionCurrency) || []),
-      ...(e.transactions?.map(t => t.transactionCurrency) || [])
-    ])
+    budgetLines.map(bl => bl.currency).filter(Boolean)
   ));
 
   const toggleCurrency = (currency: string) => {
@@ -68,7 +65,6 @@ export default function FilterPanel({ expenses, filters, onFiltersChange }: Filt
 
   return (
     <div className="flex flex-wrap items-center gap-3 mb-4">
-      {/* Search input */}
       <input
         type="text"
         value={filters.searchText || ''}
@@ -76,19 +72,13 @@ export default function FilterPanel({ expenses, filters, onFiltersChange }: Filt
         placeholder="Buscar gasto..."
         className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent w-48"
       />
-
       <div className="w-px h-6 bg-gray-300" />
-
-      {/* Column toggles */}
       <div className="flex items-center gap-1">
         <button onClick={() => toggleColumn('budget')} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filters.visibleColumns.budget ? accentOn : accentOff}`}>Ppto</button>
         <button onClick={() => toggleColumn('committed')} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filters.visibleColumns.committed ? accentOn : accentOff}`}>Comp</button>
         <button onClick={() => toggleColumn('real')} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filters.visibleColumns.real ? accentOn : accentOff}`}>Real</button>
       </div>
-
       <div className="w-px h-6 bg-gray-300" />
-
-      {/* Currency filters */}
       {currencies.length > 0 && (
         <>
           <div className="flex items-center gap-1">
@@ -99,8 +89,6 @@ export default function FilterPanel({ expenses, filters, onFiltersChange }: Filt
           <div className="w-px h-6 bg-gray-300" />
         </>
       )}
-
-      {/* Financial company filters */}
       {financialCompanies.length > 0 && (
         <>
           <div className="flex items-center gap-1">
@@ -111,8 +99,6 @@ export default function FilterPanel({ expenses, filters, onFiltersChange }: Filt
           <div className="w-px h-6 bg-gray-300" />
         </>
       )}
-
-      {/* Clear filters icon button */}
       <button onClick={clearFilters} className="text-accent hover:opacity-70 transition-opacity ml-auto" title="Limpiar filtros">
         <HiOutlineXMark className="w-6 h-6" />
       </button>

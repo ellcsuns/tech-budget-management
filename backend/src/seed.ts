@@ -15,11 +15,12 @@ async function main() {
   await prisma.tagValue.deleteMany();
   await prisma.tagDefinition.deleteMany();
   await prisma.transaction.deleteMany();
-  await prisma.planValue.deleteMany();
+  await prisma.budgetLine.deleteMany();
   await prisma.expense.deleteMany();
   await prisma.conversionRate.deleteMany();
   await prisma.budget.deleteMany();
   await prisma.financialCompany.deleteMany();
+  await prisma.allowedCurrency.deleteMany();
   await prisma.userArea.deleteMany();
   await prisma.technologyDirection.deleteMany();
   await prisma.permission.deleteMany();
@@ -57,12 +58,22 @@ async function main() {
     prisma.userArea.create({ data: { code: 'ATEN', name: 'Atención al Cliente', description: 'Soporte y servicio al cliente' } }),
   ]);
 
+  // AllowedCurrencies
+  console.log('💱 Creando monedas permitidas...');
+  await Promise.all([
+    prisma.allowedCurrency.create({ data: { code: 'USD', name: 'US Dollar' } }),
+    prisma.allowedCurrency.create({ data: { code: 'EUR', name: 'Euro' } }),
+    prisma.allowedCurrency.create({ data: { code: 'CLP', name: 'Chilean Peso' } }),
+    prisma.allowedCurrency.create({ data: { code: 'BRL', name: 'Brazilian Real' } }),
+    prisma.allowedCurrency.create({ data: { code: 'MXN', name: 'Mexican Peso' } }),
+  ]);
+
   const financialCompanies = await Promise.all([
-    prisma.financialCompany.create({ data: { code: 'CORP', name: 'Corporación Principal S.A.', description: 'Empresa matriz', taxId: '76.123.456-7' } }),
-    prisma.financialCompany.create({ data: { code: 'SUB1', name: 'Subsidiaria Norte Ltda.', description: 'Filial zona norte', taxId: '76.234.567-8' } }),
-    prisma.financialCompany.create({ data: { code: 'SUB2', name: 'Subsidiaria Sur S.A.', description: 'Filial zona sur', taxId: '76.345.678-9' } }),
-    prisma.financialCompany.create({ data: { code: 'TECH', name: 'Tech Solutions SpA', description: 'Empresa de tecnología', taxId: '76.456.789-0' } }),
-    prisma.financialCompany.create({ data: { code: 'SERV', name: 'Servicios Digitales Ltda.', description: 'Servicios digitales y consultoría', taxId: '76.567.890-1' } }),
+    prisma.financialCompany.create({ data: { code: 'CORP', name: 'Corporación Principal S.A.', description: 'Empresa matriz', taxId: '76.123.456-7', currencyCode: 'USD' } }),
+    prisma.financialCompany.create({ data: { code: 'SUB1', name: 'Subsidiaria Norte Ltda.', description: 'Filial zona norte', taxId: '76.234.567-8', currencyCode: 'CLP' } }),
+    prisma.financialCompany.create({ data: { code: 'SUB2', name: 'Subsidiaria Sur S.A.', description: 'Filial zona sur', taxId: '76.345.678-9', currencyCode: 'CLP' } }),
+    prisma.financialCompany.create({ data: { code: 'TECH', name: 'Tech Solutions SpA', description: 'Empresa de tecnología', taxId: '76.456.789-0', currencyCode: 'USD' } }),
+    prisma.financialCompany.create({ data: { code: 'SERV', name: 'Servicios Digitales Ltda.', description: 'Servicios digitales y consultoría', taxId: '76.567.890-1', currencyCode: 'EUR' } }),
   ]);
 
   // ============================================
@@ -89,7 +100,6 @@ async function main() {
   const budget2025v1 = await prisma.budget.create({ data: { year: 2025, version: 'v1' } });
   const budget2025v2 = await prisma.budget.create({ data: { year: 2025, version: 'v2' } });
   const budget2026v1 = await prisma.budget.create({ data: { year: 2026, version: 'v1' } });
-
   const budgets = [budget2025v1, budget2025v2, budget2026v1];
 
   // ============================================
@@ -116,9 +126,9 @@ async function main() {
   }
 
   // ============================================
-  // GASTOS (EXPENSES) - Muchos gastos por presupuesto
+  // GASTOS (EXPENSES) - Entidades maestras independientes
   // ============================================
-  console.log('📝 Creando gastos...');
+  console.log('📝 Creando gastos (entidades maestras)...');
 
   const expenseDefinitions = [
     { code: 'INFRA-001', short: 'Servidores Cloud AWS', long: 'Instancias EC2, RDS y servicios AWS para producción', techIdx: [0, 4], areaIdx: [6], compIdx: 0 },
@@ -158,24 +168,22 @@ async function main() {
     { code: 'CAP-001', short: 'Capacitación TI', long: 'Programas de capacitación y certificaciones TI', techIdx: [1], areaIdx: [6, 3], compIdx: 0 },
   ];
 
-  // Crear gastos para budget2025v1 (presupuesto principal con todos los gastos)
+  // Create expenses as independent master data (no budgetId, no financialCompanyId)
   const allExpenses: any[] = [];
   for (const def of expenseDefinitions) {
     const expense = await prisma.expense.create({
       data: {
-        budgetId: budget2025v1.id,
         code: def.code,
         shortDescription: def.short,
         longDescription: def.long,
         technologyDirections: def.techIdx.map(i => techDirections[i].id),
         userAreas: def.areaIdx.map(i => userAreas[i].id),
-        financialCompanyId: financialCompanies[def.compIdx].id,
       }
     });
-    allExpenses.push(expense);
+    allExpenses.push({ ...expense, compIdx: def.compIdx });
   }
 
-  // Crear algunos gastos hijos (sub-gastos)
+  // Sub-expenses
   console.log('📝 Creando sub-gastos...');
   const subExpenses = [
     { parent: 0, code: 'INFRA-001-A', short: 'AWS EC2 Producción', long: 'Instancias EC2 para ambiente de producción' },
@@ -191,180 +199,142 @@ async function main() {
     const parentExp = allExpenses[sub.parent];
     const expense = await prisma.expense.create({
       data: {
-        budgetId: budget2025v1.id,
         code: sub.code,
         shortDescription: sub.short,
         longDescription: sub.long,
         technologyDirections: parentExp.technologyDirections || [],
         userAreas: parentExp.userAreas || [],
-        financialCompanyId: parentExp.financialCompanyId,
         parentExpenseId: parentExp.id,
       }
     });
-    allExpenses.push(expense);
-  }
-
-  // Crear gastos para budget2025v2 (subset)
-  const v2Expenses: any[] = [];
-  for (let i = 0; i < 20; i++) {
-    const def = expenseDefinitions[i];
-    const expense = await prisma.expense.create({
-      data: {
-        budgetId: budget2025v2.id,
-        code: def.code,
-        shortDescription: def.short,
-        longDescription: def.long,
-        technologyDirections: def.techIdx.map(idx => techDirections[idx].id),
-        userAreas: def.areaIdx.map(idx => userAreas[idx].id),
-        financialCompanyId: financialCompanies[def.compIdx].id,
-      }
-    });
-    v2Expenses.push(expense);
-  }
-
-  // Crear gastos para budget2026v1 (subset)
-  const v2026Expenses: any[] = [];
-  for (let i = 0; i < 25; i++) {
-    const def = expenseDefinitions[i];
-    const expense = await prisma.expense.create({
-      data: {
-        budgetId: budget2026v1.id,
-        code: def.code,
-        shortDescription: def.short,
-        longDescription: def.long,
-        technologyDirections: def.techIdx.map(idx => techDirections[idx].id),
-        userAreas: def.areaIdx.map(idx => userAreas[idx].id),
-        financialCompanyId: financialCompanies[def.compIdx].id,
-      }
-    });
-    v2026Expenses.push(expense);
+    allExpenses.push({ ...expense, compIdx: parentExp.compIdx });
   }
 
   // ============================================
-  // VALORES PLAN (12 meses para cada gasto)
+  // BUDGET LINES (with planM1-M12)
   // ============================================
-  console.log('📅 Creando valores plan...');
+  console.log('📅 Creando líneas de presupuesto con valores plan...');
 
   const monthlyBudgets: number[][] = [
-    [12000, 12000, 13000, 13000, 14000, 14000, 15000, 15000, 14000, 13000, 12000, 12000], // INFRA-001
-    [8000, 8000, 8500, 8500, 9000, 9000, 9500, 9500, 9000, 8500, 8000, 8000],             // INFRA-002
-    [5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000],             // INFRA-003
-    [3000, 3000, 3500, 3500, 4000, 4000, 4500, 4500, 4000, 3500, 3000, 3000],             // INFRA-004
-    [2000, 2000, 2000, 2500, 2500, 3000, 3000, 3000, 2500, 2500, 2000, 2000],             // INFRA-005
-    [4500, 4500, 4500, 4500, 4500, 4500, 4500, 4500, 4500, 4500, 4500, 4500],             // DEV-001
-    [6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000],             // DEV-002
-    [3000, 3000, 3500, 3500, 4000, 4000, 3500, 3500, 3000, 3000, 2500, 2500],             // DEV-003
-    [15000, 15000, 18000, 18000, 20000, 20000, 22000, 22000, 18000, 15000, 12000, 10000], // DEV-004
-    [8000, 8000, 9000, 9000, 10000, 10000, 10000, 9000, 9000, 8000, 8000, 7000],          // DEV-005
-    [7000, 7000, 7000, 7000, 7000, 7000, 7000, 7000, 7000, 7000, 7000, 7000],             // SEC-001
-    [2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500],             // SEC-002
-    [5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000],             // SEC-003
-    [0, 0, 15000, 0, 0, 15000, 0, 0, 15000, 0, 0, 15000],                                 // SEC-004 (trimestral)
-    [10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000], // DATA-001
-    [3500, 3500, 3500, 3500, 3500, 3500, 3500, 3500, 3500, 3500, 3500, 3500],             // DATA-002
-    [6000, 6000, 7000, 7000, 8000, 8000, 8000, 7000, 7000, 6000, 6000, 6000],             // DATA-003
-    [4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000],             // NET-001
-    [1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500],             // NET-002
-    [2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000],             // NET-003
-    [8000, 8000, 10000, 10000, 12000, 12000, 12000, 10000, 10000, 8000, 8000, 8000],      // AI-001
-    [5000, 5000, 6000, 6000, 7000, 7000, 7000, 6000, 6000, 5000, 5000, 5000],             // AI-002
-    [4000, 4000, 4500, 4500, 5000, 5000, 5000, 4500, 4500, 4000, 4000, 4000],             // AI-003
-    [6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000],             // DEVOPS-001
-    [3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000],             // DEVOPS-002
-    [15000, 15000, 15000, 15000, 15000, 15000, 15000, 15000, 15000, 15000, 15000, 15000], // LIC-001
-    [8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000],             // LIC-002
-    [25000, 25000, 25000, 25000, 25000, 25000, 25000, 25000, 25000, 25000, 25000, 25000], // LIC-003
-    [2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000],             // LIC-004
-    [0, 0, 20000, 20000, 20000, 0, 0, 0, 0, 0, 0, 0],                                     // CONS-001
-    [0, 0, 0, 0, 0, 12000, 12000, 12000, 0, 0, 0, 0],                                     // CONS-002
-    [0, 0, 0, 0, 0, 0, 0, 0, 15000, 15000, 15000, 0],                                     // CONS-003
-    [3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000],             // TEL-001
-    [5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000],             // TEL-002
-    [0, 0, 8000, 0, 0, 8000, 0, 0, 8000, 0, 0, 8000],                                     // CAP-001
+    [12000, 12000, 13000, 13000, 14000, 14000, 15000, 15000, 14000, 13000, 12000, 12000],
+    [8000, 8000, 8500, 8500, 9000, 9000, 9500, 9500, 9000, 8500, 8000, 8000],
+    [5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000],
+    [3000, 3000, 3500, 3500, 4000, 4000, 4500, 4500, 4000, 3500, 3000, 3000],
+    [2000, 2000, 2000, 2500, 2500, 3000, 3000, 3000, 2500, 2500, 2000, 2000],
+    [4500, 4500, 4500, 4500, 4500, 4500, 4500, 4500, 4500, 4500, 4500, 4500],
+    [6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000],
+    [3000, 3000, 3500, 3500, 4000, 4000, 3500, 3500, 3000, 3000, 2500, 2500],
+    [15000, 15000, 18000, 18000, 20000, 20000, 22000, 22000, 18000, 15000, 12000, 10000],
+    [8000, 8000, 9000, 9000, 10000, 10000, 10000, 9000, 9000, 8000, 8000, 7000],
+    [7000, 7000, 7000, 7000, 7000, 7000, 7000, 7000, 7000, 7000, 7000, 7000],
+    [2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500],
+    [5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000],
+    [0, 0, 15000, 0, 0, 15000, 0, 0, 15000, 0, 0, 15000],
+    [10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000],
+    [3500, 3500, 3500, 3500, 3500, 3500, 3500, 3500, 3500, 3500, 3500, 3500],
+    [6000, 6000, 7000, 7000, 8000, 8000, 8000, 7000, 7000, 6000, 6000, 6000],
+    [4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000],
+    [1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500],
+    [2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000],
+    [8000, 8000, 10000, 10000, 12000, 12000, 12000, 10000, 10000, 8000, 8000, 8000],
+    [5000, 5000, 6000, 6000, 7000, 7000, 7000, 6000, 6000, 5000, 5000, 5000],
+    [4000, 4000, 4500, 4500, 5000, 5000, 5000, 4500, 4500, 4000, 4000, 4000],
+    [6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000],
+    [3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000],
+    [15000, 15000, 15000, 15000, 15000, 15000, 15000, 15000, 15000, 15000, 15000, 15000],
+    [8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000],
+    [25000, 25000, 25000, 25000, 25000, 25000, 25000, 25000, 25000, 25000, 25000, 25000],
+    [2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000],
+    [0, 0, 20000, 20000, 20000, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 12000, 12000, 12000, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 15000, 15000, 15000, 0],
+    [3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000],
+    [5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000],
+    [0, 0, 8000, 0, 0, 8000, 0, 0, 8000, 0, 0, 8000],
   ];
 
-  // Plan values para budget2025v1
+  // BudgetLines for budget2025v1
+  const allBudgetLines: any[] = [];
   for (let expIdx = 0; expIdx < allExpenses.length && expIdx < monthlyBudgets.length; expIdx++) {
-    const budgetValues = monthlyBudgets[expIdx];
-    for (let month = 1; month <= 12; month++) {
-      const value = budgetValues[month - 1];
-      if (value > 0) {
-        await prisma.planValue.create({
-          data: {
-            expenseId: allExpenses[expIdx].id,
-            month,
-            transactionCurrency: 'USD',
-            transactionValue: value,
-            usdValue: value,
-            conversionRate: 1.0,
-          }
-        });
+    const exp = allExpenses[expIdx];
+    const vals = monthlyBudgets[expIdx];
+    const companyIdx = exp.compIdx ?? 0;
+    const company = financialCompanies[companyIdx];
+    const bl = await prisma.budgetLine.create({
+      data: {
+        budgetId: budget2025v1.id,
+        expenseId: exp.id,
+        financialCompanyId: company.id,
+        currency: company.currencyCode || 'USD',
+        planM1: vals[0], planM2: vals[1], planM3: vals[2], planM4: vals[3],
+        planM5: vals[4], planM6: vals[5], planM7: vals[6], planM8: vals[7],
+        planM9: vals[8], planM10: vals[9], planM11: vals[10], planM12: vals[11],
       }
-    }
+    });
+    allBudgetLines.push(bl);
   }
 
-  // Plan values para budget2025v2 (con variaciones +/- 10%)
-  for (let expIdx = 0; expIdx < v2Expenses.length && expIdx < monthlyBudgets.length; expIdx++) {
-    const budgetValues = monthlyBudgets[expIdx];
-    for (let month = 1; month <= 12; month++) {
-      const value = Math.round(budgetValues[month - 1] * (0.9 + Math.random() * 0.2));
-      if (value > 0) {
-        await prisma.planValue.create({
-          data: {
-            expenseId: v2Expenses[expIdx].id,
-            month,
-            transactionCurrency: 'USD',
-            transactionValue: value,
-            usdValue: value,
-            conversionRate: 1.0,
-          }
-        });
+  // BudgetLines for budget2025v2 (subset, +/- 10%)
+  const v2BudgetLines: any[] = [];
+  for (let expIdx = 0; expIdx < 20 && expIdx < monthlyBudgets.length; expIdx++) {
+    const exp = allExpenses[expIdx];
+    const vals = monthlyBudgets[expIdx].map(v => Math.round(v * (0.9 + Math.random() * 0.2)));
+    const companyIdx = exp.compIdx ?? 0;
+    const company = financialCompanies[companyIdx];
+    const bl = await prisma.budgetLine.create({
+      data: {
+        budgetId: budget2025v2.id,
+        expenseId: exp.id,
+        financialCompanyId: company.id,
+        currency: company.currencyCode || 'USD',
+        planM1: vals[0], planM2: vals[1], planM3: vals[2], planM4: vals[3],
+        planM5: vals[4], planM6: vals[5], planM7: vals[6], planM8: vals[7],
+        planM9: vals[8], planM10: vals[9], planM11: vals[10], planM12: vals[11],
       }
-    }
+    });
+    v2BudgetLines.push(bl);
   }
 
-  // Plan values para budget2026v1 (incremento ~15%)
-  for (let expIdx = 0; expIdx < v2026Expenses.length && expIdx < monthlyBudgets.length; expIdx++) {
-    const budgetValues = monthlyBudgets[expIdx];
-    for (let month = 1; month <= 12; month++) {
-      const value = Math.round(budgetValues[month - 1] * 1.15);
-      if (value > 0) {
-        await prisma.planValue.create({
-          data: {
-            expenseId: v2026Expenses[expIdx].id,
-            month,
-            transactionCurrency: 'USD',
-            transactionValue: value,
-            usdValue: value,
-            conversionRate: 1.0,
-          }
-        });
+  // BudgetLines for budget2026v1 (subset, +15%)
+  for (let expIdx = 0; expIdx < 25 && expIdx < monthlyBudgets.length; expIdx++) {
+    const exp = allExpenses[expIdx];
+    const vals = monthlyBudgets[expIdx].map(v => Math.round(v * 1.15));
+    const companyIdx = exp.compIdx ?? 0;
+    const company = financialCompanies[companyIdx];
+    await prisma.budgetLine.create({
+      data: {
+        budgetId: budget2026v1.id,
+        expenseId: exp.id,
+        financialCompanyId: company.id,
+        currency: company.currencyCode || 'USD',
+        planM1: vals[0], planM2: vals[1], planM3: vals[2], planM4: vals[3],
+        planM5: vals[4], planM6: vals[5], planM7: vals[6], planM8: vals[7],
+        planM9: vals[8], planM10: vals[9], planM11: vals[10], planM12: vals[11],
       }
-    }
+    });
   }
 
   // ============================================
   // TRANSACCIONES (Comprometidas y Reales)
   // ============================================
-  console.log('💳 Creando transacciones comprometidas y reales...');
+  console.log('💳 Creando transacciones...');
 
   let docCounter = 1;
   const pad = (n: number) => String(n).padStart(5, '0');
 
-  // Generar transacciones para los primeros 6 meses de budget2025v1
-  for (let expIdx = 0; expIdx < allExpenses.length && expIdx < monthlyBudgets.length; expIdx++) {
-    const expense = allExpenses[expIdx];
-    const budgetValues = monthlyBudgets[expIdx];
+  for (let blIdx = 0; blIdx < allBudgetLines.length && blIdx < monthlyBudgets.length; blIdx++) {
+    const bl = allBudgetLines[blIdx];
+    const budgetValues = monthlyBudgets[blIdx];
 
     for (let month = 1; month <= 6; month++) {
       const planValue = budgetValues[month - 1];
       if (planValue <= 0) continue;
 
-      // Transacción comprometida (90-110% del plan)
       const committedValue = Math.round(planValue * (0.9 + Math.random() * 0.2));
       await prisma.transaction.create({
         data: {
-          expenseId: expense.id,
+          budgetLineId: bl.id,
+          financialCompanyId: bl.financialCompanyId,
           type: TransactionType.COMMITTED,
           serviceDate: new Date(2025, month - 1, 10 + Math.floor(Math.random() * 10)),
           postingDate: new Date(2025, month - 1, 5 + Math.floor(Math.random() * 5)),
@@ -378,12 +348,12 @@ async function main() {
         }
       });
 
-      // Transacción real (85-100% del comprometido) - solo meses 1-4
       if (month <= 4) {
         const realValue = Math.round(committedValue * (0.85 + Math.random() * 0.15));
         await prisma.transaction.create({
           data: {
-            expenseId: expense.id,
+            budgetLineId: bl.id,
+            financialCompanyId: bl.financialCompanyId,
             type: TransactionType.REAL,
             serviceDate: new Date(2025, month - 1, 25 + Math.floor(Math.random() * 5)),
             postingDate: new Date(2025, month - 1, 28),
@@ -400,71 +370,8 @@ async function main() {
     }
   }
 
-  // Transacciones adicionales en CLP para algunos gastos
-  const clpExpenses = [0, 2, 3, 17, 18]; // INFRA-001, INFRA-003, INFRA-004, NET-001, NET-002
-  for (const expIdx of clpExpenses) {
-    if (expIdx >= allExpenses.length) continue;
-    for (let month = 1; month <= 3; month++) {
-      const clpValue = Math.round((500000 + Math.random() * 2000000));
-      const rate = currencyRates.CLP[month - 1];
-      await prisma.transaction.create({
-        data: {
-          expenseId: allExpenses[expIdx].id,
-          type: TransactionType.COMMITTED,
-          serviceDate: new Date(2025, month - 1, 15),
-          postingDate: new Date(2025, month - 1, 12),
-          referenceDocumentNumber: `CLP-COM-${pad(docCounter++)}`,
-          externalPlatformLink: `https://erp.corp.com/clp/${docCounter}`,
-          transactionCurrency: 'CLP',
-          transactionValue: clpValue,
-          usdValue: Math.round(clpValue * rate * 100) / 100,
-          conversionRate: rate,
-          month,
-        }
-      });
-
-      const clpRealValue = Math.round(clpValue * 0.95);
-      await prisma.transaction.create({
-        data: {
-          expenseId: allExpenses[expIdx].id,
-          type: TransactionType.REAL,
-          serviceDate: new Date(2025, month - 1, 28),
-          postingDate: new Date(2025, month - 1, 28),
-          referenceDocumentNumber: `CLP-REAL-${pad(docCounter++)}`,
-          externalPlatformLink: `https://erp.corp.com/clp/${docCounter}`,
-          transactionCurrency: 'CLP',
-          transactionValue: clpRealValue,
-          usdValue: Math.round(clpRealValue * rate * 100) / 100,
-          conversionRate: rate,
-          month,
-        }
-      });
-    }
-  }
-
-  // Transacciones en EUR para consultoría
-  for (let month = 3; month <= 5; month++) {
-    const eurValue = Math.round(15000 + Math.random() * 5000);
-    const rate = currencyRates.EUR[month - 1];
-    await prisma.transaction.create({
-      data: {
-        expenseId: allExpenses[29].id, // CONS-001
-        type: TransactionType.COMMITTED,
-        serviceDate: new Date(2025, month - 1, 10),
-        postingDate: new Date(2025, month - 1, 8),
-        referenceDocumentNumber: `EUR-COM-${pad(docCounter++)}`,
-        externalPlatformLink: `https://erp.corp.com/eur/${docCounter}`,
-        transactionCurrency: 'EUR',
-        transactionValue: eurValue,
-        usdValue: Math.round(eurValue * rate * 100) / 100,
-        conversionRate: rate,
-        month,
-      }
-    });
-  }
-
   // ============================================
-  // TAG VALUES (Etiquetas para gastos)
+  // TAG VALUES
   // ============================================
   console.log('🏷️  Asignando etiquetas a gastos...');
 
@@ -478,48 +385,16 @@ async function main() {
 
   for (let i = 0; i < allExpenses.length && i < 35; i++) {
     const expense = allExpenses[i];
-
-    // Prioridad
-    await prisma.tagValue.create({
-      data: { expenseId: expense.id, tagId: tagDefs[0].id, value: JSON.parse(JSON.stringify(priorities[i % priorities.length])) }
-    });
-
-    // Proyecto
-    await prisma.tagValue.create({
-      data: { expenseId: expense.id, tagId: tagDefs[1].id, value: JSON.parse(JSON.stringify(projects[i % projects.length])) }
-    });
-
-    // Centro de Costo
-    await prisma.tagValue.create({
-      data: { expenseId: expense.id, tagId: tagDefs[2].id, value: JSON.parse(JSON.stringify(costCenters[i % costCenters.length])) }
-    });
-
-    // Tipo Contrato
-    await prisma.tagValue.create({
-      data: { expenseId: expense.id, tagId: tagDefs[3].id, value: JSON.parse(JSON.stringify(contractTypes[i % contractTypes.length])) }
-    });
-
-    // Responsable
-    await prisma.tagValue.create({
-      data: { expenseId: expense.id, tagId: tagDefs[4].id, value: JSON.parse(JSON.stringify(responsables[i % responsables.length])) }
-    });
-
-    // CAPEX/OPEX
-    await prisma.tagValue.create({
-      data: { expenseId: expense.id, tagId: tagDefs[5].id, value: JSON.parse(JSON.stringify(capexOpex[i % capexOpex.length])) }
-    });
-
-    // Proveedor
-    await prisma.tagValue.create({
-      data: { expenseId: expense.id, tagId: tagDefs[6].id, value: JSON.parse(JSON.stringify(proveedores[i % proveedores.length])) }
-    });
-
-    // Fecha Vencimiento (solo para algunos)
+    await prisma.tagValue.create({ data: { expenseId: expense.id, tagId: tagDefs[0].id, value: JSON.parse(JSON.stringify(priorities[i % priorities.length])) } });
+    await prisma.tagValue.create({ data: { expenseId: expense.id, tagId: tagDefs[1].id, value: JSON.parse(JSON.stringify(projects[i % projects.length])) } });
+    await prisma.tagValue.create({ data: { expenseId: expense.id, tagId: tagDefs[2].id, value: JSON.parse(JSON.stringify(costCenters[i % costCenters.length])) } });
+    await prisma.tagValue.create({ data: { expenseId: expense.id, tagId: tagDefs[3].id, value: JSON.parse(JSON.stringify(contractTypes[i % contractTypes.length])) } });
+    await prisma.tagValue.create({ data: { expenseId: expense.id, tagId: tagDefs[4].id, value: JSON.parse(JSON.stringify(responsables[i % responsables.length])) } });
+    await prisma.tagValue.create({ data: { expenseId: expense.id, tagId: tagDefs[5].id, value: JSON.parse(JSON.stringify(capexOpex[i % capexOpex.length])) } });
+    await prisma.tagValue.create({ data: { expenseId: expense.id, tagId: tagDefs[6].id, value: JSON.parse(JSON.stringify(proveedores[i % proveedores.length])) } });
     if (i % 3 === 0) {
       const month = String(1 + (i % 12)).padStart(2, '0');
-      await prisma.tagValue.create({
-        data: { expenseId: expense.id, tagId: tagDefs[7].id, value: JSON.parse(JSON.stringify(`31/${month}/2026`)) }
-      });
+      await prisma.tagValue.create({ data: { expenseId: expense.id, tagId: tagDefs[7].id, value: JSON.parse(JSON.stringify(`31/${month}/2026`)) } });
     }
   }
 
@@ -533,82 +408,36 @@ async function main() {
   const adminHash = await passwordService.hashPassword('admin123');
   const userHash = await passwordService.hashPassword('user123');
 
-  // Roles
-  const adminRole = await prisma.role.create({
-    data: {
-      name: 'Administrador',
-      description: 'Acceso completo al sistema',
-      isSystem: true,
-    }
-  });
+  const adminRole = await prisma.role.create({ data: { name: 'Administrador', description: 'Acceso completo al sistema', isSystem: true } });
+  const viewerRole = await prisma.role.create({ data: { name: 'Visualizador', description: 'Solo lectura en todos los módulos' } });
+  const budgetManagerRole = await prisma.role.create({ data: { name: 'Gestor de Presupuesto', description: 'Gestión completa de presupuestos y gastos' } });
+  const analystRole = await prisma.role.create({ data: { name: 'Analista', description: 'Visualización y reportes' } });
 
-  const viewerRole = await prisma.role.create({
-    data: {
-      name: 'Visualizador',
-      description: 'Solo lectura en todos los módulos',
-    }
-  });
-
-  const budgetManagerRole = await prisma.role.create({
-    data: {
-      name: 'Gestor de Presupuesto',
-      description: 'Gestión completa de presupuestos y gastos',
-    }
-  });
-
-  const analystRole = await prisma.role.create({
-    data: {
-      name: 'Analista',
-      description: 'Visualización y reportes',
-    }
-  });
-
-  // Permisos para admin (todos)
-  const allMenuCodes = ['dashboard', 'budgets', 'expenses', 'transactions', 'plan-values', 'committed-transactions', 'real-transactions', 'master-data', 'technology-directions', 'user-areas', 'financial-companies', 'tag-definitions', 'conversion-rates', 'users', 'roles', 'reports', 'deferrals', 'configuration'];
+  const allMenuCodes = ['dashboard', 'budgets', 'expenses', 'transactions', 'budget-lines', 'committed-transactions', 'real-transactions', 'master-data', 'technology-directions', 'user-areas', 'financial-companies', 'tag-definitions', 'conversion-rates', 'users', 'roles', 'reports', 'deferrals', 'configuration'];
   for (const menuCode of allMenuCodes) {
     await prisma.permission.create({ data: { roleId: adminRole.id, menuCode, permissionType: PermissionType.VIEW } });
     await prisma.permission.create({ data: { roleId: adminRole.id, menuCode, permissionType: PermissionType.MODIFY } });
   }
-
-  // Permisos para viewer (solo VIEW)
   for (const menuCode of allMenuCodes) {
     await prisma.permission.create({ data: { roleId: viewerRole.id, menuCode, permissionType: PermissionType.VIEW } });
   }
-
-  // Permisos para budget manager
-  const budgetMenus = ['dashboard', 'budgets', 'expenses', 'transactions', 'plan-values', 'committed-transactions', 'real-transactions', 'conversion-rates', 'reports', 'deferrals'];
+  const budgetMenus = ['dashboard', 'budgets', 'expenses', 'transactions', 'budget-lines', 'committed-transactions', 'real-transactions', 'conversion-rates', 'reports', 'deferrals'];
   for (const menuCode of budgetMenus) {
     await prisma.permission.create({ data: { roleId: budgetManagerRole.id, menuCode, permissionType: PermissionType.VIEW } });
     await prisma.permission.create({ data: { roleId: budgetManagerRole.id, menuCode, permissionType: PermissionType.MODIFY } });
   }
-
-  // Permisos para analista
-  const analystMenus = ['dashboard', 'budgets', 'expenses', 'transactions', 'plan-values', 'committed-transactions', 'real-transactions', 'reports'];
+  const analystMenus = ['dashboard', 'budgets', 'expenses', 'transactions', 'budget-lines', 'committed-transactions', 'real-transactions', 'reports'];
   for (const menuCode of analystMenus) {
     await prisma.permission.create({ data: { roleId: analystRole.id, menuCode, permissionType: PermissionType.VIEW } });
   }
 
-  // Usuarios
-  const adminUser = await prisma.user.create({
-    data: { username: 'admin', passwordHash: adminHash, email: 'admin@corp.com', fullName: 'Administrador del Sistema' }
-  });
-  const user1 = await prisma.user.create({
-    data: { username: 'jperez', passwordHash: userHash, email: 'jperez@corp.com', fullName: 'Juan Pérez' }
-  });
-  const user2 = await prisma.user.create({
-    data: { username: 'mgarcia', passwordHash: userHash, email: 'mgarcia@corp.com', fullName: 'María García' }
-  });
-  const user3 = await prisma.user.create({
-    data: { username: 'clopez', passwordHash: userHash, email: 'clopez@corp.com', fullName: 'Carlos López' }
-  });
-  const user4 = await prisma.user.create({
-    data: { username: 'amartinez', passwordHash: userHash, email: 'amartinez@corp.com', fullName: 'Ana Martínez' }
-  });
-  const user5 = await prisma.user.create({
-    data: { username: 'rsanchez', passwordHash: userHash, email: 'rsanchez@corp.com', fullName: 'Roberto Sánchez' }
-  });
+  const adminUser = await prisma.user.create({ data: { username: 'admin', passwordHash: adminHash, email: 'admin@corp.com', fullName: 'Administrador del Sistema' } });
+  const user1 = await prisma.user.create({ data: { username: 'jperez', passwordHash: userHash, email: 'jperez@corp.com', fullName: 'Juan Pérez' } });
+  const user2 = await prisma.user.create({ data: { username: 'mgarcia', passwordHash: userHash, email: 'mgarcia@corp.com', fullName: 'María García' } });
+  const user3 = await prisma.user.create({ data: { username: 'clopez', passwordHash: userHash, email: 'clopez@corp.com', fullName: 'Carlos López' } });
+  const user4 = await prisma.user.create({ data: { username: 'amartinez', passwordHash: userHash, email: 'amartinez@corp.com', fullName: 'Ana Martínez' } });
+  const user5 = await prisma.user.create({ data: { username: 'rsanchez', passwordHash: userHash, email: 'rsanchez@corp.com', fullName: 'Roberto Sánchez' } });
 
-  // Asignar roles
   await prisma.userRole.create({ data: { userId: adminUser.id, roleId: adminRole.id } });
   await prisma.userRole.create({ data: { userId: user1.id, roleId: budgetManagerRole.id } });
   await prisma.userRole.create({ data: { userId: user2.id, roleId: budgetManagerRole.id } });
@@ -617,32 +446,30 @@ async function main() {
   await prisma.userRole.create({ data: { userId: user5.id, roleId: analystRole.id } });
 
   // ============================================
-  // SAVINGS (Ahorros)
+  // SAVINGS (using budgetLineId)
   // ============================================
   console.log('💵 Creando ahorros...');
 
   const savingsData = [
-    { expIdx: 0, amount: 5000, desc: 'Optimización de instancias EC2 con Reserved Instances', status: SavingStatus.APPROVED, dist: [0, 0, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500] },
-    { expIdx: 1, amount: 3000, desc: 'Migración a instancias spot para ambientes de desarrollo', status: SavingStatus.APPROVED, dist: [0, 0, 0, 500, 500, 500, 500, 500, 500, 0, 0, 0] },
-    { expIdx: 5, amount: 2000, desc: 'Consolidación de licencias IDE duplicadas', status: SavingStatus.PENDING, dist: [0, 0, 0, 0, 400, 400, 400, 400, 400, 0, 0, 0] },
-    { expIdx: 11, amount: 1500, desc: 'Renegociación contrato antivirus corporativo', status: SavingStatus.APPROVED, dist: [125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125] },
-    { expIdx: 14, amount: 8000, desc: 'Migración data warehouse a solución cloud más económica', status: SavingStatus.PENDING, dist: [0, 0, 0, 0, 0, 1000, 1000, 1000, 1000, 1000, 1000, 2000] },
-    { expIdx: 25, amount: 10000, desc: 'Renegociación licencias Microsoft 365 por volumen', status: SavingStatus.APPROVED, dist: [833, 833, 833, 833, 833, 833, 833, 833, 833, 833, 833, 837] },
-    { expIdx: 27, amount: 15000, desc: 'Optimización módulos SAP no utilizados', status: SavingStatus.PENDING, dist: [0, 0, 0, 0, 0, 0, 2500, 2500, 2500, 2500, 2500, 2500] },
-    { expIdx: 23, amount: 4000, desc: 'Reducción de nodos Kubernetes en horario nocturno', status: SavingStatus.APPROVED, dist: [333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 337] },
-    { expIdx: 17, amount: 2400, desc: 'Optimización ancho de banda WAN', status: SavingStatus.APPROVED, dist: [200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200] },
-    { expIdx: 20, amount: 6000, desc: 'Uso de modelos ML open source en lugar de propietarios', status: SavingStatus.PENDING, dist: [0, 0, 0, 1000, 1000, 1000, 1000, 1000, 1000, 0, 0, 0] },
+    { blIdx: 0, amount: 5000, desc: 'Optimización de instancias EC2 con Reserved Instances', status: SavingStatus.APPROVED, dist: [0, 0, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500] },
+    { blIdx: 1, amount: 3000, desc: 'Migración a instancias spot para ambientes de desarrollo', status: SavingStatus.APPROVED, dist: [0, 0, 0, 500, 500, 500, 500, 500, 500, 0, 0, 0] },
+    { blIdx: 5, amount: 2000, desc: 'Consolidación de licencias IDE duplicadas', status: SavingStatus.PENDING, dist: [0, 0, 0, 0, 400, 400, 400, 400, 400, 0, 0, 0] },
+    { blIdx: 11, amount: 1500, desc: 'Renegociación contrato antivirus corporativo', status: SavingStatus.APPROVED, dist: [125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125] },
+    { blIdx: 14, amount: 8000, desc: 'Migración data warehouse a solución cloud más económica', status: SavingStatus.PENDING, dist: [0, 0, 0, 0, 0, 1000, 1000, 1000, 1000, 1000, 1000, 2000] },
+    { blIdx: 25, amount: 10000, desc: 'Renegociación licencias Microsoft 365 por volumen', status: SavingStatus.APPROVED, dist: [833, 833, 833, 833, 833, 833, 833, 833, 833, 833, 833, 837] },
+    { blIdx: 27, amount: 15000, desc: 'Optimización módulos SAP no utilizados', status: SavingStatus.PENDING, dist: [0, 0, 0, 0, 0, 0, 2500, 2500, 2500, 2500, 2500, 2500] },
+    { blIdx: 23, amount: 4000, desc: 'Reducción de nodos Kubernetes en horario nocturno', status: SavingStatus.APPROVED, dist: [333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 337] },
+    { blIdx: 17, amount: 2400, desc: 'Optimización ancho de banda WAN', status: SavingStatus.APPROVED, dist: [200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200] },
+    { blIdx: 20, amount: 6000, desc: 'Uso de modelos ML open source en lugar de propietarios', status: SavingStatus.PENDING, dist: [0, 0, 0, 1000, 1000, 1000, 1000, 1000, 1000, 0, 0, 0] },
   ];
 
   for (const s of savingsData) {
-    if (s.expIdx >= allExpenses.length) continue;
+    if (s.blIdx >= allBudgetLines.length) continue;
     const monthlyDist: Record<string, number> = {};
     s.dist.forEach((val, idx) => { monthlyDist[String(idx + 1)] = val; });
-
     await prisma.saving.create({
       data: {
-        expenseId: allExpenses[s.expIdx].id,
-        budgetId: budget2025v1.id,
+        budgetLineId: allBudgetLines[s.blIdx].id,
         totalAmount: s.amount,
         description: s.desc,
         status: s.status,
@@ -654,27 +481,26 @@ async function main() {
   }
 
   // ============================================
-  // DEFERRALS (Diferidos)
+  // DEFERRALS (using budgetLineId)
   // ============================================
   console.log('📆 Creando diferidos...');
 
   const deferralsData = [
-    { expIdx: 8, desc: 'Diferido desarrollo app móvil - fase 1', amount: 30000, start: 1, end: 6 },
-    { expIdx: 8, desc: 'Diferido desarrollo app móvil - fase 2', amount: 25000, start: 4, end: 9 },
-    { expIdx: 9, desc: 'Diferido portal web clientes - rediseño', amount: 20000, start: 2, end: 7 },
-    { expIdx: 29, desc: 'Diferido consultoría cloud - migración', amount: 60000, start: 3, end: 8 },
-    { expIdx: 30, desc: 'Diferido consultoría seguridad - auditoría', amount: 36000, start: 6, end: 9 },
-    { expIdx: 31, desc: 'Diferido consultoría data - estrategia', amount: 45000, start: 9, end: 12 },
-    { expIdx: 13, desc: 'Diferido pentesting anual', amount: 60000, start: 1, end: 12 },
-    { expIdx: 34, desc: 'Diferido programa capacitación anual TI', amount: 32000, start: 1, end: 12 },
+    { blIdx: 8, desc: 'Diferido desarrollo app móvil - fase 1', amount: 30000, start: 1, end: 6 },
+    { blIdx: 8, desc: 'Diferido desarrollo app móvil - fase 2', amount: 25000, start: 4, end: 9 },
+    { blIdx: 9, desc: 'Diferido portal web clientes - rediseño', amount: 20000, start: 2, end: 7 },
+    { blIdx: 29, desc: 'Diferido consultoría cloud - migración', amount: 60000, start: 3, end: 8 },
+    { blIdx: 30, desc: 'Diferido consultoría seguridad - auditoría', amount: 36000, start: 6, end: 9 },
+    { blIdx: 31, desc: 'Diferido consultoría data - estrategia', amount: 45000, start: 9, end: 12 },
+    { blIdx: 13, desc: 'Diferido pentesting anual', amount: 60000, start: 1, end: 12 },
+    { blIdx: 34, desc: 'Diferido programa capacitación anual TI', amount: 32000, start: 1, end: 12 },
   ];
 
   for (const d of deferralsData) {
-    if (d.expIdx >= allExpenses.length) continue;
+    if (d.blIdx >= allBudgetLines.length) continue;
     await prisma.deferral.create({
       data: {
-        expenseId: allExpenses[d.expIdx].id,
-        budgetId: budget2025v1.id,
+        budgetLineId: allBudgetLines[d.blIdx].id,
         description: d.desc,
         totalAmount: d.amount,
         startMonth: d.start,
@@ -700,11 +526,9 @@ async function main() {
   console.log(`      - ${tagDefs.length} definiciones de etiquetas`);
   console.log('   💰 Presupuestos:');
   console.log(`      - ${budgets.length} presupuestos (2025 v1, 2025 v2, 2026 v1)`);
-  console.log(`      - ${allExpenses.length} gastos en 2025 v1 (incluye sub-gastos)`);
-  console.log(`      - ${v2Expenses.length} gastos en 2025 v2`);
-  console.log(`      - ${v2026Expenses.length} gastos en 2026 v1`);
-  console.log(`      - Valores plan para 12 meses en cada presupuesto`);
-  console.log(`      - ~${docCounter} transacciones (comprometidas + reales, USD/CLP/EUR)`);
+  console.log(`      - ${allBudgetLines.length} líneas de presupuesto en 2025 v1`);
+  console.log(`      - ${v2BudgetLines.length} líneas en 2025 v2`);
+  console.log(`      - ~${docCounter} transacciones`);
   console.log('   👥 Usuarios:');
   console.log('      - admin / admin123 (Administrador)');
   console.log('      - jperez / user123 (Gestor de Presupuesto)');
@@ -712,9 +536,8 @@ async function main() {
   console.log('      - clopez / user123 (Analista)');
   console.log('      - amartinez / user123 (Visualizador)');
   console.log('      - rsanchez / user123 (Analista)');
-  console.log('   💵 Ahorros: 10 registros (aprobados y pendientes)');
+  console.log('   💵 Ahorros: 10 registros');
   console.log('   📆 Diferidos: 8 registros');
-  console.log('   🏷️  Etiquetas: ~245 valores asignados a gastos');
 }
 
 main()

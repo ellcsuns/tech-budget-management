@@ -19,7 +19,6 @@ export interface ExpenseInput {
   longDescription: string;
   technologyDirections: string[];
   userAreas: string[];
-  financialCompanyId: string;
   parentExpenseId?: string;
 }
 
@@ -27,7 +26,6 @@ export interface ExpenseFilters {
   searchText?: string;
   technologyDirectionIds?: string[];
   userAreaIds?: string[];
-  financialCompanyId?: string;
   parentExpenseId?: string;
   hasTag?: { key: string; value?: string };
   includeInactive?: boolean;
@@ -39,8 +37,42 @@ export interface CustomTag {
   valueType: 'TEXT' | 'NUMBER' | 'DATE' | 'SELECT';
 }
 
-export interface TransactionInput {
+export interface BudgetLineInput {
+  budgetId: string;
   expenseId: string;
+  financialCompanyId: string;
+  planM1?: number;
+  planM2?: number;
+  planM3?: number;
+  planM4?: number;
+  planM5?: number;
+  planM6?: number;
+  planM7?: number;
+  planM8?: number;
+  planM9?: number;
+  planM10?: number;
+  planM11?: number;
+  planM12?: number;
+}
+
+export interface MonthlyPlanValues {
+  planM1?: number;
+  planM2?: number;
+  planM3?: number;
+  planM4?: number;
+  planM5?: number;
+  planM6?: number;
+  planM7?: number;
+  planM8?: number;
+  planM9?: number;
+  planM10?: number;
+  planM11?: number;
+  planM12?: number;
+}
+
+export interface TransactionInput {
+  budgetLineId: string;
+  financialCompanyId: string;
   type: TransactionType;
   serviceDate: Date | string;
   postingDate: Date | string;
@@ -48,14 +80,7 @@ export interface TransactionInput {
   externalPlatformLink: string;
   transactionCurrency: string;
   transactionValue: number;
-  month?: number;
-}
-
-export interface PlanValueInput {
-  expenseId: string;
-  month: number;
-  transactionCurrency: string;
-  transactionValue: number;
+  committedTransactionId?: string;
 }
 
 export interface MasterDataInput {
@@ -66,6 +91,7 @@ export interface MasterDataInput {
 
 export interface FinancialCompanyInput extends MasterDataInput {
   taxId?: string;
+  currencyCode: string;
 }
 
 export interface TagDefinitionInput {

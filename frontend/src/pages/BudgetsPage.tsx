@@ -1,19 +1,23 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { budgetApi, expenseApi, planValueApi } from '../services/api';
-import type { Budget, Expense, ExpenseRow, CellEdit } from '../types';
-import { getCellKey, validateCellValue, transformToExpenseRows } from '../utils/budgetEditHelpers';
+import { budgetApi, budgetLineApi, expenseApi, financialCompanyApi } from '../services/api';
+import type { Budget, BudgetLine } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { fmt } from '../utils/formatters';
-import RowManager from '../components/RowManager';
 import SaveButton from '../components/SaveButton';
 import ConfirmationDialog from '../components/ConfirmationDialog';
 import BudgetTable from '../components/BudgetTable';
-import { HiOutlineLockClosed } from 'react-icons/hi2';
+import { HiOutlineLockClosed, HiOutlinePlusCircle } from 'react-icons/hi2';
+
+interface BudgetLineEdit {
+  budgetLineId: string;
+  month: number;
+  value: number;
+}
 
 export default function BudgetsPage() {
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
-  const [expenses, setExpenses] = useState<ExpenseRow[]>([]);
-  const [editedCells, setEditedCells] = useState<Map<string, CellEdit>>(new Map());
+  const [budgetLines, setBudgetLines] = useState<BudgetLine[]>([]);
+  const [editedCells, setEditedCells] = useState<Map<string, BudgetLineEdit>>(new Map());
   const [validationErrors, setValidationErrors] = useState<Map<string, string>>(new Map());
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -21,11 +25,16 @@ export default function BudgetsPage() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState<string | null>(null);
   const [searchText, setSearchText] = useState('');
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [addExpenseId, setAddExpenseId] = useState('');
+  const [addCompanyId, setAddCompanyId] = useState('');
+  const [allExpenses, setAllExpenses] = useState<any[]>([]);
+  const [allCompanies, setAllCompanies] = useState<any[]>([]);
 
   const { hasPermission } = useAuth();
   const canEdit = hasPermission('budgets', 'MODIFY');
 
-  useEffect(() => { loadBudgets(); }, []);
+  useEffect(() => { loadBudgets(); loadMasterData(); }, []);
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -34,6 +43,19 @@ export default function BudgetsPage() {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges]);
+
+  const loadMasterData = async () => {
+    try {
+      const [expRes, compRes] = await Promise.all([
+        expenseApi.getAll(),
+        financialCompanyApi.getAll()
+      ]);
+      setAllExpenses(expRes.data);
+      setAllCompanies(compRes.data);
+    } catch (error) {
+      console.error('Error loading master data:', error);
+    }
+  };
 
   const loadBudgets = async () => {
     try {
@@ -54,9 +76,7 @@ export default function BudgetsPage() {
       setIsLoading(true);
       const res = await budgetApi.getBudgetWithDetails(budgetId);
       setSelectedBudget(res.data);
-      if (res.data.expenses) {
-        setExpenses(transformToExpenseRows(res.data.expenses));
-      }
+      setBudgetLines(res.data.budgetLines || []);
       setEditedCells(new Map());
       setValidationErrors(new Map());
       setHasUnsavedChanges(false);
@@ -67,30 +87,36 @@ export default function BudgetsPage() {
     }
   };
 
-  const handleCellEdit = (expenseId: string, month: number, value: string) => {
-    const cellKey = getCellKey(expenseId, month);
-    const validation = validateCellValue(value);
+  const getCellKey = (budgetLineId: string, month: number) => `${budgetLineId}-${month}`;
+
+  const getPlanValue = (bl: BudgetLine, month: number): number => {
+    const key = `planM${month}` as keyof BudgetLine;
+    return Number(bl[key]) || 0;
+  };
+
+  const handleCellEdit = (budgetLineId: string, month: number, value: string) => {
+    const cellKey = getCellKey(budgetLineId, month);
     const newValidationErrors = new Map(validationErrors);
-    if (validation.isValid) newValidationErrors.delete(cellKey);
-    else newValidationErrors.set(cellKey, validation.error || 'Invalid value');
+
+    if (value.trim() !== '' && (isNaN(parseFloat(value)) || parseFloat(value) < 0)) {
+      newValidationErrors.set(cellKey, 'Valor inválido');
+    } else {
+      newValidationErrors.delete(cellKey);
+    }
     setValidationErrors(newValidationErrors);
 
     const numValue = value.trim() === '' ? 0 : parseFloat(value);
-    const expense = expenses.find((e: ExpenseRow) => e.id === expenseId);
-    const planValue = expense?.planValues.find(pv => pv.month === month);
-    if (planValue) {
-      const newEditedCells = new Map(editedCells);
-      newEditedCells.set(cellKey, { expenseId, month, value: isNaN(numValue) ? 0 : numValue, currency: planValue.transactionCurrency, isValid: validation.isValid });
-      setEditedCells(newEditedCells);
-      setHasUnsavedChanges(true);
-    }
+    const newEditedCells = new Map(editedCells);
+    newEditedCells.set(cellKey, { budgetLineId, month, value: isNaN(numValue) ? 0 : numValue });
+    setEditedCells(newEditedCells);
+    setHasUnsavedChanges(true);
   };
 
-  const handleRemoveRow = (expenseId: string) => { setShowDeleteDialog(expenseId); };
+  const handleRemoveRow = (budgetLineId: string) => { setShowDeleteDialog(budgetLineId); };
 
   const confirmRemoveRow = () => {
     if (!showDeleteDialog) return;
-    setExpenses(expenses.filter((e: ExpenseRow) => e.id !== showDeleteDialog));
+    setBudgetLines(budgetLines.filter(bl => bl.id !== showDeleteDialog));
     const newEditedCells = new Map(editedCells);
     for (let month = 1; month <= 12; month++) newEditedCells.delete(getCellKey(showDeleteDialog, month));
     setEditedCells(newEditedCells);
@@ -98,29 +124,27 @@ export default function BudgetsPage() {
     setShowDeleteDialog(null);
   };
 
-  const handleAddRow = async (expenseCode: string) => {
+  const handleAddBudgetLine = async () => {
+    if (!selectedBudget || !addExpenseId || !addCompanyId) return;
     try {
-      const res = await expenseApi.getByBudget(selectedBudget!.id);
-      const expense = res.data.find((e: Expense) => e.code === expenseCode);
-      if (!expense) return;
-      if (expenses.some((e: ExpenseRow) => e.id === expense.id)) { alert('Este gasto ya está en la tabla'); return; }
-      const planValuesRes = await planValueApi.getByExpense(expense.id);
-      const planValues = [];
-      for (let month = 1; month <= 12; month++) {
-        const existing = planValuesRes.data.find((pv: any) => pv.month === month);
-        planValues.push(existing || { id: `new-${expense.id}-${month}`, expenseId: expense.id, month, transactionCurrency: 'USD', transactionValue: 0, usdValue: 0, conversionRate: 1, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
-      }
-      setExpenses([...expenses, { id: expense.id, code: expense.code, description: expense.shortDescription, planValues, isNew: true }]);
-      setHasUnsavedChanges(true);
-    } catch (error) { alert('Error al agregar la fila'); }
+      await budgetApi.addBudgetLine(selectedBudget.id, addExpenseId, addCompanyId);
+      setShowAddForm(false);
+      setAddExpenseId('');
+      setAddCompanyId('');
+      loadBudgetDetails(selectedBudget.id);
+    } catch (error: any) {
+      alert(error.response?.data?.error || 'Error al agregar línea');
+    }
   };
 
   const handleSave = async () => {
     if (!selectedBudget) return;
     try {
       setIsSaving(true);
-      const planValueChanges = Array.from(editedCells.values()).map((cell: CellEdit) => ({
-        expenseId: cell.expenseId, month: cell.month, transactionValue: cell.value, transactionCurrency: cell.currency
+      const planValueChanges = Array.from(editedCells.values()).map(cell => ({
+        budgetLineId: cell.budgetLineId,
+        month: cell.month,
+        value: cell.value
       }));
       const res = await budgetApi.createNewVersion(selectedBudget.id, planValueChanges);
       await loadBudgetDetails(res.data.id);
@@ -132,27 +156,30 @@ export default function BudgetsPage() {
     } finally { setIsSaving(false); }
   };
 
-  // Filter expenses by search text
-  const filteredExpenses = useMemo(() => {
-    if (!searchText.trim()) return expenses;
+  const filteredLines = useMemo(() => {
+    if (!searchText.trim()) return budgetLines;
     const s = searchText.toLowerCase();
-    return expenses.filter((e: ExpenseRow) => e.code?.toLowerCase().includes(s) || e.description?.toLowerCase().includes(s));
-  }, [expenses, searchText]);
+    return budgetLines.filter(bl =>
+      bl.expense?.code?.toLowerCase().includes(s) ||
+      bl.expense?.shortDescription?.toLowerCase().includes(s) ||
+      bl.financialCompany?.name?.toLowerCase().includes(s)
+    );
+  }, [budgetLines, searchText]);
 
-  // Calculate totals from filtered expenses
   const totals = useMemo(() => {
     const byCurrency: Record<string, number> = {};
-    filteredExpenses.forEach((exp: ExpenseRow) => {
-      exp.planValues.forEach((pv: { month: number; transactionValue: number | string; transactionCurrency: string }) => {
-        const cellKey = getCellKey(exp.id, pv.month);
+    filteredLines.forEach(bl => {
+      let lineTotal = 0;
+      for (let m = 1; m <= 12; m++) {
+        const cellKey = getCellKey(bl.id, m);
         const edited = editedCells.get(cellKey);
-        const val = edited ? edited.value : Number(pv.transactionValue);
-        const curr = pv.transactionCurrency || 'USD';
-        byCurrency[curr] = (byCurrency[curr] || 0) + val;
-      });
+        lineTotal += edited ? edited.value : getPlanValue(bl, m);
+      }
+      const curr = bl.currency || 'USD';
+      byCurrency[curr] = (byCurrency[curr] || 0) + lineTotal;
     });
     return byCurrency;
-  }, [filteredExpenses, editedCells]);
+  }, [filteredLines, editedCells]);
 
   if (isLoading && !selectedBudget) return <div className="text-center py-8">Cargando...</div>;
 
@@ -166,7 +193,7 @@ export default function BudgetsPage() {
                 type="text"
                 value={searchText}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchText(e.target.value)}
-                placeholder="Buscar por código o descripción..."
+                placeholder="Buscar por código, descripción o empresa..."
                 className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent w-56"
               />
               <div className="ml-auto flex items-center gap-3">
@@ -175,12 +202,36 @@ export default function BudgetsPage() {
                 {hasUnsavedChanges && <span className="text-sm text-yellow-600 font-medium">⚠ Cambios sin guardar</span>}
                 {canEdit && (
                   <>
-                    <RowManager budgetId={selectedBudget.id} onAddRow={handleAddRow} />
+                    <button onClick={() => setShowAddForm(!showAddForm)} className="btn-secondary flex items-center gap-1 text-sm">
+                      <HiOutlinePlusCircle className="w-4 h-4" /> Agregar Línea
+                    </button>
                     <SaveButton hasUnsavedChanges={hasUnsavedChanges} hasValidationErrors={validationErrors.size > 0} isSaving={isSaving} onSave={() => setShowConfirmDialog(true)} />
                   </>
                 )}
               </div>
             </div>
+
+            {showAddForm && (
+              <div className="bg-gray-50 p-4 rounded mb-4 flex gap-4 items-end">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium mb-1">Gasto</label>
+                  <select value={addExpenseId} onChange={e => setAddExpenseId(e.target.value)} className="w-full border rounded px-2 py-1 text-sm">
+                    <option value="">Seleccionar...</option>
+                    {allExpenses.map(e => <option key={e.id} value={e.id}>{e.code} - {e.shortDescription}</option>)}
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-medium mb-1">Empresa Financiera</label>
+                  <select value={addCompanyId} onChange={e => setAddCompanyId(e.target.value)} className="w-full border rounded px-2 py-1 text-sm">
+                    <option value="">Seleccionar...</option>
+                    {allCompanies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+                <button onClick={handleAddBudgetLine} disabled={!addExpenseId || !addCompanyId} className="btn-success text-sm disabled:opacity-50">Agregar</button>
+                <button onClick={() => setShowAddForm(false)} className="btn-cancel text-sm">Cancelar</button>
+              </div>
+            )}
+
             <div className="flex gap-4 flex-wrap">
               {Object.entries(totals).map(([curr, val]) => (
                 <div key={curr} className="bg-blue-50 px-4 py-2 rounded-lg">
@@ -195,14 +246,21 @@ export default function BudgetsPage() {
             {isLoading ? (
               <div className="text-center py-8">Cargando detalles...</div>
             ) : (
-              <BudgetTable expenses={filteredExpenses} editedCells={editedCells} validationErrors={validationErrors} canEdit={canEdit} onCellEdit={handleCellEdit} onRemoveRow={handleRemoveRow} />
+              <BudgetTable
+                budgetLines={filteredLines}
+                editedCells={editedCells}
+                validationErrors={validationErrors}
+                canEdit={canEdit}
+                onCellEdit={handleCellEdit}
+                onRemoveRow={handleRemoveRow}
+              />
             )}
           </div>
         </>
       )}
 
       <ConfirmationDialog isOpen={showConfirmDialog} message="Esto creará una nueva versión del presupuesto como copia del actual con los cambios aplicados. ¿Continuar?" onConfirm={() => { setShowConfirmDialog(false); handleSave(); }} onCancel={() => setShowConfirmDialog(false)} />
-      <ConfirmationDialog isOpen={!!showDeleteDialog} message="¿Estás seguro de eliminar esta fila del presupuesto?" onConfirm={confirmRemoveRow} onCancel={() => setShowDeleteDialog(null)} />
+      <ConfirmationDialog isOpen={!!showDeleteDialog} message="¿Estás seguro de eliminar esta línea del presupuesto?" onConfirm={confirmRemoveRow} onCancel={() => setShowDeleteDialog(null)} />
     </div>
   );
 }

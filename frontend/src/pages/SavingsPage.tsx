@@ -1,23 +1,21 @@
 import { useState, useEffect } from 'react';
-import { savingsApi, budgetApi, expenseApi } from '../services/api';
-import type { Saving, Budget, Expense } from '../types';
+import { savingsApi, budgetApi, budgetLineApi } from '../services/api';
+import type { Saving, Budget, BudgetLine } from '../types';
 import { HiOutlineTrash, HiOutlinePlusCircle } from 'react-icons/hi2';
 
 export default function SavingsPage() {
   const [savings, setSavings] = useState<Saving[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [budgetLines, setBudgetLines] = useState<BudgetLine[]>([]);
   const [selectedBudget, setSelectedBudget] = useState<string>('');
-  const [selectedExpense, setSelectedExpense] = useState<string>('');
+  const [selectedBudgetLine, setSelectedBudgetLine] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [selectedSavings, setSelectedSavings] = useState<Set<string>>(new Set());
 
-  // Form state
   const [formData, setFormData] = useState({
-    expenseId: '',
-    budgetId: '',
+    budgetLineId: '',
     totalAmount: 0,
     description: '',
     distributionStrategy: 'EVEN' as 'EVEN' | 'SINGLE_MONTH' | 'CUSTOM',
@@ -25,55 +23,40 @@ export default function SavingsPage() {
     customDistribution: {} as Record<number, number>
   });
 
-  useEffect(() => {
-    loadBudgets();
-    loadSavings();
-  }, []);
+  useEffect(() => { loadBudgets(); loadSavings(); }, []);
 
   useEffect(() => {
-    if (selectedBudget) {
-      loadExpenses(selectedBudget);
-    }
+    if (selectedBudget) loadBudgetLines(selectedBudget);
   }, [selectedBudget]);
 
   const loadBudgets = async () => {
     try {
       const res = await budgetApi.getAll();
       setBudgets(res.data);
-      // Auto-select latest budget
       if (res.data.length > 0) {
         const latest = res.data[res.data.length - 1];
         setSelectedBudget(latest.id);
       }
-    } catch (error) {
-      console.error('Error loading budgets:', error);
-    }
+    } catch (error) { console.error('Error loading budgets:', error); }
   };
 
-  const loadExpenses = async (budgetId: string) => {
+  const loadBudgetLines = async (budgetId: string) => {
     try {
-      const res = await expenseApi.getByBudget(budgetId);
-      setExpenses(res.data);
-    } catch (error) {
-      console.error('Error loading expenses:', error);
-    }
+      const res = await budgetLineApi.getByBudget(budgetId);
+      setBudgetLines(res.data);
+    } catch (error) { console.error('Error loading budget lines:', error); }
   };
 
   const loadSavings = async () => {
     setIsLoading(true);
     try {
       const filters: any = {};
-      if (selectedBudget) filters.budgetId = selectedBudget;
-      if (selectedExpense) filters.expenseId = selectedExpense;
+      if (selectedBudgetLine) filters.budgetLineId = selectedBudgetLine;
       if (statusFilter) filters.status = statusFilter;
-
       const res = await savingsApi.getAll(filters);
       setSavings(res.data);
-    } catch (error) {
-      console.error('Error loading savings:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    } catch (error) { console.error('Error loading savings:', error); }
+    finally { setIsLoading(false); }
   };
 
   const handleCreateSaving = async (e: React.FormEvent) => {
@@ -83,68 +66,46 @@ export default function SavingsPage() {
       setShowForm(false);
       resetForm();
       loadSavings();
-    } catch (error: any) {
-      alert(error.response?.data?.error || 'Error al crear ahorro');
-    }
+    } catch (error: any) { alert(error.response?.data?.error || 'Error al crear ahorro'); }
   };
 
   const handleApproveSavings = async () => {
-    if (selectedSavings.size === 0) {
-      alert('Selecciona al menos un ahorro para aprobar');
-      return;
-    }
-
+    if (selectedSavings.size === 0) { alert('Selecciona al menos un ahorro para aprobar'); return; }
     try {
       await savingsApi.approve(Array.from(selectedSavings));
       setSelectedSavings(new Set());
       loadSavings();
       alert('Ahorros aprobados exitosamente');
-    } catch (error: any) {
-      alert(error.response?.data?.error || 'Error al aprobar ahorros');
-    }
+    } catch (error: any) { alert(error.response?.data?.error || 'Error al aprobar ahorros'); }
   };
 
   const handleDeleteSaving = async (id: string) => {
     if (!confirm('¿Estás seguro de eliminar este ahorro?')) return;
-
-    try {
-      await savingsApi.delete(id);
-      loadSavings();
-    } catch (error: any) {
-      alert(error.response?.data?.error || 'Error al eliminar ahorro');
-    }
+    try { await savingsApi.delete(id); loadSavings(); }
+    catch (error: any) { alert(error.response?.data?.error || 'Error al eliminar ahorro'); }
   };
 
   const resetForm = () => {
-    setFormData({
-      expenseId: '',
-      budgetId: '',
-      totalAmount: 0,
-      description: '',
-      distributionStrategy: 'EVEN',
-      targetMonth: 1,
-      customDistribution: {}
-    });
+    setFormData({ budgetLineId: '', totalAmount: 0, description: '', distributionStrategy: 'EVEN', targetMonth: 1, customDistribution: {} });
   };
 
   const toggleSavingSelection = (id: string) => {
     const newSelection = new Set(selectedSavings);
-    if (newSelection.has(id)) {
-      newSelection.delete(id);
-    } else {
-      newSelection.add(id);
-    }
+    if (newSelection.has(id)) newSelection.delete(id);
+    else newSelection.add(id);
     setSelectedSavings(newSelection);
+  };
+
+  const getBudgetLineLabel = (bl?: BudgetLine) => {
+    if (!bl) return '-';
+    return `${bl.expense?.code || ''} - ${bl.financialCompany?.name || ''}`;
   };
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <div />
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="btn-primary flex items-center gap-2"
-        >
+        <button onClick={() => setShowForm(!showForm)} className="btn-primary flex items-center gap-2">
           <HiOutlinePlusCircle className="w-5 h-5" />
           {showForm ? 'Cancelar' : 'Nuevo Ahorro'}
         </button>
@@ -155,50 +116,28 @@ export default function SavingsPage() {
         <div className="grid grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">Presupuesto</label>
-            <select
-              value={selectedBudget}
-              onChange={(e) => setSelectedBudget(e.target.value)}
-              className="w-full border rounded px-3 py-2"
-            >
+            <select value={selectedBudget} onChange={(e) => setSelectedBudget(e.target.value)} className="w-full border rounded px-3 py-2">
               <option value="">Todos</option>
-              {budgets.map(b => (
-                <option key={b.id} value={b.id}>{b.year} - v{b.version}</option>
-              ))}
+              {budgets.map(b => (<option key={b.id} value={b.id}>{b.year} - v{b.version}</option>))}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Gasto</label>
-            <select
-              value={selectedExpense}
-              onChange={(e) => setSelectedExpense(e.target.value)}
-              className="w-full border rounded px-3 py-2"
-              disabled={!selectedBudget}
-            >
-              <option value="">Todos</option>
-              {expenses.map(e => (
-                <option key={e.id} value={e.id}>{e.code} - {e.shortDescription}</option>
-              ))}
+            <label className="block text-sm font-medium mb-1">Línea Presupuesto</label>
+            <select value={selectedBudgetLine} onChange={(e) => setSelectedBudgetLine(e.target.value)} className="w-full border rounded px-3 py-2" disabled={!selectedBudget}>
+              <option value="">Todas</option>
+              {budgetLines.map(bl => (<option key={bl.id} value={bl.id}>{bl.expense?.code} - {bl.financialCompany?.name}</option>))}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Estado</label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full border rounded px-3 py-2"
-            >
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-full border rounded px-3 py-2">
               <option value="">Todos</option>
               <option value="PENDING">Pendiente</option>
               <option value="APPROVED">Aprobado</option>
             </select>
           </div>
         </div>
-        <button
-          onClick={loadSavings}
-          className="mt-4 btn-secondary"
-        >
-          Filtrar
-        </button>
+        <button onClick={loadSavings} className="mt-4 btn-secondary">Filtrar</button>
       </div>
 
       {/* Form */}
@@ -207,127 +146,55 @@ export default function SavingsPage() {
           <h2 className="text-xl font-bold mb-4">Crear Nuevo Ahorro</h2>
           <form onSubmit={handleCreateSaving}>
             <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Presupuesto *</label>
-                <select
-                  value={formData.budgetId}
-                  onChange={(e) => {
-                    setFormData({ ...formData, budgetId: e.target.value, expenseId: '' });
-                    loadExpenses(e.target.value);
-                  }}
-                  className="w-full border rounded px-3 py-2"
-                  required
-                >
+              <div className="col-span-2">
+                <label className="block text-sm font-medium mb-1">Línea de Presupuesto *</label>
+                <select value={formData.budgetLineId} onChange={(e) => setFormData({ ...formData, budgetLineId: e.target.value })} className="w-full border rounded px-3 py-2" required>
                   <option value="">Seleccionar</option>
-                  {budgets.map(b => (
-                    <option key={b.id} value={b.id}>{b.year} - v{b.version}</option>
-                  ))}
+                  {budgetLines.map(bl => (<option key={bl.id} value={bl.id}>{bl.expense?.code} - {bl.expense?.shortDescription} ({bl.financialCompany?.name})</option>))}
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Gasto *</label>
-                <select
-                  value={formData.expenseId}
-                  onChange={(e) => setFormData({ ...formData, expenseId: e.target.value })}
-                  className="w-full border rounded px-3 py-2"
-                  required
-                  disabled={!formData.budgetId}
-                >
-                  <option value="">Seleccionar</option>
-                  {expenses.map(e => (
-                    <option key={e.id} value={e.id}>{e.code} - {e.shortDescription}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Monto Total *</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.totalAmount}
-                  onChange={(e) => setFormData({ ...formData, totalAmount: parseFloat(e.target.value) })}
-                  className="w-full border rounded px-3 py-2"
-                  required
-                />
+                <input type="number" step="0.01" value={formData.totalAmount} onChange={(e) => setFormData({ ...formData, totalAmount: parseFloat(e.target.value) })} className="w-full border rounded px-3 py-2" required />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Estrategia de Distribución *</label>
-                <select
-                  value={formData.distributionStrategy}
-                  onChange={(e) => setFormData({ ...formData, distributionStrategy: e.target.value as any })}
-                  className="w-full border rounded px-3 py-2"
-                >
+                <select value={formData.distributionStrategy} onChange={(e) => setFormData({ ...formData, distributionStrategy: e.target.value as any })} className="w-full border rounded px-3 py-2">
                   <option value="EVEN">Homogénea (12 meses)</option>
                   <option value="SINGLE_MONTH">Un solo mes</option>
                   <option value="CUSTOM">Personalizada</option>
                 </select>
               </div>
             </div>
-
             {formData.distributionStrategy === 'SINGLE_MONTH' && (
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-1">Mes *</label>
-                <select
-                  value={formData.targetMonth}
-                  onChange={(e) => setFormData({ ...formData, targetMonth: parseInt(e.target.value) })}
-                  className="w-full border rounded px-3 py-2"
-                >
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                    <option key={m} value={m}>Mes {m}</option>
-                  ))}
+                <select value={formData.targetMonth} onChange={(e) => setFormData({ ...formData, targetMonth: parseInt(e.target.value) })} className="w-full border rounded px-3 py-2">
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (<option key={m} value={m}>Mes {m}</option>))}
                 </select>
               </div>
             )}
-
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">Descripción *</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full border rounded px-3 py-2"
-                rows={3}
-                required
-              />
+              <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full border rounded px-3 py-2" rows={3} required />
             </div>
-
             <div className="flex gap-2">
-              <button
-                type="submit"
-                className="btn-success"
-              >
-                Crear Ahorro
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowForm(false)}
-                className="btn-cancel"
-              >
-                Cancelar
-              </button>
+              <button type="submit" className="btn-success">Crear Ahorro</button>
+              <button type="button" onClick={() => setShowForm(false)} className="btn-cancel">Cancelar</button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Approve Button */}
       {selectedSavings.size > 0 && (
         <div className="bg-yellow-100 p-4 rounded shadow mb-6">
           <div className="flex justify-between items-center">
             <span>{selectedSavings.size} ahorro(s) seleccionado(s)</span>
-            <button
-              onClick={handleApproveSavings}
-              className="btn-success"
-            >
-              Aprobar Seleccionados
-            </button>
+            <button onClick={handleApproveSavings} className="btn-success">Aprobar Seleccionados</button>
           </div>
         </div>
       )}
 
-      {/* Savings List */}
       <div className="bg-white rounded shadow">
         {isLoading ? (
           <div className="p-8 text-center">Cargando...</div>
@@ -338,8 +205,7 @@ export default function SavingsPage() {
             <thead className="bg-gray-100">
               <tr>
                 <th className="p-3 text-left">Sel</th>
-                <th className="p-3 text-left">Presupuesto</th>
-                <th className="p-3 text-left">Gasto</th>
+                <th className="p-3 text-left">Línea Presupuesto</th>
                 <th className="p-3 text-left">Descripción</th>
                 <th className="p-3 text-right">Monto</th>
                 <th className="p-3 text-left">Estado</th>
@@ -353,21 +219,14 @@ export default function SavingsPage() {
                 <tr key={saving.id} className="border-t hover:bg-gray-50">
                   <td className="p-3">
                     {saving.status === 'PENDING' && (
-                      <input
-                        type="checkbox"
-                        checked={selectedSavings.has(saving.id)}
-                        onChange={() => toggleSavingSelection(saving.id)}
-                      />
+                      <input type="checkbox" checked={selectedSavings.has(saving.id)} onChange={() => toggleSavingSelection(saving.id)} />
                     )}
                   </td>
-                  <td className="p-3">{saving.budget?.year} - v{saving.budget?.version}</td>
-                  <td className="p-3">{saving.expense?.code}</td>
+                  <td className="p-3">{getBudgetLineLabel(saving.budgetLine)}</td>
                   <td className="p-3">{saving.description}</td>
                   <td className="p-3 text-right">${Number(saving.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   <td className="p-3">
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      saving.status === 'APPROVED' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                    }`}>
+                    <span className={`px-2 py-1 rounded text-xs ${saving.status === 'APPROVED' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                       {saving.status === 'APPROVED' ? 'Aprobado' : 'Pendiente'}
                     </span>
                   </td>
@@ -375,11 +234,7 @@ export default function SavingsPage() {
                   <td className="p-3">{new Date(saving.createdAt).toLocaleDateString()}</td>
                   <td className="p-3">
                     {saving.status === 'PENDING' && (
-                      <button
-                        onClick={() => handleDeleteSaving(saving.id)}
-                        className="icon-btn-danger"
-                        title="Eliminar"
-                      >
+                      <button onClick={() => handleDeleteSaving(saving.id)} className="icon-btn-danger" title="Eliminar">
                         <HiOutlineTrash className="w-5 h-5" />
                       </button>
                     )}

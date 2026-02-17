@@ -3,11 +3,10 @@ import { expenseApi } from '../services/api';
 import { Expense } from '../types';
 
 interface RowManagerProps {
-  budgetId: string;
   onAddRow: (expenseCode: string) => void;
 }
 
-export default function RowManager({ budgetId, onAddRow }: RowManagerProps) {
+export default function RowManager({ onAddRow }: RowManagerProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [allExpenses, setAllExpenses] = useState<Expense[]>([]);
@@ -37,7 +36,7 @@ export default function RowManager({ budgetId, onAddRow }: RowManagerProps) {
   const loadExpenses = async () => {
     try {
       setIsLoading(true);
-      const res = await expenseApi.getByBudget(budgetId);
+      const res = await expenseApi.getAll();
       setAllExpenses(res.data);
       setFilteredExpenses(res.data);
     } catch (error) {
