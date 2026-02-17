@@ -23,7 +23,7 @@ export function changeRequestRouter(prisma: PrismaClient) {
   const authenticateJWT = createAuthenticateJWT(authService);
   const requirePermission = createRequirePermission(permissionService);
 
-  router.post('/', authenticateJWT, requirePermission(MENU_CODES.APPROVALS, PermissionType.CREATE), async (req, res, next) => {
+  router.post('/', authenticateJWT, requirePermission(MENU_CODES.APPROVALS, PermissionType.MODIFY), async (req, res, next) => {
     try {
       const userId = req.user!.userId;
       const result = await service.createChangeRequest(req.body, userId);
@@ -41,7 +41,7 @@ export function changeRequestRouter(prisma: PrismaClient) {
     } catch (error) { next(error); }
   });
 
-  router.post('/:id/approve', authenticateJWT, requirePermission(MENU_CODES.APPROVALS, PermissionType.APPROVE), async (req, res, next) => {
+  router.post('/:id/approve', authenticateJWT, requirePermission(MENU_CODES.APPROVALS, PermissionType.APPROVE_BUDGET), async (req, res, next) => {
     try {
       const userId = req.user!.userId;
       res.json(await service.approveRequest(req.params.id, userId));
@@ -51,7 +51,7 @@ export function changeRequestRouter(prisma: PrismaClient) {
     }
   });
 
-  router.post('/:id/reject', authenticateJWT, requirePermission(MENU_CODES.APPROVALS, PermissionType.APPROVE), async (req, res, next) => {
+  router.post('/:id/reject', authenticateJWT, requirePermission(MENU_CODES.APPROVALS, PermissionType.APPROVE_BUDGET), async (req, res, next) => {
     try {
       const userId = req.user!.userId;
       res.json(await service.rejectRequest(req.params.id, userId));
