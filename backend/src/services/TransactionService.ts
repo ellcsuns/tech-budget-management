@@ -167,6 +167,9 @@ export class TransactionService {
 
     // Recalcular USD si cambia valor o moneda
     if (data.transactionValue !== undefined || data.transactionCurrency) {
+      if (!transaction.budgetLine) {
+        throw new Error('No se puede recalcular conversión USD sin línea de presupuesto asociada');
+      }
       const month = updateData.month ?? transaction.month;
       const currency = data.transactionCurrency ?? transaction.transactionCurrency;
       const value = data.transactionValue ?? Number(transaction.transactionValue);
