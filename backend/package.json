@@ -20,6 +20,9 @@
     "bcrypt": "^5.1.1",
     "jsonwebtoken": "^9.0.2"
   },
+  "prisma": {
+    "seed": "tsx src/seed.ts"
+  },
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/cors": "^2.8.17",
