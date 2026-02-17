@@ -79,10 +79,12 @@ export default function AuditPage() {
 
   const actionColor = (action: string) => {
     if (action === 'LOGIN' || action === 'LOGOUT') return 'bg-blue-100 text-blue-800';
-    if (action === 'CREATE' || action === 'ADD_TO_BUDGET') return 'bg-green-100 text-green-800';
-    if (action === 'UPDATE' || action === 'CHANGE_STATUS' || action === 'CHANGE_PASSWORD') return 'bg-yellow-100 text-yellow-800';
+    if (action === 'LOGIN_FAILED') return 'bg-red-200 text-red-900';
+    if (action === 'VIEW') return 'bg-slate-100 text-slate-600';
+    if (action === 'CREATE' || action === 'ADD_TO_BUDGET' || action === 'CREATE_VERSION') return 'bg-green-100 text-green-800';
+    if (action === 'UPDATE' || action === 'CHANGE_STATUS' || action === 'CHANGE_PASSWORD' || action === 'MODIFY_TAG') return 'bg-yellow-100 text-yellow-800';
     if (action === 'DELETE') return 'bg-red-100 text-red-800';
-    if (action === 'APPROVE') return 'bg-emerald-100 text-emerald-800';
+    if (action === 'APPROVE' || action === 'APPROVE_BUDGET') return 'bg-emerald-100 text-emerald-800';
     if (action === 'REJECT') return 'bg-orange-100 text-orange-800';
     return 'bg-gray-100 text-gray-800';
   };

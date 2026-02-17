@@ -1,11 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
 import { AuditService } from '../services/AuditService';
 
-// Map route patterns to entity/action descriptions
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+
+// Map route patterns to entity/action descriptions for mutating operations
 const ROUTE_MAP: Record<string, { entity: string; actions: Record<string, string> }> = {
   '/api/auth/login': { entity: 'Session', actions: { POST: 'LOGIN' } },
   '/api/auth/logout': { entity: 'Session', actions: { POST: 'LOGOUT' } },
-  '/api/budgets': { entity: 'Budget', actions: { POST: 'CREATE' } },
+  '/api/budgets': { entity: 'Budget', actions: { POST: 'CREATE', PUT: 'UPDATE', DELETE: 'DELETE' } },
   '/api/budget-lines': { entity: 'BudgetLine', actions: { POST: 'CREATE', PUT: 'UPDATE', DELETE: 'DELETE' } },
   '/api/transactions': { entity: 'Transaction', actions: { POST: 'CREATE', PUT: 'UPDATE', DELETE: 'DELETE' } },
   '/api/expenses': { entity: 'Expense', actions: { POST: 'CREATE', PUT: 'UPDATE', DELETE: 'DELETE' } },
@@ -24,7 +27,7 @@ const ROUTE_MAP: Record<string, { entity: string; actions: Record<string, string
   '/api/tag-definitions': { entity: 'TagDefinition', actions: { POST: 'CREATE', PUT: 'UPDATE', DELETE: 'DELETE' } },
 };
 
-// Special sub-path patterns
+// Special sub-path patterns for mutating operations
 const SPECIAL_PATTERNS: Array<{ pattern: RegExp; entity: string; action: string }> = [
   { pattern: /\/api\/change-requests\/[^/]+\/approve/, entity: 'ChangeRequest', action: 'APPROVE' },
   { pattern: /\/api\/change-requests\/[^/]+\/reject/, entity: 'ChangeRequest', action: 'REJECT' },
@@ -35,6 +38,31 @@ const SPECIAL_PATTERNS: Array<{ pattern: RegExp; entity: string; action: string 
   { pattern: /\/api\/users\/[^/]+\/status/, entity: 'User', action: 'CHANGE_STATUS' },
   { pattern: /\/api\/users\/[^/]+\/password/, entity: 'User', action: 'CHANGE_PASSWORD' },
 ];
+
+// Navigation / module access tracking (GET requests)
+const NAVIGATION_MAP: Record<string, string> = {
+  '/api/budgets': 'Budgets',
+  '/api/budget-lines': 'BudgetLines',
+  '/api/transactions': 'Transactions',
+  '/api/expenses': 'Expenses',
+  '/api/expenses-enhanced': 'Expenses',
+  '/api/savings': 'Savings',
+  '/api/deferrals': 'Deferrals',
+  '/api/change-requests': 'ChangeRequests',
+  '/api/users': 'Users',
+  '/api/roles': 'Roles',
+  '/api/conversion-rates': 'ConversionRates',
+  '/api/config': 'SystemConfig',
+  '/api/translations': 'Translations',
+  '/api/technology-directions': 'TechnologyDirections',
+  '/api/user-areas': 'UserAreas',
+  '/api/financial-companies': 'FinancialCompanies',
+  '/api/tag-definitions': 'TagDefinitions',
+  '/api/reports': 'Reports',
+  '/api/audit': 'AuditLogs',
+  '/api/budgets/compare': 'BudgetCompare',
+  '/api/budgets/active': 'BudgetActive',
+};
 
 function getClientIp(req: Request): string {
   const forwarded = req.headers['x-forwarded-for'];
@@ -61,8 +89,21 @@ function resolveRoute(method: string, path: string): { entity: string; action: s
   return null;
 }
 
+function resolveNavigation(path: string): string | null {
+  // Check specific paths first (longer matches)
+  if (path === '/api/budgets/compare' || path.startsWith('/api/budgets/compare?')) return 'BudgetCompare';
+  if (path === '/api/budgets/active') return 'BudgetActive';
+  if (path.startsWith('/api/audit/actions') || path.startsWith('/api/audit/entities')) return null; // skip filter helpers
+
+  for (const [route, module] of Object.entries(NAVIGATION_MAP)) {
+    if (path === route || path.startsWith(route + '?') || path.startsWith(route + '/')) {
+      return module;
+    }
+  }
+  return null;
+}
+
 function extractEntityId(path: string): string | undefined {
-  // Match UUID in path: /api/something/uuid-here or /api/something/uuid-here/action
   const match = path.match(/\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
   return match ? match[1] : undefined;
 }
@@ -70,7 +111,6 @@ function extractEntityId(path: string): string | undefined {
 function sanitizeBody(body: any): any {
   if (!body || typeof body !== 'object') return body;
   const sanitized = { ...body };
-  // Remove sensitive fields
   delete sanitized.password;
   delete sanitized.passwordHash;
   delete sanitized.currentPassword;
@@ -81,26 +121,60 @@ function sanitizeBody(body: any): any {
 
 export function createAuditLogger(auditService: AuditService) {
   return (req: Request, res: Response, next: NextFunction) => {
-    // Only audit mutating methods + login
     const method = req.method;
-    if (method !== 'POST' && method !== 'PUT' && method !== 'DELETE') {
+    const path = req.path;
+    const userId = (req as any).user?.userId || undefined;
+    const ip = getClientIp(req);
+
+    // ========================================
+    // 1) GET requests → log navigation/access
+    // ========================================
+    if (method === 'GET') {
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        let tokenUserId: string | undefined;
+        try {
+          const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+          tokenUserId = decoded.userId;
+        } catch { /* invalid token, skip */ }
+
+        if (tokenUserId) {
+          const module = resolveNavigation(path);
+          if (module) {
+            const entityId = extractEntityId(path);
+            const queryParams = req.query && Object.keys(req.query).length > 0
+              ? Object.fromEntries(Object.entries(req.query).map(([k, v]) => [k, String(v)]))
+              : undefined;
+
+            auditService.log({
+              userId: tokenUserId,
+              action: 'VIEW',
+              entity: module,
+              entityId,
+              details: queryParams ? { filters: queryParams } : undefined,
+              ipAddress: ip,
+            });
+          }
+        }
+      }
       return next();
     }
 
+    // ========================================
+    // 2) POST/PUT/DELETE → log mutations
+    // ========================================
     const originalJson = res.json.bind(res);
     res.json = function (body: any) {
-      // Log after response is sent (async, non-blocking)
       const statusCode = res.statusCode;
-      if (statusCode >= 200 && statusCode < 300) {
-        const resolved = resolveRoute(method, req.path);
-        if (resolved) {
-          const userId = (req as any).user?.userId || undefined;
-          const entityId = extractEntityId(req.path) || body?.id;
 
-          // For login, extract userId from response
-          let loginUserId = userId;
-          if (req.path === '/api/auth/login' && body?.user?.id) {
-            loginUserId = body.user.id;
+      // Log successful mutations (2xx)
+      if (statusCode >= 200 && statusCode < 300) {
+        const resolved = resolveRoute(method, path);
+        if (resolved) {
+          let logUserId = userId;
+          if (path === '/api/auth/login' && body?.user?.id) {
+            logUserId = body.user.id;
           }
 
           const details: any = {};
@@ -108,18 +182,29 @@ export function createAuditLogger(auditService: AuditService) {
             details.input = sanitizeBody(req.body);
           }
           if (method === 'DELETE') {
-            details.deletedId = entityId;
+            details.deletedId = extractEntityId(path);
           }
 
           auditService.log({
-            userId: loginUserId,
+            userId: logUserId,
             action: resolved.action,
             entity: resolved.entity,
-            entityId: typeof entityId === 'string' ? entityId : undefined,
+            entityId: extractEntityId(path) || body?.id,
             details: Object.keys(details).length > 0 ? details : undefined,
-            ipAddress: getClientIp(req),
+            ipAddress: ip,
           });
         }
+      }
+
+      // Log failed login attempts (401)
+      if (path === '/api/auth/login' && statusCode === 401) {
+        auditService.log({
+          userId: undefined,
+          action: 'LOGIN_FAILED',
+          entity: 'Session',
+          details: { username: req.body?.username || 'unknown' },
+          ipAddress: ip,
+        });
       }
 
       return originalJson(body);
