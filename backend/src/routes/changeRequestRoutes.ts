@@ -23,7 +23,8 @@ export function changeRequestRouter(prisma: PrismaClient) {
   const authenticateJWT = createAuthenticateJWT(authService);
   const requirePermission = createRequirePermission(permissionService);
 
-  router.post('/', authenticateJWT, requirePermission(MENU_CODES.APPROVALS, PermissionType.MODIFY), async (req, res, next) => {
+  // Create change request - anyone with MODIFY on budgets can request
+  router.post('/', authenticateJWT, requirePermission(MENU_CODES.BUDGETS, PermissionType.MODIFY), async (req, res, next) => {
     try {
       const userId = req.user!.userId;
       const result = await service.createChangeRequest(req.body, userId);
@@ -34,6 +35,15 @@ export function changeRequestRouter(prisma: PrismaClient) {
     }
   });
 
+  // Get my own requests
+  router.get('/my', authenticateJWT, async (req, res, next) => {
+    try {
+      const userId = req.user!.userId;
+      res.json(await service.getMyRequests(userId));
+    } catch (error) { next(error); }
+  });
+
+  // Get pending requests for approver
   router.get('/pending', authenticateJWT, requirePermission(MENU_CODES.APPROVALS, PermissionType.VIEW), async (req, res, next) => {
     try {
       const userId = req.user!.userId;
@@ -41,6 +51,7 @@ export function changeRequestRouter(prisma: PrismaClient) {
     } catch (error) { next(error); }
   });
 
+  // Approve single request
   router.post('/:id/approve', authenticateJWT, requirePermission(MENU_CODES.APPROVALS, PermissionType.APPROVE_BUDGET), async (req, res, next) => {
     try {
       const userId = req.user!.userId;
@@ -51,6 +62,22 @@ export function changeRequestRouter(prisma: PrismaClient) {
     }
   });
 
+  // Approve multiple requests at once
+  router.post('/approve-multiple', authenticateJWT, requirePermission(MENU_CODES.APPROVALS, PermissionType.APPROVE_BUDGET), async (req, res, next) => {
+    try {
+      const userId = req.user!.userId;
+      const { requestIds } = req.body;
+      if (!requestIds || !Array.isArray(requestIds) || requestIds.length === 0) {
+        return res.status(400).json({ error: 'Se requiere un array de requestIds' });
+      }
+      res.json(await service.approveMultiple(requestIds, userId));
+    } catch (error: any) {
+      if (error.message?.includes('no encontrad') || error.message?.includes('ya fue')) return res.status(400).json({ error: error.message });
+      next(error);
+    }
+  });
+
+  // Reject single request
   router.post('/:id/reject', authenticateJWT, requirePermission(MENU_CODES.APPROVALS, PermissionType.APPROVE_BUDGET), async (req, res, next) => {
     try {
       const userId = req.user!.userId;

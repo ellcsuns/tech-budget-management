@@ -113,4 +113,51 @@ export class ChangeRequestService {
       orderBy: { createdAt: 'desc' }
     });
   }
+
+  async getMyRequests(userId: string) {
+    return await this.prisma.budgetLineChangeRequest.findMany({
+      where: { requestedById: userId },
+      include: {
+        budgetLine: { include: { expense: true, financialCompany: true, technologyDirection: true, budget: true } },
+        requestedBy: { select: { id: true, username: true, fullName: true } },
+        approvedBy: { select: { id: true, username: true, fullName: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  async approveMultiple(requestIds: string[], approverId: string, sourceBudgetId?: string) {
+    return await this.prisma.$transaction(async (tx: any) => {
+      const results = [];
+      for (const requestId of requestIds) {
+        const request = await tx.budgetLineChangeRequest.findUnique({
+          where: { id: requestId },
+          include: { budgetLine: true }
+        });
+        if (!request) throw new Error(`Solicitud ${requestId} no encontrada`);
+        if (request.status !== 'PENDING') throw new Error(`La solicitud ${requestId} ya fue procesada`);
+
+        const proposed = request.proposedValues as Record<string, number>;
+        const updateData: any = {};
+        for (let m = 1; m <= 12; m++) {
+          const key = `planM${m}`;
+          if (proposed[key] !== undefined) updateData[key] = proposed[key];
+        }
+
+        await tx.budgetLine.update({ where: { id: request.budgetLineId }, data: updateData });
+
+        const updated = await tx.budgetLineChangeRequest.update({
+          where: { id: requestId },
+          data: { status: 'APPROVED', approvedById: approverId, resolvedAt: new Date() },
+          include: {
+            budgetLine: { include: { expense: true, financialCompany: true, technologyDirection: true } },
+            requestedBy: { select: { id: true, username: true, fullName: true } },
+            approvedBy: { select: { id: true, username: true, fullName: true } }
+          }
+        });
+        results.push(updated);
+      }
+      return results;
+    });
+  }
 }

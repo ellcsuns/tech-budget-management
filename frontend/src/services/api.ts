@@ -228,8 +228,10 @@ export const reportApi = {
 export const changeRequestApi = {
   create: (data: { budgetLineId: string; proposedValues: Record<string, number>; comment?: string }) =>
     api.post<ChangeRequest>('/change-requests', data),
+  getMyRequests: () => api.get<ChangeRequest[]>('/change-requests/my'),
   getPending: () => api.get<ChangeRequest[]>('/change-requests/pending'),
   approve: (id: string) => api.post<ChangeRequest>(`/change-requests/${id}/approve`),
+  approveMultiple: (requestIds: string[]) => api.post('/change-requests/approve-multiple', { requestIds }),
   reject: (id: string) => api.post<ChangeRequest>(`/change-requests/${id}/reject`),
 };
 
