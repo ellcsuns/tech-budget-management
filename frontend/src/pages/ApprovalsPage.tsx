@@ -9,6 +9,7 @@ const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', '
 export default function ApprovalsPage() {
   const [requests, setRequests] = useState<ChangeRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<ChangeRequest | null>(null);
 
   useEffect(() => { loadPending(); }, []);
@@ -16,9 +17,14 @@ export default function ApprovalsPage() {
   const loadPending = async () => {
     try {
       setLoading(true);
+      setError(null);
       const res = await changeRequestApi.getPending();
-      setRequests(res.data);
-    } catch (error) { console.error('Error:', error); }
+      setRequests(res.data || []);
+    } catch (err: any) {
+      console.error('Error:', err);
+      setError(err?.response?.data?.error || 'Error al cargar solicitudes pendientes');
+      setRequests([]);
+    }
     finally { setLoading(false); }
   };
 
@@ -35,6 +41,12 @@ export default function ApprovalsPage() {
   };
 
   if (loading) return <div className="text-center py-8">Cargando...</div>;
+  if (error) return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-gray-800">Aprobaciones Pendientes</h1>
+      <div className="bg-white rounded-lg shadow p-8 text-center text-red-500">{error}</div>
+    </div>
+  );
 
   return (
     <div className="space-y-6">

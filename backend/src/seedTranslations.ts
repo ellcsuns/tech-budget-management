@@ -25,6 +25,8 @@ const translations: TranslationSeed[] = [
   { key: 'menu.translations', es: 'Traducciones', en: 'Translations', category: 'menu' },
   { key: 'menu.detailedReports', es: 'Reportes Detallados', en: 'Detailed Reports', category: 'menu' },
   { key: 'menu.compareBudgets', es: 'Comparar Presupuestos', en: 'Compare Budgets', category: 'menu' },
+  { key: 'menu.approvals', es: 'Aprobaciones', en: 'Approvals', category: 'menu' },
+  { key: 'menu.audit', es: 'Auditoría', en: 'Audit Log', category: 'menu' },
 
   // Section headers
   { key: 'section.administration', es: 'Administración', en: 'Administration', category: 'section' },
@@ -196,6 +198,8 @@ const translations: TranslationSeed[] = [
   { key: 'page.masterData', es: 'Datos Maestros', en: 'Master Data', category: 'page' },
   { key: 'page.users', es: 'Gestión de Usuarios', en: 'User Management', category: 'page' },
   { key: 'page.roles', es: 'Gestión de Roles', en: 'Role Management', category: 'page' },
+  { key: 'page.approvals', es: 'Aprobaciones Pendientes', en: 'Pending Approvals', category: 'page' },
+  { key: 'page.audit', es: 'Auditoría', en: 'Audit Log', category: 'page' },
 
   // Theme names
   { key: 'theme.default', es: 'Azul Corporativo', en: 'Corporate Blue', category: 'theme' },

@@ -10,6 +10,7 @@ export default function AuditPage() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(25);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   // Filters
@@ -33,6 +34,7 @@ export default function AuditPage() {
 
   const loadLogs = useCallback(async () => {
     setIsLoading(true);
+    setError(null);
     try {
       const filters: any = { page, pageSize };
       if (filterUserId) filters.userId = filterUserId;
@@ -41,10 +43,14 @@ export default function AuditPage() {
       if (filterDateFrom) filters.dateFrom = filterDateFrom;
       if (filterDateTo) filters.dateTo = filterDateTo;
       const res = await auditApi.getLogs(filters);
-      setLogs(res.data.logs || []);
-      setTotal(res.data.total || 0);
-      setTotalPages(res.data.totalPages || 0);
-    } catch (error) { console.error('Error loading audit logs:', error); }
+      setLogs(res.data?.logs || []);
+      setTotal(res.data?.total || 0);
+      setTotalPages(res.data?.totalPages || 0);
+    } catch (err: any) {
+      console.error('Error loading audit logs:', err);
+      setError(err?.response?.data?.error || 'Error al cargar registros de auditoría');
+      setLogs([]);
+    }
     finally { setIsLoading(false); }
   }, [page, pageSize, filterUserId, filterAction, filterEntity, filterDateFrom, filterDateTo]);
 
@@ -134,6 +140,8 @@ export default function AuditPage() {
           <tbody>
             {isLoading ? (
               <tr><td colSpan={6} className="text-center py-8 text-gray-400">Cargando...</td></tr>
+            ) : error ? (
+              <tr><td colSpan={6} className="text-center py-8 text-red-500">{error}</td></tr>
             ) : logs.length === 0 ? (
               <tr><td colSpan={6} className="text-center py-8 text-gray-400">No hay registros de auditoría</td></tr>
             ) : logs.map(log => (
