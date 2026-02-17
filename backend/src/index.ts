@@ -48,7 +48,7 @@ const auditService = new AuditService(prisma);
 app.use(cors());
 app.use(express.json());
 app.use(requestLogger);
-app.use(createAuditLogger(auditService));
+app.use(createAuditLogger(auditService, prisma));
 
 // Auth Routes
 app.use('/api/auth', authRouter(prisma));

@@ -35,7 +35,6 @@ export class AuditService {
         }
       });
     } catch (error) {
-      // Never let audit logging break the main flow
       console.error('Audit log error:', error);
     }
   }

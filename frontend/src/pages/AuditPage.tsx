@@ -47,11 +47,8 @@ export default function AuditPage() {
       setTotal(data.total || 0);
       setTotalPages(data.totalPages || 0);
     } catch (err: any) {
-      console.error('Error loading audit logs:', err);
       setError(err?.response?.data?.error || 'Error al cargar registros de auditoría');
       setLogs([]);
-      setTotal(0);
-      setTotalPages(0);
     } finally {
       setIsLoading(false);
     }
@@ -60,12 +57,8 @@ export default function AuditPage() {
   useEffect(() => { loadLogs(); }, [loadLogs]);
 
   const clearFilters = () => {
-    setFilterUserId('');
-    setFilterAction('');
-    setFilterEntity('');
-    setFilterDateFrom('');
-    setFilterDateTo('');
-    setPage(1);
+    setFilterUserId(''); setFilterAction(''); setFilterEntity('');
+    setFilterDateFrom(''); setFilterDateTo(''); setPage(1);
   };
 
   const formatDate = (d: string) => {
@@ -77,6 +70,17 @@ export default function AuditPage() {
     } catch { return d; }
   };
 
+  const actionLabel = (action: string) => {
+    const labels: Record<string, string> = {
+      LOGIN: 'Inicio sesión', LOGOUT: 'Cierre sesión', LOGIN_FAILED: 'Login fallido',
+      VIEW: 'Visualización', CREATE: 'Creación', UPDATE: 'Modificación', DELETE: 'Eliminación',
+      APPROVE: 'Aprobación', REJECT: 'Rechazo', CREATE_VERSION: 'Nueva versión',
+      ADD_TO_BUDGET: 'Agregar a presupuesto', CHANGE_STATUS: 'Cambio estado',
+      CHANGE_PASSWORD: 'Cambio contraseña', MODIFY_TAG: 'Modificar etiqueta',
+    };
+    return labels[action] || action;
+  };
+
   const actionColor = (action: string) => {
     if (action === 'LOGIN' || action === 'LOGOUT') return 'bg-blue-100 text-blue-800';
     if (action === 'LOGIN_FAILED') return 'bg-red-200 text-red-900';
@@ -84,9 +88,58 @@ export default function AuditPage() {
     if (action === 'CREATE' || action === 'ADD_TO_BUDGET' || action === 'CREATE_VERSION') return 'bg-green-100 text-green-800';
     if (action === 'UPDATE' || action === 'CHANGE_STATUS' || action === 'CHANGE_PASSWORD' || action === 'MODIFY_TAG') return 'bg-yellow-100 text-yellow-800';
     if (action === 'DELETE') return 'bg-red-100 text-red-800';
-    if (action === 'APPROVE' || action === 'APPROVE_BUDGET') return 'bg-emerald-100 text-emerald-800';
+    if (action === 'APPROVE') return 'bg-emerald-100 text-emerald-800';
     if (action === 'REJECT') return 'bg-orange-100 text-orange-800';
     return 'bg-gray-100 text-gray-800';
+  };
+
+  const actionCategory = (action: string) => {
+    if (action === 'LOGIN' || action === 'LOGOUT' || action === 'LOGIN_FAILED') return '🔐 Sesión';
+    if (action === 'VIEW') return '👁 Navegación';
+    return '✏️ Escritura';
+  };
+
+  // Render before/after diff for write operations
+  const renderDetails = (log: AuditLog) => {
+    if (!log.details) return <span className="text-gray-400 text-xs">Sin detalles</span>;
+    const d = log.details as any;
+
+    // If it has before/after, show diff
+    if (d.before !== undefined || d.after !== undefined) {
+      return (
+        <div className="grid grid-cols-2 gap-4">
+          {d.before && (
+            <div>
+              <div className="text-xs font-semibold text-red-600 mb-1">ANTES:</div>
+              <pre className="text-xs bg-red-50 p-2 rounded overflow-x-auto max-h-60 whitespace-pre-wrap">
+                {JSON.stringify(d.before, null, 2)}
+              </pre>
+            </div>
+          )}
+          {d.after !== undefined && (
+            <div>
+              <div className="text-xs font-semibold text-green-600 mb-1">
+                {d.after === null ? 'ELIMINADO' : 'DESPUÉS:'}
+              </div>
+              {d.after !== null ? (
+                <pre className="text-xs bg-green-50 p-2 rounded overflow-x-auto max-h-60 whitespace-pre-wrap">
+                  {JSON.stringify(d.after, null, 2)}
+                </pre>
+              ) : (
+                <div className="text-xs text-red-500 italic">Registro eliminado</div>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Fallback: just show raw JSON
+    return (
+      <pre className="text-xs bg-gray-100 p-2 rounded overflow-x-auto max-h-48 whitespace-pre-wrap">
+        {JSON.stringify(d, null, 2)}
+      </pre>
+    );
   };
 
   return (
@@ -95,10 +148,7 @@ export default function AuditPage() {
 
       <div className="flex justify-between items-center">
         <div className="text-sm text-gray-500">{total} registros encontrados</div>
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className="text-sm text-blue-600 hover:underline"
-        >
+        <button onClick={() => setShowFilters(!showFilters)} className="text-sm text-blue-600 hover:underline">
           {showFilters ? 'Ocultar filtros' : 'Mostrar filtros'}
         </button>
       </div>
@@ -117,7 +167,7 @@ export default function AuditPage() {
               <label className="block text-xs text-gray-500 mb-1">Acción</label>
               <select value={filterAction} onChange={(e) => { setFilterAction(e.target.value); setPage(1); }} className="w-full px-2 py-1.5 border rounded text-sm">
                 <option value="">Todas</option>
-                {actions.map((a) => <option key={a} value={a}>{a}</option>)}
+                {actions.map((a) => <option key={a} value={a}>{actionLabel(a)}</option>)}
               </select>
             </div>
             <div>
@@ -148,44 +198,37 @@ export default function AuditPage() {
             <tr>
               <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Fecha/Hora</th>
               <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Usuario</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Categoría</th>
               <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Acción</th>
               <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Entidad</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">ID Entidad</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">IP</th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
-              <tr><td colSpan={6} className="text-center py-8 text-gray-400">Cargando...</td></tr>
+              <tr><td colSpan={5} className="text-center py-8 text-gray-400">Cargando...</td></tr>
             ) : error ? (
-              <tr><td colSpan={6} className="text-center py-8 text-red-500">{error}</td></tr>
+              <tr><td colSpan={5} className="text-center py-8 text-red-500">{error}</td></tr>
             ) : logs.length === 0 ? (
-              <tr><td colSpan={6} className="text-center py-8 text-gray-400">No hay registros de auditoría</td></tr>
+              <tr><td colSpan={5} className="text-center py-8 text-gray-400">No hay registros de auditoría</td></tr>
             ) : (
               logs.map((log) => (
                 <React.Fragment key={log.id}>
                   <tr
-                    className="border-t hover:bg-gray-50 cursor-pointer"
-                    onClick={() => setExpandedRow(expandedRow === log.id ? null : log.id)}
+                    className={`border-t hover:bg-gray-50 ${log.details ? 'cursor-pointer' : ''}`}
+                    onClick={() => log.details && setExpandedRow(expandedRow === log.id ? null : log.id)}
                   >
                     <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap">{formatDate(log.createdAt)}</td>
-                    <td className="px-4 py-2.5">{log.user?.fullName || log.userId || '—'}</td>
+                    <td className="px-4 py-2.5">{log.user?.fullName || '—'}</td>
+                    <td className="px-4 py-2.5 text-xs text-gray-500">{actionCategory(log.action)}</td>
                     <td className="px-4 py-2.5">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${actionColor(log.action)}`}>{log.action}</span>
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${actionColor(log.action)}`}>{actionLabel(log.action)}</span>
                     </td>
                     <td className="px-4 py-2.5 text-gray-700">{log.entity}</td>
-                    <td className="px-4 py-2.5 text-gray-500 font-mono text-xs">
-                      {log.entityId ? log.entityId.substring(0, 8) + '...' : '—'}
-                    </td>
-                    <td className="px-4 py-2.5 text-gray-500 text-xs">{log.ipAddress || '—'}</td>
                   </tr>
                   {expandedRow === log.id && log.details && (
                     <tr className="bg-gray-50">
-                      <td colSpan={6} className="px-4 py-3">
-                        <div className="text-xs font-medium text-gray-500 mb-1">Detalles:</div>
-                        <pre className="text-xs bg-gray-100 p-3 rounded overflow-x-auto max-h-48">
-                          {JSON.stringify(log.details, null, 2)}
-                        </pre>
+                      <td colSpan={5} className="px-4 py-3">
+                        {renderDetails(log)}
                       </td>
                     </tr>
                   )}
@@ -204,9 +247,7 @@ export default function AuditPage() {
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
               className="px-3 py-1 rounded border text-sm hover:bg-gray-50 disabled:opacity-30"
-            >
-              ‹
-            </button>
+            >‹</button>
             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
               let pageNum: number;
               if (totalPages <= 5) pageNum = i + 1;
@@ -214,22 +255,16 @@ export default function AuditPage() {
               else if (page >= totalPages - 2) pageNum = totalPages - 4 + i;
               else pageNum = page - 2 + i;
               return (
-                <button
-                  key={pageNum}
-                  onClick={() => setPage(pageNum)}
+                <button key={pageNum} onClick={() => setPage(pageNum)}
                   className={`px-3 py-1 rounded text-sm ${page === pageNum ? 'bg-blue-600 text-white' : 'border hover:bg-gray-50'}`}
-                >
-                  {pageNum}
-                </button>
+                >{pageNum}</button>
               );
             })}
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
               className="px-3 py-1 rounded border text-sm hover:bg-gray-50 disabled:opacity-30"
-            >
-              ›
-            </button>
+            >›</button>
           </div>
         </div>
       )}

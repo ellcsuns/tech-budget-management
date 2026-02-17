@@ -1,34 +1,33 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { PrismaClient } from '@prisma/client';
 import { AuditService } from '../services/AuditService';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
-// Map route patterns to entity/action descriptions for mutating operations
-const ROUTE_MAP: Record<string, { entity: string; actions: Record<string, string> }> = {
-  '/api/auth/login': { entity: 'Session', actions: { POST: 'LOGIN' } },
-  '/api/auth/logout': { entity: 'Session', actions: { POST: 'LOGOUT' } },
-  '/api/budgets': { entity: 'Budget', actions: { POST: 'CREATE', PUT: 'UPDATE', DELETE: 'DELETE' } },
-  '/api/budget-lines': { entity: 'BudgetLine', actions: { POST: 'CREATE', PUT: 'UPDATE', DELETE: 'DELETE' } },
-  '/api/transactions': { entity: 'Transaction', actions: { POST: 'CREATE', PUT: 'UPDATE', DELETE: 'DELETE' } },
-  '/api/expenses': { entity: 'Expense', actions: { POST: 'CREATE', PUT: 'UPDATE', DELETE: 'DELETE' } },
-  '/api/expenses-enhanced': { entity: 'Expense', actions: { POST: 'CREATE', PUT: 'UPDATE', DELETE: 'DELETE' } },
-  '/api/savings': { entity: 'Saving', actions: { POST: 'CREATE', DELETE: 'DELETE' } },
-  '/api/deferrals': { entity: 'Deferral', actions: { POST: 'CREATE', DELETE: 'DELETE' } },
-  '/api/change-requests': { entity: 'ChangeRequest', actions: { POST: 'CREATE' } },
-  '/api/users': { entity: 'User', actions: { POST: 'CREATE', PUT: 'UPDATE', DELETE: 'DELETE' } },
-  '/api/roles': { entity: 'Role', actions: { POST: 'CREATE', PUT: 'UPDATE', DELETE: 'DELETE' } },
-  '/api/conversion-rates': { entity: 'ConversionRate', actions: { POST: 'CREATE', DELETE: 'DELETE' } },
-  '/api/config': { entity: 'SystemConfig', actions: { PUT: 'UPDATE' } },
-  '/api/translations': { entity: 'Translation', actions: { POST: 'CREATE', PUT: 'UPDATE', DELETE: 'DELETE' } },
-  '/api/technology-directions': { entity: 'TechnologyDirection', actions: { POST: 'CREATE', PUT: 'UPDATE', DELETE: 'DELETE' } },
-  '/api/user-areas': { entity: 'UserArea', actions: { POST: 'CREATE', PUT: 'UPDATE', DELETE: 'DELETE' } },
-  '/api/financial-companies': { entity: 'FinancialCompany', actions: { POST: 'CREATE', PUT: 'UPDATE', DELETE: 'DELETE' } },
-  '/api/tag-definitions': { entity: 'TagDefinition', actions: { POST: 'CREATE', PUT: 'UPDATE', DELETE: 'DELETE' } },
+// Entity mapping: route prefix → Prisma model name for fetching "before" state
+const ENTITY_MAP: Record<string, { entity: string; model: string }> = {
+  '/api/budgets': { entity: 'Budget', model: 'budget' },
+  '/api/budget-lines': { entity: 'BudgetLine', model: 'budgetLine' },
+  '/api/transactions': { entity: 'Transaction', model: 'transaction' },
+  '/api/expenses': { entity: 'Expense', model: 'expense' },
+  '/api/expenses-enhanced': { entity: 'Expense', model: 'expense' },
+  '/api/savings': { entity: 'Saving', model: 'saving' },
+  '/api/deferrals': { entity: 'Deferral', model: 'deferral' },
+  '/api/change-requests': { entity: 'ChangeRequest', model: 'budgetLineChangeRequest' },
+  '/api/users': { entity: 'User', model: 'user' },
+  '/api/roles': { entity: 'Role', model: 'role' },
+  '/api/conversion-rates': { entity: 'ConversionRate', model: 'conversionRate' },
+  '/api/config': { entity: 'SystemConfig', model: 'systemConfig' },
+  '/api/translations': { entity: 'Translation', model: 'translation' },
+  '/api/technology-directions': { entity: 'TechnologyDirection', model: 'technologyDirection' },
+  '/api/user-areas': { entity: 'UserArea', model: 'userArea' },
+  '/api/financial-companies': { entity: 'FinancialCompany', model: 'financialCompany' },
+  '/api/tag-definitions': { entity: 'TagDefinition', model: 'tagDefinition' },
 };
 
-// Special sub-path patterns for mutating operations
-const SPECIAL_PATTERNS: Array<{ pattern: RegExp; entity: string; action: string }> = [
+// Special action patterns (POST sub-paths)
+const SPECIAL_ACTIONS: Array<{ pattern: RegExp; entity: string; action: string }> = [
   { pattern: /\/api\/change-requests\/[^/]+\/approve/, entity: 'ChangeRequest', action: 'APPROVE' },
   { pattern: /\/api\/change-requests\/[^/]+\/reject/, entity: 'ChangeRequest', action: 'REJECT' },
   { pattern: /\/api\/savings\/approve/, entity: 'Saving', action: 'APPROVE' },
@@ -39,8 +38,8 @@ const SPECIAL_PATTERNS: Array<{ pattern: RegExp; entity: string; action: string 
   { pattern: /\/api\/users\/[^/]+\/password/, entity: 'User', action: 'CHANGE_PASSWORD' },
 ];
 
-// Navigation / module access tracking (GET requests)
-const NAVIGATION_MAP: Record<string, string> = {
+// Navigation modules for GET tracking
+const NAV_MAP: Record<string, string> = {
   '/api/budgets': 'Budgets',
   '/api/budget-lines': 'BudgetLines',
   '/api/transactions': 'Transactions',
@@ -52,7 +51,6 @@ const NAVIGATION_MAP: Record<string, string> = {
   '/api/users': 'Users',
   '/api/roles': 'Roles',
   '/api/conversion-rates': 'ConversionRates',
-  '/api/config': 'SystemConfig',
   '/api/translations': 'Translations',
   '/api/technology-directions': 'TechnologyDirections',
   '/api/user-areas': 'UserAreas',
@@ -60,150 +58,170 @@ const NAVIGATION_MAP: Record<string, string> = {
   '/api/tag-definitions': 'TagDefinitions',
   '/api/reports': 'Reports',
   '/api/audit': 'AuditLogs',
-  '/api/budgets/compare': 'BudgetCompare',
-  '/api/budgets/active': 'BudgetActive',
 };
 
-function getClientIp(req: Request): string {
-  const forwarded = req.headers['x-forwarded-for'];
-  if (typeof forwarded === 'string') return forwarded.split(',')[0].trim();
-  return req.socket?.remoteAddress || 'unknown';
+function extractUUID(path: string): string | undefined {
+  const m = path.match(/\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+  return m ? m[1] : undefined;
 }
 
-function resolveRoute(method: string, path: string): { entity: string; action: string } | null {
-  // Check special patterns first
-  for (const sp of SPECIAL_PATTERNS) {
+function getUserIdFromToken(req: Request): string | undefined {
+  const auth = req.headers.authorization;
+  if (!auth || !auth.startsWith('Bearer ')) return undefined;
+  try {
+    const decoded = jwt.verify(auth.substring(7), JWT_SECRET) as { userId: string };
+    return decoded.userId;
+  } catch { return undefined; }
+}
+
+function sanitize(body: any): any {
+  if (!body || typeof body !== 'object') return body;
+  const s = { ...body };
+  delete s.password; delete s.passwordHash; delete s.currentPassword;
+  delete s.newPassword; delete s.token;
+  return s;
+}
+
+function resolveWriteAction(method: string, path: string): { entity: string; action: string } | null {
+  // Special patterns first
+  for (const sp of SPECIAL_ACTIONS) {
     if (sp.pattern.test(path) && method === 'POST') {
       return { entity: sp.entity, action: sp.action };
     }
   }
+  // Login/logout
+  if (path === '/api/auth/login' && method === 'POST') return { entity: 'Session', action: 'LOGIN' };
+  if (path === '/api/auth/logout' && method === 'POST') return { entity: 'Session', action: 'LOGOUT' };
 
-  // Check base routes
-  for (const [route, config] of Object.entries(ROUTE_MAP)) {
+  // Standard CRUD
+  for (const [route, config] of Object.entries(ENTITY_MAP)) {
     if (path === route || path.startsWith(route + '/')) {
-      const action = config.actions[method];
-      if (action) return { entity: config.entity, action };
+      if (method === 'POST') return { entity: config.entity, action: 'CREATE' };
+      if (method === 'PUT') return { entity: config.entity, action: 'UPDATE' };
+      if (method === 'DELETE') return { entity: config.entity, action: 'DELETE' };
     }
   }
-
   return null;
 }
 
-function resolveNavigation(path: string): string | null {
-  // Check specific paths first (longer matches)
-  if (path === '/api/budgets/compare' || path.startsWith('/api/budgets/compare?')) return 'BudgetCompare';
-  if (path === '/api/budgets/active') return 'BudgetActive';
-  if (path.startsWith('/api/audit/actions') || path.startsWith('/api/audit/entities')) return null; // skip filter helpers
+function resolveNavModule(path: string): string | null {
+  // Skip audit sub-endpoints (actions, entities)
+  if (path.startsWith('/api/audit/actions') || path.startsWith('/api/audit/entities')) return null;
+  // Skip auth/me (called on every page load)
+  if (path === '/api/auth/me') return null;
 
-  for (const [route, module] of Object.entries(NAVIGATION_MAP)) {
+  for (const [route, mod] of Object.entries(NAV_MAP)) {
     if (path === route || path.startsWith(route + '?') || path.startsWith(route + '/')) {
-      return module;
+      return mod;
     }
   }
   return null;
 }
 
-function extractEntityId(path: string): string | undefined {
-  const match = path.match(/\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
-  return match ? match[1] : undefined;
+// Fetch the current record before it gets modified (for UPDATE/DELETE)
+async function fetchBefore(prisma: PrismaClient, path: string, entityId: string | undefined): Promise<any> {
+  if (!entityId) return undefined;
+  for (const [route, config] of Object.entries(ENTITY_MAP)) {
+    if (path === route || path.startsWith(route + '/')) {
+      try {
+        const model = (prisma as any)[config.model];
+        if (model && typeof model.findUnique === 'function') {
+          const record = await model.findUnique({ where: { id: entityId } });
+          if (record) {
+            // Remove internal/sensitive fields
+            const clean = { ...record };
+            delete clean.passwordHash;
+            return clean;
+          }
+        }
+      } catch { /* model might not support findUnique by id */ }
+      return undefined;
+    }
+  }
+  return undefined;
 }
 
-function sanitizeBody(body: any): any {
-  if (!body || typeof body !== 'object') return body;
-  const sanitized = { ...body };
-  delete sanitized.password;
-  delete sanitized.passwordHash;
-  delete sanitized.currentPassword;
-  delete sanitized.newPassword;
-  delete sanitized.token;
-  return sanitized;
-}
-
-export function createAuditLogger(auditService: AuditService) {
-  return (req: Request, res: Response, next: NextFunction) => {
+export function createAuditLogger(auditService: AuditService, prisma?: PrismaClient) {
+  return async (req: Request, res: Response, next: NextFunction) => {
     const method = req.method;
     const path = req.path;
-    const userId = (req as any).user?.userId || undefined;
-    const ip = getClientIp(req);
 
     // ========================================
-    // 1) GET requests → log navigation/access
+    // GET → log navigation (VIEW)
     // ========================================
     if (method === 'GET') {
-      const authHeader = req.headers.authorization;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.substring(7);
-        let tokenUserId: string | undefined;
-        try {
-          const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
-          tokenUserId = decoded.userId;
-        } catch { /* invalid token, skip */ }
-
-        if (tokenUserId) {
-          const module = resolveNavigation(path);
-          if (module) {
-            const entityId = extractEntityId(path);
-            const queryParams = req.query && Object.keys(req.query).length > 0
-              ? Object.fromEntries(Object.entries(req.query).map(([k, v]) => [k, String(v)]))
-              : undefined;
-
-            auditService.log({
-              userId: tokenUserId,
-              action: 'VIEW',
-              entity: module,
-              entityId,
-              details: queryParams ? { filters: queryParams } : undefined,
-              ipAddress: ip,
-            });
-          }
+      const uid = getUserIdFromToken(req);
+      if (uid) {
+        const mod = resolveNavModule(path);
+        if (mod) {
+          auditService.log({
+            userId: uid,
+            action: 'VIEW',
+            entity: mod,
+            details: undefined,
+          });
         }
       }
       return next();
     }
 
     // ========================================
-    // 2) POST/PUT/DELETE → log mutations
+    // POST/PUT/DELETE → log writes with before/after
     // ========================================
+    const entityId = extractUUID(path);
+    let beforeState: any = undefined;
+
+    // For UPDATE and DELETE, capture the "before" state
+    if (prisma && (method === 'PUT' || method === 'DELETE') && entityId) {
+      beforeState = await fetchBefore(prisma, path, entityId);
+    }
+
     const originalJson = res.json.bind(res);
     res.json = function (body: any) {
       const statusCode = res.statusCode;
+      const resolved = resolveWriteAction(method, path);
 
-      // Log successful mutations (2xx)
-      if (statusCode >= 200 && statusCode < 300) {
-        const resolved = resolveRoute(method, path);
-        if (resolved) {
-          let logUserId = userId;
-          if (path === '/api/auth/login' && body?.user?.id) {
-            logUserId = body.user.id;
-          }
+      // Successful write (2xx)
+      if (statusCode >= 200 && statusCode < 300 && resolved) {
+        let logUserId = (req as any).user?.userId || getUserIdFromToken(req);
 
-          const details: any = {};
-          if (method === 'POST' || method === 'PUT') {
-            details.input = sanitizeBody(req.body);
-          }
-          if (method === 'DELETE') {
-            details.deletedId = extractEntityId(path);
-          }
-
-          auditService.log({
-            userId: logUserId,
-            action: resolved.action,
-            entity: resolved.entity,
-            entityId: extractEntityId(path) || body?.id,
-            details: Object.keys(details).length > 0 ? details : undefined,
-            ipAddress: ip,
-          });
+        // For login, get userId from response
+        if (path === '/api/auth/login' && body?.user?.id) {
+          logUserId = body.user.id;
         }
+
+        // Build details with before/after
+        const details: any = {};
+
+        if (method === 'POST' || method === 'PUT') {
+          // "after" = the response body (the saved record) or the input
+          if (beforeState) details.before = beforeState;
+          // For the "after", use the response body (which is the updated record)
+          // but sanitize it
+          const afterData = body && typeof body === 'object' ? sanitize(body) : sanitize(req.body);
+          details.after = afterData;
+        }
+
+        if (method === 'DELETE') {
+          if (beforeState) details.before = beforeState;
+          details.after = null;
+        }
+
+        auditService.log({
+          userId: logUserId,
+          action: resolved.action,
+          entity: resolved.entity,
+          details: Object.keys(details).length > 0 ? details : undefined,
+        });
       }
 
-      // Log failed login attempts (401)
+      // Failed login → log attempt
       if (path === '/api/auth/login' && statusCode === 401) {
         auditService.log({
           userId: undefined,
           action: 'LOGIN_FAILED',
           entity: 'Session',
           details: { username: req.body?.username || 'unknown' },
-          ipAddress: ip,
         });
       }
 

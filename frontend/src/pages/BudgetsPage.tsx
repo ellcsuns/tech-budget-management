@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { budgetApi, expenseApi, financialCompanyApi } from '../services/api';
-import type { Budget, BudgetLine } from '../types';
+import { budgetApi, expenseApi, financialCompanyApi, userAreaApi } from '../services/api';
+import type { Budget, BudgetLine, UserArea } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { fmt } from '../utils/formatters';
 import SaveButton from '../components/SaveButton';
@@ -32,6 +32,7 @@ export default function BudgetsPage() {
   const [addCompanyId, setAddCompanyId] = useState('');
   const [allExpenses, setAllExpenses] = useState<any[]>([]);
   const [allCompanies, setAllCompanies] = useState<any[]>([]);
+  const [allUserAreas, setAllUserAreas] = useState<UserArea[]>([]);
   const [editPopupLine, setEditPopupLine] = useState<BudgetLine | null>(null);
   const [popupValues, setPopupValues] = useState<Record<number, string>>({});
   const [filters, setFilters] = useState({
@@ -56,9 +57,12 @@ export default function BudgetsPage() {
 
   const loadMasterData = async () => {
     try {
-      const [expRes, compRes] = await Promise.all([expenseApi.getAll(), financialCompanyApi.getAll()]);
+      const [expRes, compRes, areaRes] = await Promise.all([
+        expenseApi.getAll(), financialCompanyApi.getAll(), userAreaApi.getAll()
+      ]);
       setAllExpenses(expRes.data);
       setAllCompanies(compRes.data);
+      setAllUserAreas(areaRes.data);
     } catch (error) { console.error('Error loading master data:', error); }
   };
 
@@ -128,13 +132,23 @@ export default function BudgetsPage() {
     } catch (error: any) { alert(error.response?.data?.error || 'Error al agregar línea'); }
   };
 
+  // Convert per-cell edits to per-budgetLine planM1..planM12 format for backend
+  const buildPlanValueChanges = () => {
+    const changesByLine: Record<string, Record<string, number>> = {};
+    editedCells.forEach((cell) => {
+      if (!changesByLine[cell.budgetLineId]) {
+        changesByLine[cell.budgetLineId] = { budgetLineId: cell.budgetLineId } as any;
+      }
+      changesByLine[cell.budgetLineId][`planM${cell.month}`] = cell.value;
+    });
+    return Object.values(changesByLine);
+  };
+
   const handleSave = async () => {
     if (!selectedBudget) return;
     try {
       setIsSaving(true);
-      const planValueChanges = Array.from(editedCells.values()).map((cell: BudgetLineEdit) => ({
-        budgetLineId: cell.budgetLineId, month: cell.month, value: cell.value
-      }));
+      const planValueChanges = buildPlanValueChanges();
       const res = await budgetApi.createNewVersion(selectedBudget.id, planValueChanges);
       await loadBudgetDetails(res.data.id);
       alert(`Nueva versión ${res.data.version} creada exitosamente`);
@@ -164,13 +178,24 @@ export default function BudgetsPage() {
     setEditPopupLine(null);
   };
 
+  // Resolve user area names from expense.userAreas (array of IDs)
+  const getAreaNames = (bl: BudgetLine): string => {
+    const areaIds = bl.expense?.userAreas || [];
+    if (areaIds.length === 0) return '-';
+    return areaIds.map((id: string) => {
+      const area = allUserAreas.find(a => a.id === id);
+      return area ? area.name : '';
+    }).filter(Boolean).join(', ');
+  };
+
   const filteredLines = useMemo(() => budgetLines.filter(bl => {
     if (filters.searchText && filters.searchText.trim()) {
       const s = filters.searchText.toLowerCase();
       const matchCode = bl.expense?.code?.toLowerCase().includes(s);
       const matchDesc = bl.expense?.shortDescription?.toLowerCase().includes(s);
       const matchComp = bl.financialCompany?.name?.toLowerCase().includes(s);
-      if (!matchCode && !matchDesc && !matchComp) return false;
+      const matchArea = getAreaNames(bl).toLowerCase().includes(s);
+      if (!matchCode && !matchDesc && !matchComp && !matchArea) return false;
     }
     if (filters.currencies && filters.currencies.length > 0) {
       if (!filters.currencies.includes(bl.currency)) return false;
@@ -179,7 +204,7 @@ export default function BudgetsPage() {
       if (!filters.financialCompanyIds.includes(bl.financialCompanyId)) return false;
     }
     return true;
-  }), [budgetLines, filters]);
+  }), [budgetLines, filters, allUserAreas]);
 
   const totals = useMemo(() => {
     const byCurrency: Record<string, number> = {};
@@ -195,6 +220,10 @@ export default function BudgetsPage() {
     });
     return byCurrency;
   }, [filteredLines, editedCells]);
+
+  const popupTotal = useMemo(() =>
+    Object.values(popupValues).reduce((s: number, v: string) => s + (parseFloat(v) || 0), 0),
+  [popupValues]);
 
   if (isLoading && !selectedBudget) return <div className="text-center py-8">Cargando...</div>;
 
@@ -263,43 +292,48 @@ export default function BudgetsPage() {
                 onCellEdit={handleCellEdit}
                 onRemoveRow={handleRemoveRow}
                 onRowClick={openEditPopup}
+                userAreas={allUserAreas}
               />
             )}
           </div>
         </>
       )}
 
-      {/* Edit Popup */}
+      {/* Edit Popup - Vertical month layout */}
       {editPopupLine && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-bold">Editar Línea de Presupuesto</h2>
               <button onClick={() => setEditPopupLine(null)} className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
             </div>
-            <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
+            <div className="space-y-2 mb-4 text-sm">
               <div><span className="text-gray-500">Código:</span> {editPopupLine.expense?.code}</div>
               <div><span className="text-gray-500">Descripción:</span> {editPopupLine.expense?.shortDescription}</div>
               <div><span className="text-gray-500">Empresa:</span> {editPopupLine.financialCompany?.name}</div>
               <div><span className="text-gray-500">Moneda:</span> {editPopupLine.currency}</div>
-              {editPopupLine.technologyDirection && <div><span className="text-gray-500">Área Tecnología:</span> {editPopupLine.technologyDirection.name}</div>}
+              {editPopupLine.technologyDirection && <div><span className="text-gray-500">Dir. Tecnología:</span> {editPopupLine.technologyDirection.name}</div>}
+              <div><span className="text-gray-500">Área Responsable:</span> {getAreaNames(editPopupLine)}</div>
             </div>
-            <div className="grid grid-cols-4 gap-3 mb-4">
+
+            {/* Vertical month list */}
+            <div className="border rounded divide-y mb-4">
               {MONTHS.map((m, i) => (
-                <div key={i}>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">{m}</label>
+                <div key={i} className="flex items-center justify-between px-4 py-2">
+                  <label className="text-sm font-medium text-gray-600 w-16">{m}</label>
                   <input
                     type="number" step="0.01" value={popupValues[i + 1] || '0'}
                     onChange={(e) => setPopupValues({ ...popupValues, [i + 1]: e.target.value })}
-                    className="w-full border rounded px-2 py-1 text-sm text-right"
+                    className="w-40 border rounded px-3 py-1.5 text-sm text-right focus:ring-2 focus:ring-accent focus:border-accent"
                     disabled={!canEdit}
                   />
                 </div>
               ))}
             </div>
+
             <div className="flex justify-between items-center">
               <div className="text-sm font-semibold">
-                Total: {fmt(Object.values(popupValues).reduce((s: number, v: string) => s + (parseFloat(v) || 0), 0))} {editPopupLine.currency}
+                Total: {fmt(popupTotal)} {editPopupLine.currency}
               </div>
               <div className="flex gap-2">
                 <button onClick={() => setEditPopupLine(null)} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">Cancelar</button>
