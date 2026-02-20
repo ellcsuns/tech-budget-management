@@ -41,7 +41,7 @@ export default function TranslationsPage() {
     if (filterCategory) filtered = filtered.filter(t => t.category === filterCategory);
     const groups: Record<string, Translation[]> = {};
     filtered.forEach(t => {
-      const section = t.key.split('.')[0] || 'general';
+      const section = t.category || 'general';
       if (!groups[section]) groups[section] = [];
       groups[section].push(t);
     });

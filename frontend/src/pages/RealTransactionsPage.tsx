@@ -4,6 +4,7 @@ import type { Budget, BudgetLine } from '../types';
 import { HiOutlinePencilSquare, HiOutlineTrash, HiOutlinePlusCircle, HiOutlineClipboardDocumentList, HiOutlineChevronUpDown } from 'react-icons/hi2';
 import { showToast } from '../components/Toast';
 import ConfirmationDialog from '../components/ConfirmationDialog';
+import { useI18n } from '../contexts/I18nContext';
 
 interface Transaction {
   id: string;
@@ -26,6 +27,7 @@ type SortField = 'budgetLine' | 'serviceDate' | 'postingDate' | 'refDoc' | 'curr
 type SortDir = 'asc' | 'desc';
 
 export default function RealTransactionsPage() {
+  const { t } = useI18n();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [committedTransactions, setCommittedTransactions] = useState<Transaction[]>([]);
   const [allBudgets, setAllBudgets] = useState<Budget[]>([]);
@@ -188,7 +190,7 @@ export default function RealTransactionsPage() {
 
   const activeBudget = allBudgets.find(b => b.isActive);
 
-  if (isLoading) return <div className="text-center py-8">Cargando...</div>;
+  if (isLoading) return <div className="text-center py-8">{t('msg.loading')}</div>;
 
   const thSortable = "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none";
 
@@ -205,31 +207,31 @@ export default function RealTransactionsPage() {
             <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">★ Vigente</span>
           )}
           <input type="text" value={filterText} onChange={e => setFilterText(e.target.value)}
-            placeholder="Filtrar (separar por comas)..." className="border rounded px-3 py-1.5 text-sm w-64" />
+            placeholder={t('filter.searchComma') || 'Filtrar (separar por comas)...'} className="border rounded px-3 py-1.5 text-sm w-64" />
         </div>
         <div className="flex gap-2">
           <button onClick={() => setShowCommittedPicker(!showCommittedPicker)} className="btn-secondary flex items-center gap-2">
             <HiOutlineClipboardDocumentList className="w-5 h-5" />
-            {showCommittedPicker ? 'Ocultar Comprometidas' : 'Desde Comprometida'}
+            {showCommittedPicker ? t('transaction.hideCommitted') : t('transaction.fromCommitted')}
           </button>
           <button onClick={handleCreate} className="btn-primary flex items-center gap-2">
-            <HiOutlinePlusCircle className="w-5 h-5" /> Nueva Transacción
+            <HiOutlinePlusCircle className="w-5 h-5" /> {t('transaction.new')}
           </button>
         </div>
       </div>
 
       {showCommittedPicker && committedTransactions.length > 0 && (
         <div className="bg-yellow-50 rounded-lg shadow p-4 mb-4">
-          <h3 className="text-sm font-bold text-yellow-800 mb-3">Selecciona una transacción comprometida no compensada:</h3>
+          <h3 className="text-sm font-bold text-yellow-800 mb-3">{t('transaction.selectCommitted') || 'Selecciona una transacción comprometida no compensada'}:</h3>
           <div className="max-h-48 overflow-y-auto">
             <table className="w-full text-sm">
               <thead className="bg-yellow-100">
                 <tr>
-                  <th className="px-3 py-2 text-left">Línea Presupuesto</th>
-                  <th className="px-3 py-2 text-left">Ref. Doc</th>
-                  <th className="px-3 py-2 text-right">Valor</th>
-                  <th className="px-3 py-2 text-left">Moneda</th>
-                  <th className="px-3 py-2 text-center">Acción</th>
+                  <th className="px-3 py-2 text-left">{t('table.budgetLine')}</th>
+                  <th className="px-3 py-2 text-left">{t('table.refDocument')}</th>
+                  <th className="px-3 py-2 text-right">{t('table.value')}</th>
+                  <th className="px-3 py-2 text-left">{t('table.currency')}</th>
+                  <th className="px-3 py-2 text-center">{t('label.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -254,14 +256,14 @@ export default function RealTransactionsPage() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className={thSortable} onClick={() => handleSort('budgetLine')}>Línea Presupuesto <SortIcon field="budgetLine" /></th>
-              <th className={thSortable} onClick={() => handleSort('serviceDate')}>Fecha Servicio <SortIcon field="serviceDate" /></th>
-              <th className={thSortable} onClick={() => handleSort('postingDate')}>Fecha Imputación <SortIcon field="postingDate" /></th>
-              <th className={thSortable} onClick={() => handleSort('refDoc')}>Ref. Documento <SortIcon field="refDoc" /></th>
-              <th className={thSortable} onClick={() => handleSort('currency')}>Moneda <SortIcon field="currency" /></th>
-              <th className={thSortable + " text-right"} onClick={() => handleSort('value')}>Valor <SortIcon field="value" /></th>
-              <th className={thSortable + " text-center"} onClick={() => handleSort('month')}>Mes <SortIcon field="month" /></th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Acciones</th>
+              <th className={thSortable} onClick={() => handleSort('budgetLine')}>{t('table.budgetLine')} <SortIcon field="budgetLine" /></th>
+              <th className={thSortable} onClick={() => handleSort('serviceDate')}>{t('table.serviceDate')} <SortIcon field="serviceDate" /></th>
+              <th className={thSortable} onClick={() => handleSort('postingDate')}>{t('table.postingDate')} <SortIcon field="postingDate" /></th>
+              <th className={thSortable} onClick={() => handleSort('refDoc')}>{t('table.refDocument')} <SortIcon field="refDoc" /></th>
+              <th className={thSortable} onClick={() => handleSort('currency')}>{t('table.currency')} <SortIcon field="currency" /></th>
+              <th className={thSortable + " text-right"} onClick={() => handleSort('value')}>{t('table.value')} <SortIcon field="value" /></th>
+              <th className={thSortable + " text-center"} onClick={() => handleSort('month')}>{t('table.month')} <SortIcon field="month" /></th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">{t('table.actions')}</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -287,51 +289,51 @@ export default function RealTransactionsPage() {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
-            <h2 className="text-2xl font-bold mb-4">{selectedTransaction ? 'Editar Transacción' : 'Nueva Transacción Real'}</h2>
-            {selectedCommittedId && <p className="text-sm text-blue-600 mb-3">Compensando transacción comprometida</p>}
+            <h2 className="text-2xl font-bold mb-4">{selectedTransaction ? t('transaction.edit') || 'Editar Transacción' : t('transaction.real')}</h2>
+            {selectedCommittedId && <p className="text-sm text-blue-600 mb-3">{t('transaction.compensating') || 'Compensando transacción comprometida'}</p>}
             <form onSubmit={handleSubmit}>
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Línea de Presupuesto</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('table.budgetLine')}</label>
                   <select value={formData.budgetLineId} onChange={(e) => {
                     const bl = budgetLines.find(b => b.id === e.target.value);
                     setFormData({ ...formData, budgetLineId: e.target.value, financialCompanyId: bl?.financialCompanyId || '' });
                   }} className="w-full px-3 py-2 border rounded-md" required>
-                    <option value="">Seleccione</option>
+                    <option value="">{t('msg.select') || 'Seleccione'}</option>
                     {budgetLines.map(bl => (<option key={bl.id} value={bl.id}>{bl.expense?.code} - {bl.expense?.shortDescription} ({bl.financialCompany?.name})</option>))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Servicio</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('table.serviceDate')}</label>
                   <input type="date" value={formData.serviceDate} onChange={(e) => setFormData({ ...formData, serviceDate: e.target.value })} className="w-full px-3 py-2 border rounded-md" required />
-                  {formData.serviceDate && <p className="text-xs text-gray-500 mt-1">Mes: {getMonthFromDate(formData.serviceDate)}</p>}
+                  {formData.serviceDate && <p className="text-xs text-gray-500 mt-1">{t('label.month')}: {getMonthFromDate(formData.serviceDate)}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Imputación</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('table.postingDate')}</label>
                   <input type="date" value={formData.postingDate} onChange={(e) => setFormData({ ...formData, postingDate: e.target.value })} className="w-full px-3 py-2 border rounded-md" required />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Número de Documento</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('transaction.refDoc') || 'Número de Documento'}</label>
                   <input type="text" value={formData.referenceDocumentNumber} onChange={(e) => setFormData({ ...formData, referenceDocumentNumber: e.target.value })} className="w-full px-3 py-2 border rounded-md" required />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Link Plataforma Externa</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('table.externalLink')}</label>
                   <input type="url" value={formData.externalPlatformLink} onChange={(e) => setFormData({ ...formData, externalPlatformLink: e.target.value })} className="w-full px-3 py-2 border rounded-md" required />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('table.currency')}</label>
                   <select value={formData.transactionCurrency} onChange={(e) => setFormData({ ...formData, transactionCurrency: e.target.value })} className="w-full px-3 py-2 border rounded-md" required>
                     <option value="USD">USD</option><option value="EUR">EUR</option><option value="CLP">CLP</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Valor</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('table.value')}</label>
                   <input type="number" step="0.01" value={formData.transactionValue} onChange={(e) => setFormData({ ...formData, transactionValue: e.target.value })} className="w-full px-3 py-2 border rounded-md" required />
                 </div>
               </div>
               <div className="flex justify-end space-x-3 mt-6">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="btn-cancel">Cancelar</button>
-                <button type="submit" className="btn-primary">Guardar</button>
+                <button type="button" onClick={() => setIsModalOpen(false)} className="btn-cancel">{t('btn.cancel')}</button>
+                <button type="submit" className="btn-primary">{t('btn.save')}</button>
               </div>
             </form>
           </div>

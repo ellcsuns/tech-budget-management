@@ -4,8 +4,10 @@ import { classifyExpenses, calculateSummary, getDifferenceColor, generateDiffere
 import type { ComparisonRow, ComparisonSummary } from '../utils/budgetComparison';
 import type { Budget } from '../types';
 import { showToast } from '../components/Toast';
+import { useI18n } from '../contexts/I18nContext';
 
 export default function BudgetComparePage() {
+  const { t } = useI18n();
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [yearA, setYearA] = useState<number>(0);
   const [yearB, setYearB] = useState<number>(0);
@@ -50,10 +52,10 @@ export default function BudgetComparePage() {
   };
 
   const statusLabel = (s: string) => {
-    if (s === 'new') return <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">Nuevo</span>;
-    if (s === 'removed') return <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs">Eliminado</span>;
-    if (s === 'modified') return <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs">Modificado</span>;
-    return <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">Sin cambios</span>;
+    if (s === 'new') return <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">{t('budget.newExpenses') || 'Nuevo'}</span>;
+    if (s === 'removed') return <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs">{t('budget.removedExpenses') || 'Eliminado'}</span>;
+    if (s === 'modified') return <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs">{t('budget.modifiedExpenses') || 'Modificado'}</span>;
+    return <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">{t('budget.unchanged') || 'Sin cambios'}</span>;
   };
 
   return (
@@ -62,39 +64,39 @@ export default function BudgetComparePage() {
       <div className="bg-white rounded-lg shadow p-6">
         <div className="grid grid-cols-2 gap-6">
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-gray-600 uppercase">Presupuesto A</h3>
+            <h3 className="text-sm font-semibold text-gray-600 uppercase">{t('budget.budgetA') || 'Presupuesto A'}</h3>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Año</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('label.year')}</label>
                 <select value={yearA} onChange={e => { setYearA(Number(e.target.value)); setBudgetAId(''); }}
                   className="w-full px-3 py-2 border rounded-lg">
                   {years.map(y => <option key={y} value={y}>{y}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Versión</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('label.version')}</label>
                 <select value={budgetAId} onChange={e => setBudgetAId(e.target.value)} className="w-full px-3 py-2 border rounded-lg">
-                  <option value="">Seleccionar...</option>
-                  {budgetsForYearA.map(b => <option key={b.id} value={b.id}>{b.version}{b.isActive ? ' (vigente)' : ''}</option>)}
+                  <option value="">{t('msg.select') || 'Seleccionar...'}</option>
+                  {budgetsForYearA.map(b => <option key={b.id} value={b.id}>{b.version}{b.isActive ? ` (${t('label.active').toLowerCase()})` : ''}</option>)}
                 </select>
               </div>
             </div>
           </div>
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-gray-600 uppercase">Presupuesto B</h3>
+            <h3 className="text-sm font-semibold text-gray-600 uppercase">{t('budget.budgetB') || 'Presupuesto B'}</h3>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Año</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('label.year')}</label>
                 <select value={yearB} onChange={e => { setYearB(Number(e.target.value)); setBudgetBId(''); }}
                   className="w-full px-3 py-2 border rounded-lg">
                   {years.map(y => <option key={y} value={y}>{y}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Versión</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('label.version')}</label>
                 <select value={budgetBId} onChange={e => setBudgetBId(e.target.value)} className="w-full px-3 py-2 border rounded-lg">
-                  <option value="">Seleccionar...</option>
-                  {budgetsForYearB.map(b => <option key={b.id} value={b.id}>{b.version}{b.isActive ? ' (vigente)' : ''}</option>)}
+                  <option value="">{t('msg.select') || 'Seleccionar...'}</option>
+                  {budgetsForYearB.map(b => <option key={b.id} value={b.id}>{b.version}{b.isActive ? ` (${t('label.active').toLowerCase()})` : ''}</option>)}
                 </select>
               </div>
             </div>
@@ -103,7 +105,7 @@ export default function BudgetComparePage() {
         <div className="mt-4">
           <button onClick={compare} disabled={!budgetAId || !budgetBId || loading}
             className="btn-primary disabled:opacity-50 w-full">
-            {loading ? 'Comparando...' : 'Comparar'}
+            {loading ? (t('msg.loading') || 'Comparando...') : t('btn.compare')}
           </button>
         </div>
       </div>
@@ -120,12 +122,12 @@ export default function BudgetComparePage() {
               <p className="text-2xl font-bold">${summary.totalB.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             </div>
             <div className={`bg-white rounded-lg shadow p-4 text-center ${summary.difference >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              <p className="text-sm text-gray-500">Diferencia</p>
+              <p className="text-sm text-gray-500">{t('label.difference')}</p>
               <p className="text-2xl font-bold">{summary.difference >= 0 ? '+' : ''}${summary.difference.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               <p className="text-sm">({summary.percentChange.toFixed(1)}%)</p>
             </div>
             <div className="bg-white rounded-lg shadow p-4 text-center">
-              <p className="text-sm text-gray-500">Cambios</p>
+              <p className="text-sm text-gray-500">{t('budget.changes') || 'Cambios'}</p>
               <div className="flex justify-center gap-3 mt-1">
                 <span className="text-green-600 text-sm">+{summary.newExpenses}</span>
                 <span className="text-red-600 text-sm">-{summary.removedExpenses}</span>
@@ -137,7 +139,7 @@ export default function BudgetComparePage() {
           <div className="flex gap-2">
             <button onClick={() => setShowDescription(!showDescription)}
               className="btn-secondary text-sm">
-              {showDescription ? 'Ocultar' : 'Ver'} Descripción Detallada
+              {showDescription ? t('budget.hideDescription') || 'Ocultar' : t('budget.showDescription') || 'Ver'} {t('budget.differenceDetail')}
             </button>
           </div>
 
@@ -153,12 +155,12 @@ export default function BudgetComparePage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 border-b">
-                  <th className="p-3 text-left">Estado</th>
-                  <th className="p-3 text-left">Código</th>
-                  <th className="p-3 text-left">Descripción</th>
+                  <th className="p-3 text-left">{t('label.status')}</th>
+                  <th className="p-3 text-left">{t('label.code')}</th>
+                  <th className="p-3 text-left">{t('label.description')}</th>
                   <th className="p-3 text-right">Total A</th>
                   <th className="p-3 text-right">Total B</th>
-                  <th className="p-3 text-right">Diferencia</th>
+                  <th className="p-3 text-right">{t('label.difference')}</th>
                   <th className="p-3 text-right">%</th>
                 </tr>
               </thead>

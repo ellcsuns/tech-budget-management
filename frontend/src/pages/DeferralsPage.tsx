@@ -4,10 +4,12 @@ import type { Budget, BudgetLine, Deferral } from '../types';
 import { HiOutlineTrash, HiOutlinePlusCircle } from 'react-icons/hi2';
 import { showToast } from '../components/Toast';
 import ConfirmationDialog from '../components/ConfirmationDialog';
+import { useI18n } from '../contexts/I18nContext';
 
 const MONTHS = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12'];
 
 export default function DeferralsPage() {
+  const { t } = useI18n();
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [selectedBudget, setSelectedBudget] = useState<string>('');
   const [budgetLines, setBudgetLines] = useState<BudgetLine[]>([]);
@@ -111,7 +113,7 @@ export default function DeferralsPage() {
     return `${bl.expense?.code || ''} - ${bl.expense?.shortDescription || ''} (${bl.financialCompany?.name || ''})`;
   };
 
-  if (loading && !selectedBudget) return <div className="text-center py-8">Cargando...</div>;
+  if (loading && !selectedBudget) return <div className="text-center py-8">{t('msg.loading')}</div>;
 
   return (
     <div className="space-y-6">
@@ -119,13 +121,13 @@ export default function DeferralsPage() {
         <div />
         <button onClick={() => setShowForm(!showForm)} className="btn-primary flex items-center gap-2">
           <HiOutlinePlusCircle className="w-5 h-5" />
-          {showForm ? 'Cancelar' : 'Nuevo Diferido'}
+          {showForm ? t('btn.cancel') : t('deferral.new')}
         </button>
       </div>
 
       <div className="bg-white rounded-lg shadow p-6">
         <div className="max-w-md mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Presupuesto</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">{t('label.budget')}</label>
           <select value={selectedBudget} onChange={(e) => setSelectedBudget(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md">
             {budgets.map((b) => (<option key={b.id} value={b.id}>{b.year} - {b.version}</option>))}
           </select>
@@ -134,9 +136,9 @@ export default function DeferralsPage() {
         {showForm && (
           <form onSubmit={handleSubmit} className="bg-gray-50 p-4 rounded-lg mb-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Buscar Línea de Presupuesto *</label>
+              <label className="block text-sm font-medium mb-1">{t('table.budgetLine')} *</label>
               <input type="text" value={searchText} onChange={(e) => { setSearchText(e.target.value); setSelectedBudgetLine(null); }}
-                placeholder="Buscar por código, descripción o empresa..." className="w-full border rounded px-3 py-2" />
+                placeholder={t('deferral.searchLine')} className="w-full border rounded px-3 py-2" />
               {searchText && !selectedBudgetLine && filteredLines.length > 0 && (
                 <div className="border rounded mt-1 max-h-40 overflow-y-auto bg-white">
                   {filteredLines.slice(0, 10).map(bl => (
@@ -149,44 +151,44 @@ export default function DeferralsPage() {
               {selectedBudgetLine && <p className="text-sm text-green-600 mt-1">✓ Línea seleccionada: {selectedBudgetLine.expense?.code}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Descripción *</label>
+              <label className="block text-sm font-medium mb-1">{t('label.description')} *</label>
               <input type="text" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full border rounded px-3 py-2" required />
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Monto Total *</label>
+                <label className="block text-sm font-medium mb-1">{t('deferral.totalAmount')} *</label>
                 <input type="number" step="0.01" value={form.totalAmount} onChange={(e) => setForm({ ...form, totalAmount: e.target.value })} className="w-full border rounded px-3 py-2" required />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Mes Inicio *</label>
+                <label className="block text-sm font-medium mb-1">{t('deferral.startMonth')} *</label>
                 <select value={form.startMonth} onChange={(e) => setForm({ ...form, startMonth: e.target.value })} className="w-full border rounded px-3 py-2">
                   {MONTHS.map((m, i) => (<option key={i} value={i + 1}>{m}</option>))}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Mes Fin *</label>
+                <label className="block text-sm font-medium mb-1">{t('deferral.endMonth')} *</label>
                 <select value={form.endMonth} onChange={(e) => setForm({ ...form, endMonth: e.target.value })} className="w-full border rounded px-3 py-2">
                   {MONTHS.map((m, i) => (<option key={i} value={i + 1}>{m}</option>))}
                 </select>
               </div>
             </div>
-            <button type="submit" disabled={!selectedBudgetLine} className="btn-success disabled:opacity-50">Crear Diferido</button>
+            <button type="submit" disabled={!selectedBudgetLine} className="btn-success disabled:opacity-50">{t('deferral.create')}</button>
           </form>
         )}
 
         {deferrals.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">No hay diferidos registrados</p>
+          <p className="text-gray-500 text-center py-8">{t('deferral.noRecords')}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Línea Presupuesto</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descripción</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Monto</th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Período</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Creado por</th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('table.budgetLine')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('label.description')}</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">{t('label.amount')}</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">{t('deferral.period')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('saving.createdBy')}</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">{t('label.actions')}</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">

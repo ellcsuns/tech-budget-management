@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { budgetApi, expenseApi, financialCompanyApi, userAreaApi, changeRequestApi } from '../services/api';
-import type { Budget, BudgetLine, UserArea, ChangeRequest } from '../types';
+import { budgetApi, expenseApi, financialCompanyApi, userAreaApi, changeRequestApi, technologyDirectionApi } from '../services/api';
+import type { Budget, BudgetLine, UserArea, ChangeRequest, TechnologyDirection } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { fmt } from '../utils/formatters';
 import ConfirmationDialog from '../components/ConfirmationDialog';
@@ -8,10 +8,12 @@ import BudgetTable from '../components/BudgetTable';
 import FilterPanel from '../components/FilterPanel';
 import { HiOutlineLockClosed, HiOutlinePlusCircle, HiOutlineTrash, HiOutlineStar, HiOutlineDocumentDuplicate } from 'react-icons/hi2';
 import { showToast } from '../components/Toast';
+import { useI18n } from '../contexts/I18nContext';
 
 const MONTHS = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12'];
 
 export default function BudgetsPage() {
+  const { t } = useI18n();
   const [allBudgets, setAllBudgets] = useState<Budget[]>([]);
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
   const [budgetLines, setBudgetLines] = useState<BudgetLine[]>([]);
@@ -21,9 +23,11 @@ export default function BudgetsPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [addExpenseId, setAddExpenseId] = useState('');
   const [addCompanyId, setAddCompanyId] = useState('');
+  const [addTechDirId, setAddTechDirId] = useState('');
   const [allExpenses, setAllExpenses] = useState<any[]>([]);
   const [allCompanies, setAllCompanies] = useState<any[]>([]);
   const [allUserAreas, setAllUserAreas] = useState<UserArea[]>([]);
+  const [allTechDirections, setAllTechDirections] = useState<TechnologyDirection[]>([]);
 
   // Create budget modal
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -60,12 +64,13 @@ export default function BudgetsPage() {
 
   const loadMasterData = async () => {
     try {
-      const [expRes, compRes, areaRes] = await Promise.all([
-        expenseApi.getAll(), financialCompanyApi.getAll(), userAreaApi.getAll()
+      const [expRes, compRes, areaRes, techRes] = await Promise.all([
+        expenseApi.getAll(), financialCompanyApi.getAll(), userAreaApi.getAll(), technologyDirectionApi.getAll()
       ]);
       setAllExpenses(expRes.data);
       setAllCompanies(compRes.data);
       setAllUserAreas(areaRes.data);
+      setAllTechDirections(techRes.data);
     } catch (error) { console.error('Error loading master data:', error); }
   };
 
@@ -123,8 +128,8 @@ export default function BudgetsPage() {
   const handleAddBudgetLine = async () => {
     if (!selectedBudget || !addExpenseId || !addCompanyId) return;
     try {
-      await budgetApi.addBudgetLine(selectedBudget.id, addExpenseId, addCompanyId);
-      setShowAddForm(false); setAddExpenseId(''); setAddCompanyId('');
+      await budgetApi.addBudgetLine(selectedBudget.id, addExpenseId, addCompanyId, addTechDirId || undefined);
+      setShowAddForm(false); setAddExpenseId(''); setAddCompanyId(''); setAddTechDirId('');
       loadBudgetDetails(selectedBudget.id);
       showToast('Línea agregada correctamente', 'success');
     } catch (error: any) { showToast(error.response?.data?.error || 'Error al agregar línea', 'error'); }
@@ -265,7 +270,7 @@ export default function BudgetsPage() {
     return { text: 'Rechazada', cls: 'bg-red-100 text-red-800' };
   };
 
-  if (isLoading && !selectedBudget) return <div className="text-center py-8">Cargando...</div>;
+  if (isLoading && !selectedBudget) return <div className="text-center py-8">{t('msg.loading')}</div>;
 
   return (
     <div className="space-y-4">
@@ -273,7 +278,7 @@ export default function BudgetsPage() {
       <div className="bg-white rounded-lg shadow p-4">
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-600">Presupuesto:</label>
+            <label className="text-sm font-medium text-gray-600">{t('label.budget')}:</label>
             <select
               value={selectedBudget?.id || ''}
               onChange={(e) => { if (e.target.value) loadBudgetDetails(e.target.value); }}
@@ -294,12 +299,12 @@ export default function BudgetsPage() {
           <div className="ml-auto flex items-center gap-2">
             {isAdmin && selectedBudget && !selectedBudget.isActive && (
               <button onClick={handleSetActive} className="flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-700 rounded text-sm hover:bg-green-100" title="Marcar como vigente">
-                <HiOutlineStar className="w-4 h-4" /> Marcar Vigente
+                <HiOutlineStar className="w-4 h-4" /> {t('budget.setActive')}
               </button>
             )}
             {selectedBudget && !selectedBudget.reviewStatus && (
               <button onClick={() => handleSubmitForReview()} className="flex items-center gap-1 px-3 py-1.5 bg-amber-50 text-amber-700 rounded text-sm hover:bg-amber-100" title="Enviar a revisión">
-                <HiOutlineLockClosed className="w-4 h-4" /> Enviar a Revisión
+                <HiOutlineLockClosed className="w-4 h-4" /> {t('budget.submitReview')}
               </button>
             )}
             {selectedBudget?.reviewStatus && (
@@ -309,7 +314,7 @@ export default function BudgetsPage() {
             )}
             {isAdmin && (
               <button onClick={() => setShowCreateModal(true)} className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded text-sm hover:bg-blue-100">
-                <HiOutlinePlusCircle className="w-4 h-4" /> Nuevo Presupuesto
+                <HiOutlinePlusCircle className="w-4 h-4" /> {t('budget.newBudget')}
               </button>
             )}
             {isAdmin && selectedBudget && !selectedBudget.isActive && (
@@ -327,39 +332,19 @@ export default function BudgetsPage() {
             <FilterPanel budgetLines={budgetLines} filters={filters} onFiltersChange={setFilters} />
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <div className="ml-auto flex items-center gap-3">
-                {!canEdit && <p className="text-sm text-gray-500 flex items-center gap-1"><HiOutlineLockClosed className="w-4 h-4" /> Solo lectura</p>}
+                {!canEdit && <p className="text-sm text-gray-500 flex items-center gap-1"><HiOutlineLockClosed className="w-4 h-4" /> {t('budget.readOnly')}</p>}
                 {canEdit && (
-                  <button onClick={() => setShowAddForm(!showAddForm)} className="btn-secondary flex items-center gap-1 text-sm">
-                    <HiOutlinePlusCircle className="w-4 h-4" /> Agregar Línea
+                  <button onClick={() => setShowAddForm(true)} className="btn-secondary flex items-center gap-1 text-sm">
+                    <HiOutlinePlusCircle className="w-4 h-4" /> {t('budget.addLine')}
                   </button>
                 )}
                 <button onClick={() => { setShowMyRequests(!showMyRequests); if (!showMyRequests) loadMyRequests(); }}
                   className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded text-sm hover:bg-blue-100">
-                  {showMyRequests ? 'Ocultar Solicitudes' : 'Mis Solicitudes'}
+                  {showMyRequests ? t('budget.hideRequests') || 'Ocultar Solicitudes' : t('budget.myRequests')}
                 </button>
               </div>
             </div>
 
-            {showAddForm && (
-              <div className="bg-gray-50 p-4 rounded mb-4 flex gap-4 items-end">
-                <div className="flex-1">
-                  <label className="block text-xs font-medium mb-1">Gasto</label>
-                  <select value={addExpenseId} onChange={e => setAddExpenseId(e.target.value)} className="w-full border rounded px-2 py-1 text-sm">
-                    <option value="">Seleccionar...</option>
-                    {allExpenses.map(e => <option key={e.id} value={e.id}>{e.code} - {e.shortDescription}</option>)}
-                  </select>
-                </div>
-                <div className="flex-1">
-                  <label className="block text-xs font-medium mb-1">Empresa Financiera</label>
-                  <select value={addCompanyId} onChange={e => setAddCompanyId(e.target.value)} className="w-full border rounded px-2 py-1 text-sm">
-                    <option value="">Seleccionar...</option>
-                    {allCompanies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                </div>
-                <button onClick={handleAddBudgetLine} disabled={!addExpenseId || !addCompanyId} className="btn-success text-sm disabled:opacity-50">Agregar</button>
-                <button onClick={() => setShowAddForm(false)} className="btn-cancel text-sm">Cancelar</button>
-              </div>
-            )}
 
             <div className="flex gap-4 flex-wrap">
               {Object.entries(totals).map(([curr, val]) => (
@@ -374,22 +359,22 @@ export default function BudgetsPage() {
           {/* My Change Requests panel */}
           {showMyRequests && (
             <div className="bg-white rounded-lg shadow p-4">
-              <h3 className="text-sm font-bold mb-3">Mis Solicitudes de Cambio</h3>
+              <h3 className="text-sm font-bold mb-3">{t('budget.myChangeRequests') || 'Mis Solicitudes de Cambio'}</h3>
               {loadingRequests ? (
-                <p className="text-center py-4 text-gray-400">Cargando...</p>
+                <p className="text-center py-4 text-gray-400">{t('msg.loading')}</p>
               ) : myRequests.length === 0 ? (
-                <p className="text-center py-4 text-gray-400">No tienes solicitudes de cambio</p>
+                <p className="text-center py-4 text-gray-400">{t('budget.noChangeRequests') || 'No tienes solicitudes de cambio'}</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200 text-sm">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-3 py-2 text-left text-xs text-gray-500">Fecha</th>
-                        <th className="px-3 py-2 text-left text-xs text-gray-500">Gasto</th>
-                        <th className="px-3 py-2 text-left text-xs text-gray-500">Empresa</th>
-                        <th className="px-3 py-2 text-left text-xs text-gray-500">Estado</th>
-                        <th className="px-3 py-2 text-left text-xs text-gray-500">Comentario</th>
-                        <th className="px-3 py-2 text-left text-xs text-gray-500">Aprobado por</th>
+                        <th className="px-3 py-2 text-left text-xs text-gray-500">{t('label.date')}</th>
+                        <th className="px-3 py-2 text-left text-xs text-gray-500">{t('table.expense')}</th>
+                        <th className="px-3 py-2 text-left text-xs text-gray-500">{t('table.company')}</th>
+                        <th className="px-3 py-2 text-left text-xs text-gray-500">{t('label.status')}</th>
+                        <th className="px-3 py-2 text-left text-xs text-gray-500">{t('table.comment')}</th>
+                        <th className="px-3 py-2 text-left text-xs text-gray-500">{t('table.approvedBy')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -415,7 +400,7 @@ export default function BudgetsPage() {
 
           <div className="bg-white rounded-lg shadow p-4">
             {isLoading ? (
-              <div className="text-center py-8">Cargando detalles...</div>
+              <div className="text-center py-8">{t('msg.loading')}</div>
             ) : (
               <BudgetTable
                 budgetLines={filteredLines}
@@ -437,7 +422,7 @@ export default function BudgetsPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold">Solicitar Cambio de Presupuesto</h2>
+              <h2 className="text-lg font-bold">{t('budget.requestChange')}</h2>
               <button onClick={() => setEditPopupLine(null)} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
             </div>
             <div className="space-y-1 mb-4 text-sm">
@@ -479,10 +464,10 @@ export default function BudgetsPage() {
             <div className="flex justify-between items-center">
               <div className="text-sm font-semibold">Total: {fmt(popupTotal)} {editPopupLine.currency}</div>
               <div className="flex gap-2">
-                <button onClick={() => setEditPopupLine(null)} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">Cancelar</button>
+                <button onClick={() => setEditPopupLine(null)} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">{t('btn.cancel')}</button>
                 <button onClick={submitChangeRequest} disabled={!popupHasChanges || isSubmitting}
                   className="px-4 py-2 bg-accent text-white rounded hover:opacity-90 text-sm disabled:opacity-50">
-                  {isSubmitting ? 'Enviando...' : 'Enviar a Aprobación'}
+                  {isSubmitting ? t('msg.sending') || 'Enviando...' : t('budget.sendApproval') || 'Enviar a Aprobación'}
                 </button>
               </div>
             </div>
@@ -496,17 +481,17 @@ export default function BudgetsPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold">Nuevo Presupuesto</h2>
+              <h2 className="text-lg font-bold">{t('budget.newBudget')}</h2>
               <button onClick={() => setShowCreateModal(false)} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Año</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('label.year')}</label>
                 <input type="number" value={newBudgetYear} onChange={e => setNewBudgetYear(parseInt(e.target.value))}
                   className="w-full border rounded px-3 py-2 text-sm" min={2020} max={2040} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Versión</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('label.version')}</label>
                 <input type="text" value={newBudgetVersion} onChange={e => setNewBudgetVersion(e.target.value)}
                   className="w-full border rounded px-3 py-2 text-sm" placeholder="v1" />
               </div>
@@ -526,11 +511,51 @@ export default function BudgetsPage() {
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">
-              <button onClick={() => setShowCreateModal(false)} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">Cancelar</button>
+              <button onClick={() => setShowCreateModal(false)} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">{t('btn.cancel')}</button>
               <button onClick={handleCreateBudget} disabled={isCreating || !newBudgetVersion.trim()}
                 className="px-4 py-2 bg-accent text-white rounded hover:opacity-90 text-sm disabled:opacity-50">
-                {isCreating ? 'Creando...' : 'Crear Presupuesto'}
+                {isCreating ? t('msg.creating') || 'Creando...' : t('budget.createBudget') || 'Crear Presupuesto'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Budget Line Popup */}
+      {showAddForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold">{t('budget.addBudgetLine') || 'Agregar Línea de Presupuesto'}</h2>
+              <button onClick={() => { setShowAddForm(false); setAddExpenseId(''); setAddCompanyId(''); setAddTechDirId(''); }} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Gasto *</label>
+                <select value={addExpenseId} onChange={e => setAddExpenseId(e.target.value)} className="w-full border rounded px-3 py-2 text-sm">
+                  <option value="">Seleccionar gasto...</option>
+                  {allExpenses.map(e => <option key={e.id} value={e.id}>{e.code} - {e.shortDescription}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Empresa Financiera *</label>
+                <select value={addCompanyId} onChange={e => setAddCompanyId(e.target.value)} className="w-full border rounded px-3 py-2 text-sm">
+                  <option value="">Seleccionar empresa...</option>
+                  {allCompanies.map(c => <option key={c.id} value={c.id}>{c.code} - {c.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Dirección Tecnológica (opcional)</label>
+                <select value={addTechDirId} onChange={e => setAddTechDirId(e.target.value)} className="w-full border rounded px-3 py-2 text-sm">
+                  <option value="">Sin dirección tecnológica</option>
+                  {allTechDirections.map(td => <option key={td.id} value={td.id}>{td.code} - {td.name}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button onClick={() => { setShowAddForm(false); setAddExpenseId(''); setAddCompanyId(''); setAddTechDirId(''); }} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">Cancelar</button>
+              <button onClick={handleAddBudgetLine} disabled={!addExpenseId || !addCompanyId}
+                className="px-4 py-2 bg-accent text-white rounded hover:opacity-90 text-sm disabled:opacity-50">Agregar</button>
             </div>
           </div>
         </div>
@@ -595,7 +620,7 @@ export default function BudgetsPage() {
               })()}
             </div>
             <div className="flex justify-end">
-              <button onClick={() => setSelectedChangeRequest(null)} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">Cerrar</button>
+              <button onClick={() => setSelectedChangeRequest(null)} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">{t('btn.close')}</button>
             </div>
           </div>
         </div>

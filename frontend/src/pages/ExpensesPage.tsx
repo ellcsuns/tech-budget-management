@@ -5,8 +5,10 @@ import ExpenseDetailPopup from '../components/ExpenseDetailPopup';
 import { HiOutlineMagnifyingGlass, HiOutlineTrash, HiOutlineArrowPath, HiOutlinePlusCircle } from 'react-icons/hi2';
 import { showToast } from '../components/Toast';
 import ConfirmationDialog from '../components/ConfirmationDialog';
+import { useI18n } from '../contexts/I18nContext';
 
 export default function ExpensesPage() {
+  const { t } = useI18n();
   const [expenses, setExpenses] = useState<ExpenseWithTags[]>([]);
   const [techDirections, setTechDirections] = useState<TechnologyDirection[]>([]);
   const [userAreas, setUserAreas] = useState<UserArea[]>([]);
@@ -137,7 +139,7 @@ export default function ExpensesPage() {
       <div className="flex justify-between items-center mb-6">
         <div />
         <button onClick={() => { resetForm(); setShowFormModal(true); }} className="btn-primary flex items-center gap-2">
-          <HiOutlinePlusCircle className="w-5 h-5" /> Nuevo Gasto
+          <HiOutlinePlusCircle className="w-5 h-5" /> {t('expense.new')}
         </button>
       </div>
 
@@ -145,33 +147,33 @@ export default function ExpensesPage() {
         <div className="flex gap-4 items-center">
           <input type="text" value={searchText} onChange={(e) => setSearchText(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-            placeholder="Buscar por código, descripción o tags..." className="flex-1 border rounded px-3 py-2" />
+            placeholder={t('expense.search')} className="flex-1 border rounded px-3 py-2" />
           <button onClick={handleSearch} className="btn-secondary flex items-center gap-2">
-            <HiOutlineMagnifyingGlass className="w-4 h-4" /> Buscar
+            <HiOutlineMagnifyingGlass className="w-4 h-4" /> {t('btn.search')}
           </button>
           <label className="flex items-center gap-2 text-sm whitespace-nowrap">
             <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
-            Ver desactivados
+            {t('expense.showInactive')}
           </label>
         </div>
       </div>
 
       <div className="bg-white rounded shadow">
         {isLoading ? (
-          <div className="p-8 text-center">Cargando...</div>
+          <div className="p-8 text-center">{t('msg.loading')}</div>
         ) : expenses.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">No hay gastos registrados</div>
+          <div className="p-8 text-center text-gray-500">{t('expense.noRecords')}</div>
         ) : (
           <table className="w-full">
             <thead className="bg-gray-100">
               <tr>
-                <th className="p-3 text-left">Código</th>
-                <th className="p-3 text-left">Descripción</th>
-                <th className="p-3 text-left">Categoría</th>
-                <th className="p-3 text-left">Áreas</th>
+                <th className="p-3 text-left">{t('label.code')}</th>
+                <th className="p-3 text-left">{t('label.description')}</th>
+                <th className="p-3 text-left">{t('label.category')}</th>
+                <th className="p-3 text-left">{t('label.area')}</th>
                 <th className="p-3 text-left">Tags</th>
-                <th className="p-3 text-center">Estado</th>
-                <th className="p-3 text-center">Acciones</th>
+                <th className="p-3 text-center">{t('label.status')}</th>
+                <th className="p-3 text-center">{t('label.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -191,11 +193,11 @@ export default function ExpensesPage() {
                         ))}
                         {expense.customTags.length > 2 && <span className="text-xs text-gray-500">+{expense.customTags.length - 2}</span>}
                       </div>
-                    ) : <span className="text-gray-400 text-sm">Sin tags</span>}
+                    ) : <span className="text-gray-400 text-sm">{t('expense.noTags')}</span>}
                   </td>
                   <td className="p-3 text-center">
                     <span className={`px-2 py-1 rounded text-xs ${(expense as any).active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                      {(expense as any).active !== false ? 'Activo' : 'Inactivo'}
+                      {(expense as any).active !== false ? t('label.active') : t('label.inactive')}
                     </span>
                   </td>
                   <td className="p-3 text-center space-x-2">
@@ -218,32 +220,32 @@ export default function ExpensesPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Crear Nuevo Gasto</h2>
+              <h2 className="text-xl font-bold">{t('expense.createNew')}</h2>
               <button onClick={() => setShowFormModal(false)} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
             </div>
             <form onSubmit={handleCreateExpense}>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Código *</label>
+                  <label className="block text-sm font-medium mb-1">{t('label.code')} *</label>
                   <input type="text" value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} className="w-full border rounded px-3 py-2" required />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Categoría</label>
+                  <label className="block text-sm font-medium mb-1">{t('label.category')}</label>
                   <select value={formData.categoryId} onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })} className="w-full border rounded px-3 py-2">
-                    <option value="">Sin categoría</option>
+                    <option value="">{t('expense.noCategory') || 'Sin categoría'}</option>
                     {expenseCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                   </select>
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium mb-1">Descripción Corta *</label>
+                  <label className="block text-sm font-medium mb-1">{t('expense.shortDesc')} *</label>
                   <input type="text" value={formData.shortDescription} onChange={(e) => setFormData({ ...formData, shortDescription: e.target.value })} className="w-full border rounded px-3 py-2" required />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium mb-1">Descripción Larga *</label>
+                  <label className="block text-sm font-medium mb-1">{t('expense.longDesc')} *</label>
                   <textarea value={formData.longDescription} onChange={(e) => setFormData({ ...formData, longDescription: e.target.value })} className="w-full border rounded px-3 py-2" rows={2} required />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Direcciones Tecnológicas *</label>
+                  <label className="block text-sm font-medium mb-2">{t('expense.techDirections')} *</label>
                   <div className="border rounded p-2 max-h-32 overflow-y-auto space-y-1">
                     {techDirections.map(td => (
                       <label key={td.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 px-1 py-0.5 rounded">
@@ -254,7 +256,7 @@ export default function ExpensesPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Áreas de Usuario *</label>
+                  <label className="block text-sm font-medium mb-2">{t('expense.userAreas')} *</label>
                   <div className="border rounded p-2 max-h-32 overflow-y-auto space-y-1">
                     {userAreas.map(ua => (
                       <label key={ua.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 px-1 py-0.5 rounded">
@@ -266,8 +268,8 @@ export default function ExpensesPage() {
                 </div>
               </div>
               <div className="flex justify-end gap-2 mt-6">
-                <button type="button" onClick={() => setShowFormModal(false)} className="btn-cancel">Cancelar</button>
-                <button type="submit" className="btn-primary" disabled={formData.technologyDirections.length === 0 || formData.userAreas.length === 0}>Crear Gasto</button>
+                <button type="button" onClick={() => setShowFormModal(false)} className="btn-cancel">{t('btn.cancel')}</button>
+                <button type="submit" className="btn-primary" disabled={formData.technologyDirections.length === 0 || formData.userAreas.length === 0}>{t('expense.createExpense')}</button>
               </div>
             </form>
           </div>

@@ -5,10 +5,12 @@ import { fmt } from '../utils/formatters';
 import { HiOutlineCheckCircle, HiOutlineXMark } from 'react-icons/hi2';
 import { showToast } from '../components/Toast';
 import ConfirmationDialog from '../components/ConfirmationDialog';
+import { useI18n } from '../contexts/I18nContext';
 
 const MONTHS = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12'];
 
 export default function ApprovalsPage() {
+  const { t } = useI18n();
   const [requests, setRequests] = useState<ChangeRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -80,10 +82,10 @@ export default function ApprovalsPage() {
     }
   };
 
-  if (loading) return <div className="text-center py-8">Cargando...</div>;
+  if (loading) return <div className="text-center py-8">{t('msg.loading')}</div>;
   if (error) return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">Aprobaciones Pendientes</h1>
+      <h1 className="text-2xl font-bold text-gray-800">{t('approval.title')}</h1>
       <div className="bg-white rounded-lg shadow p-8 text-center text-red-500">{error}</div>
     </div>
   );
@@ -91,17 +93,17 @@ export default function ApprovalsPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">Aprobaciones Pendientes</h1>
+        <h1 className="text-2xl font-bold text-gray-800">{t('approval.title')}</h1>
         {selectedIds.size > 0 && (
           <button onClick={handleApproveMultiple} disabled={isProcessing}
             className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm disabled:opacity-50">
-            Aprobar {selectedIds.size} seleccionada(s)
+            {t('btn.approve')} {selectedIds.size} {t('approval.selected') || 'seleccionada(s)'}
           </button>
         )}
       </div>
 
       {requests.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">No hay solicitudes pendientes de aprobación</div>
+        <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">{t('approval.noPending')}</div>
       ) : (
         <div className="bg-white rounded-lg shadow">
           <table className="min-w-full divide-y divide-gray-200">
@@ -111,13 +113,13 @@ export default function ApprovalsPage() {
                   <input type="checkbox" checked={selectedIds.size === requests.length && requests.length > 0}
                     onChange={toggleSelectAll} className="rounded" />
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Gasto</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Empresa</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Presupuesto</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Solicitado por</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Comentario</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('table.expense')}</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('table.company')}</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('table.budget')}</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('table.requestedBy')}</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('table.comment')}</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('table.date')}</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">{t('table.actions')}</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -154,17 +156,17 @@ export default function ApprovalsPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold">Detalle de Solicitud</h2>
+              <h2 className="text-lg font-bold">{t('approval.detail')}</h2>
               <button onClick={() => setSelectedRequest(null)} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
             </div>
 
             <div className="space-y-1 mb-4 text-sm">
-              <div><span className="text-gray-500">Gasto:</span> {selectedRequest.budgetLine?.expense?.code} - {selectedRequest.budgetLine?.expense?.shortDescription}</div>
-              <div><span className="text-gray-500">Empresa:</span> {selectedRequest.budgetLine?.financialCompany?.name}</div>
-              <div><span className="text-gray-500">Presupuesto:</span> {selectedRequest.budgetLine?.budget?.year} {selectedRequest.budgetLine?.budget?.version}</div>
-              <div><span className="text-gray-500">Solicitado por:</span> {selectedRequest.requestedBy?.fullName}</div>
-              <div><span className="text-gray-500">Fecha:</span> {new Date(selectedRequest.createdAt).toLocaleDateString()}</div>
-              {selectedRequest.comment && <div><span className="text-gray-500">Comentario:</span> {selectedRequest.comment}</div>}
+              <div><span className="text-gray-500">{t('table.expense')}:</span> {selectedRequest.budgetLine?.expense?.code} - {selectedRequest.budgetLine?.expense?.shortDescription}</div>
+              <div><span className="text-gray-500">{t('table.company')}:</span> {selectedRequest.budgetLine?.financialCompany?.name}</div>
+              <div><span className="text-gray-500">{t('label.budget')}:</span> {selectedRequest.budgetLine?.budget?.year} {selectedRequest.budgetLine?.budget?.version}</div>
+              <div><span className="text-gray-500">{t('table.requestedBy')}:</span> {selectedRequest.requestedBy?.fullName}</div>
+              <div><span className="text-gray-500">{t('label.date')}:</span> {new Date(selectedRequest.createdAt).toLocaleDateString()}</div>
+              {selectedRequest.comment && <div><span className="text-gray-500">{t('table.comment')}:</span> {selectedRequest.comment}</div>}
             </div>
 
             {/* Month comparison table */}
@@ -210,14 +212,14 @@ export default function ApprovalsPage() {
             </div>
 
             <div className="flex justify-end gap-3">
-              <button onClick={() => setSelectedRequest(null)} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">Cerrar</button>
+              <button onClick={() => setSelectedRequest(null)} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">{t('btn.close')}</button>
               <button onClick={() => handleReject(selectedRequest.id)} disabled={isProcessing}
                 className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm disabled:opacity-50">
-                Rechazar
+                {t('btn.reject')}
               </button>
               <button onClick={() => handleApprove(selectedRequest.id)} disabled={isProcessing}
                 className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm disabled:opacity-50">
-                Aprobar
+                {t('btn.approve')}
               </button>
             </div>
           </div>

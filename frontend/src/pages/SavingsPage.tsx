@@ -5,10 +5,12 @@ import { HiOutlineTrash, HiOutlinePlusCircle, HiOutlinePlay } from 'react-icons/
 import { showToast } from '../components/Toast';
 import ConfirmationDialog from '../components/ConfirmationDialog';
 import { fmt } from '../utils/formatters';
+import { useI18n } from '../contexts/I18nContext';
 
 const MONTHS = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12'];
 
 export default function SavingsPage() {
+  const { t } = useI18n();
   const [savings, setSavings] = useState<Saving[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [budgetLines, setBudgetLines] = useState<BudgetLine[]>([]);
@@ -93,12 +95,12 @@ export default function SavingsPage() {
       <div className="flex justify-between items-center mb-6">
         <div>
           {!isActiveBudgetSelected && selectedBudget && (
-            <span className="text-sm text-amber-600 bg-amber-50 px-3 py-1 rounded">Solo lectura — solo el presupuesto vigente permite modificaciones</span>
+            <span className="text-sm text-amber-600 bg-amber-50 px-3 py-1 rounded">{t('saving.readOnly')}</span>
           )}
         </div>
         <button onClick={() => setShowForm(!showForm)} className="btn-primary flex items-center gap-2" disabled={!isActiveBudgetSelected}>
           <HiOutlinePlusCircle className="w-5 h-5" />
-          {showForm ? 'Cancelar' : 'Nuevo Ahorro'}
+          {showForm ? t('btn.cancel') : t('saving.new')}
         </button>
       </div>
 
@@ -106,51 +108,51 @@ export default function SavingsPage() {
       <div className="bg-white p-4 rounded shadow mb-6">
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Presupuesto</label>
+            <label className="block text-sm font-medium mb-1">{t('label.budget')}</label>
             <select value={selectedBudget} onChange={(e) => { setSelectedBudget(e.target.value); setShowForm(false); }} className="w-full border rounded px-3 py-2">
-              <option value="">Todos</option>
-              {budgets.map(b => (<option key={b.id} value={b.id}>{b.year} - v{b.version}{b.isActive ? ' (vigente)' : ''}</option>))}
+              <option value="">{t('label.all')}</option>
+              {budgets.map(b => (<option key={b.id} value={b.id}>{b.year} - v{b.version}{b.isActive ? ` (${t('label.active').toLowerCase()})` : ''}</option>))}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Línea Presupuesto</label>
+            <label className="block text-sm font-medium mb-1">{t('table.budgetLine')}</label>
             <select value={selectedBudgetLine} onChange={(e) => setSelectedBudgetLine(e.target.value)} className="w-full border rounded px-3 py-2" disabled={!selectedBudget}>
-              <option value="">Todas</option>
+              <option value="">{t('filter.all')}</option>
               {budgetLines.map(bl => (<option key={bl.id} value={bl.id}>{bl.expense?.code} - {bl.financialCompany?.code}</option>))}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Estado</label>
+            <label className="block text-sm font-medium mb-1">{t('label.status')}</label>
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-full border rounded px-3 py-2">
-              <option value="">Todos</option>
-              <option value="PENDING">Pendiente</option>
-              <option value="ACTIVE">Activo</option>
+              <option value="">{t('label.all')}</option>
+              <option value="PENDING">{t('label.pending')}</option>
+              <option value="ACTIVE">{t('label.active')}</option>
             </select>
           </div>
         </div>
-        <button onClick={loadSavings} className="mt-4 btn-secondary">Filtrar</button>
+        <button onClick={loadSavings} className="mt-4 btn-secondary">{t('btn.filter')}</button>
       </div>
 
       {/* Form */}
       {showForm && (
         <div className="bg-white p-6 rounded shadow mb-6">
-          <h2 className="text-xl font-bold mb-4">Crear Nuevo Ahorro</h2>
+          <h2 className="text-xl font-bold mb-4">{t('saving.new')}</h2>
           <form onSubmit={handleCreateSaving}>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="col-span-2">
-                <label className="block text-sm font-medium mb-1">Línea de Presupuesto *</label>
+                <label className="block text-sm font-medium mb-1">{t('table.budgetLine')} *</label>
                 <select value={formData.budgetLineId} onChange={(e) => setFormData({ ...formData, budgetLineId: e.target.value })} className="w-full border rounded px-3 py-2" required>
-                  <option value="">Seleccionar</option>
+                  <option value="">{t('msg.select') || 'Seleccionar'}</option>
                   {budgetLines.map(bl => (<option key={bl.id} value={bl.id}>{bl.expense?.code} - {bl.expense?.shortDescription} ({bl.financialCompany?.code})</option>))}
                 </select>
               </div>
               <div className="col-span-2">
-                <label className="block text-sm font-medium mb-1">Descripción *</label>
+                <label className="block text-sm font-medium mb-1">{t('label.description')} *</label>
                 <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full border rounded px-3 py-2" rows={2} required />
               </div>
             </div>
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Valores Mensuales</label>
+              <label className="block text-sm font-medium mb-2">{t('saving.monthlyValues') || 'Valores Mensuales'}</label>
               <div className="grid grid-cols-6 gap-2">
                 {MONTHS.map((m, i) => (
                   <div key={i}>
@@ -162,8 +164,8 @@ export default function SavingsPage() {
               <div className="mt-2 text-right text-sm font-semibold">Total: ${fmt(total)}</div>
             </div>
             <div className="flex gap-2">
-              <button type="submit" className="btn-success" disabled={total <= 0}>Crear Ahorro</button>
-              <button type="button" onClick={() => setShowForm(false)} className="btn-cancel">Cancelar</button>
+              <button type="submit" className="btn-success" disabled={total <= 0}>{t('saving.create') || 'Crear Ahorro'}</button>
+              <button type="button" onClick={() => setShowForm(false)} className="btn-cancel">{t('btn.cancel')}</button>
             </div>
           </form>
         </div>
@@ -172,20 +174,20 @@ export default function SavingsPage() {
       {/* Table */}
       <div className="bg-white rounded shadow">
         {isLoading ? (
-          <div className="p-8 text-center">Cargando...</div>
+          <div className="p-8 text-center">{t('msg.loading')}</div>
         ) : savings.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">No hay ahorros registrados</div>
+          <div className="p-8 text-center text-gray-500">{t('saving.noRecords') || 'No hay ahorros registrados'}</div>
         ) : (
           <table className="w-full">
             <thead className="bg-gray-100">
               <tr>
-                <th className="p-3 text-left">Línea Presupuesto</th>
-                <th className="p-3 text-left">Descripción</th>
-                <th className="p-3 text-right">Monto</th>
-                <th className="p-3 text-left">Estado</th>
-                <th className="p-3 text-left">Creado por</th>
-                <th className="p-3 text-left">Fecha</th>
-                <th className="p-3 text-left">Acciones</th>
+                <th className="p-3 text-left">{t('table.budgetLine')}</th>
+                <th className="p-3 text-left">{t('label.description')}</th>
+                <th className="p-3 text-right">{t('label.amount')}</th>
+                <th className="p-3 text-left">{t('label.status')}</th>
+                <th className="p-3 text-left">{t('saving.createdBy') || 'Creado por'}</th>
+                <th className="p-3 text-left">{t('label.date')}</th>
+                <th className="p-3 text-left">{t('label.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -196,7 +198,7 @@ export default function SavingsPage() {
                   <td className="p-3 text-right">${fmt(Number(saving.totalAmount))}</td>
                   <td className="p-3">
                     <span className={`px-2 py-1 rounded text-xs ${saving.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                      {saving.status === 'ACTIVE' ? 'Activo' : 'Pendiente'}
+                      {saving.status === 'ACTIVE' ? t('label.active') : t('label.pending')}
                     </span>
                   </td>
                   <td className="p-3">{saving.user?.fullName}</td>
@@ -225,20 +227,20 @@ export default function SavingsPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[80vh] overflow-y-auto p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold">Detalle del Ahorro</h2>
+              <h2 className="text-lg font-bold">{t('saving.detail') || 'Detalle del Ahorro'}</h2>
               <button onClick={() => setDetailSaving(null)} className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
             </div>
             <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
-              <div><span className="text-gray-500">Línea:</span> {getBudgetLineLabel(detailSaving.budgetLine)}</div>
-              <div><span className="text-gray-500">Estado:</span> <span className={`px-2 py-0.5 rounded text-xs ${detailSaving.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{detailSaving.status === 'ACTIVE' ? 'Activo' : 'Pendiente'}</span></div>
-              <div><span className="text-gray-500">Descripción:</span> {detailSaving.description}</div>
-              <div><span className="text-gray-500">Creado por:</span> {detailSaving.user?.fullName}</div>
+              <div><span className="text-gray-500">{t('saving.line') || 'Línea'}:</span> {getBudgetLineLabel(detailSaving.budgetLine)}</div>
+              <div><span className="text-gray-500">{t('label.status')}:</span> <span className={`px-2 py-0.5 rounded text-xs ${detailSaving.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{detailSaving.status === 'ACTIVE' ? t('label.active') : t('label.pending')}</span></div>
+              <div><span className="text-gray-500">{t('label.description')}:</span> {detailSaving.description}</div>
+              <div><span className="text-gray-500">{t('saving.createdBy') || 'Creado por'}:</span> {detailSaving.user?.fullName}</div>
             </div>
             <table className="w-full text-sm divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-3 py-2 text-left">Mes</th>
-                  <th className="px-3 py-2 text-right">Valor Ahorro</th>
+                  <th className="px-3 py-2 text-left">{t('label.month')}</th>
+                  <th className="px-3 py-2 text-right">{t('saving.savingValue') || 'Valor Ahorro'}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -260,7 +262,7 @@ export default function SavingsPage() {
               </tfoot>
             </table>
             <div className="mt-4 flex justify-end">
-              <button onClick={() => setDetailSaving(null)} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">Cerrar</button>
+              <button onClick={() => setDetailSaving(null)} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">{t('btn.close')}</button>
             </div>
           </div>
         </div>
@@ -268,16 +270,16 @@ export default function SavingsPage() {
 
       {deleteTarget && (
         <ConfirmationDialog
-          title="Eliminar Ahorro"
-          message="¿Estás seguro de eliminar este ahorro?"
+          title={t('saving.deleteSaving') || 'Eliminar Ahorro'}
+          message={t('saving.confirmDelete') || '¿Estás seguro de eliminar este ahorro?'}
           onConfirm={handleDeleteSaving}
           onCancel={() => setDeleteTarget(null)}
         />
       )}
       {activateTarget && (
         <ConfirmationDialog
-          title="Activar Ahorro"
-          message="¿Estás seguro de activar este ahorro? Los valores se reflejarán en el Dashboard."
+          title={t('saving.activateSaving') || 'Activar Ahorro'}
+          message={t('saving.confirmActivate') || '¿Estás seguro de activar este ahorro? Los valores se reflejarán en el Dashboard.'}
           onConfirm={handleActivateSaving}
           onCancel={() => setActivateTarget(null)}
         />

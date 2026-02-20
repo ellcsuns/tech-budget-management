@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { auditApi, api } from '../services/api';
 import type { AuditLog } from '../types';
+import { useI18n } from '../contexts/I18nContext';
 
 export default function AuditPage() {
+  const { t } = useI18n();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -144,12 +146,12 @@ export default function AuditPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-800">Auditoría</h1>
+      <h1 className="text-2xl font-bold text-gray-800">{t('page.audit')}</h1>
 
       <div className="flex justify-between items-center">
-        <div className="text-sm text-gray-500">{total} registros encontrados</div>
+        <div className="text-sm text-gray-500">{total} {t('audit.recordsFound') || 'registros encontrados'}</div>
         <button onClick={() => setShowFilters(!showFilters)} className="text-sm text-blue-600 hover:underline">
-          {showFilters ? 'Ocultar filtros' : 'Mostrar filtros'}
+          {showFilters ? t('audit.hideFilters') || 'Ocultar filtros' : t('audit.showFilters') || 'Mostrar filtros'}
         </button>
       </div>
 
@@ -157,23 +159,23 @@ export default function AuditPage() {
         <div className="bg-white rounded-lg shadow p-4">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Usuario</label>
+              <label className="block text-xs text-gray-500 mb-1">{t('label.user')}</label>
               <select value={filterUserId} onChange={(e) => { setFilterUserId(e.target.value); setPage(1); }} className="w-full px-2 py-1.5 border rounded text-sm">
-                <option value="">Todos</option>
+                <option value="">{t('label.all')}</option>
                 {users.map((u) => <option key={u.id} value={u.id}>{u.fullName}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Acción</label>
+              <label className="block text-xs text-gray-500 mb-1">{t('audit.action') || 'Acción'}</label>
               <select value={filterAction} onChange={(e) => { setFilterAction(e.target.value); setPage(1); }} className="w-full px-2 py-1.5 border rounded text-sm">
-                <option value="">Todas</option>
+                <option value="">{t('filter.all')}</option>
                 {actions.map((a) => <option key={a} value={a}>{actionLabel(a)}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Entidad</label>
+              <label className="block text-xs text-gray-500 mb-1">{t('audit.entity') || 'Entidad'}</label>
               <select value={filterEntity} onChange={(e) => { setFilterEntity(e.target.value); setPage(1); }} className="w-full px-2 py-1.5 border rounded text-sm">
-                <option value="">Todas</option>
+                <option value="">{t('filter.all')}</option>
                 {entities.map((ent) => <option key={ent} value={ent}>{ent}</option>)}
               </select>
             </div>
@@ -186,7 +188,7 @@ export default function AuditPage() {
               <input type="date" value={filterDateTo} onChange={(e) => { setFilterDateTo(e.target.value); setPage(1); }} className="w-full px-2 py-1.5 border rounded text-sm" />
             </div>
             <div className="flex items-end">
-              <button onClick={clearFilters} className="w-full px-3 py-1.5 bg-gray-100 text-gray-600 rounded text-sm hover:bg-gray-200">Limpiar</button>
+              <button onClick={clearFilters} className="w-full px-3 py-1.5 bg-gray-100 text-gray-600 rounded text-sm hover:bg-gray-200">{t('filter.clearFilters')}</button>
             </div>
           </div>
         </div>
@@ -205,11 +207,11 @@ export default function AuditPage() {
           </thead>
           <tbody>
             {isLoading ? (
-              <tr><td colSpan={5} className="text-center py-8 text-gray-400">Cargando...</td></tr>
+              <tr><td colSpan={5} className="text-center py-8 text-gray-400">{t('msg.loading')}</td></tr>
             ) : error ? (
               <tr><td colSpan={5} className="text-center py-8 text-red-500">{error}</td></tr>
             ) : logs.length === 0 ? (
-              <tr><td colSpan={5} className="text-center py-8 text-gray-400">No hay registros de auditoría</td></tr>
+              <tr><td colSpan={5} className="text-center py-8 text-gray-400">{t('audit.noRecords') || 'No hay registros de auditoría'}</td></tr>
             ) : (
               logs.map((log) => (
                 <React.Fragment key={log.id}>
