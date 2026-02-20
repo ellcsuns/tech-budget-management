@@ -105,7 +105,6 @@ export default function DeferralsPage() {
     setShowDeleteDialog(false);
     setDeleteTargetId(null);
   };
-  };
 
   const getBudgetLineLabel = (bl?: BudgetLine) => {
     if (!bl) return '-';
