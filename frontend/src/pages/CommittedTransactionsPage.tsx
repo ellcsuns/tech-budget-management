@@ -170,11 +170,11 @@ export default function CommittedTransactionsPage() {
         <div className="flex items-center gap-3">
           <select value={selectedBudgetId} onChange={e => handleBudgetChange(e.target.value)} className="border rounded px-3 py-1.5 text-sm min-w-[220px]">
             {allBudgets.map(b => (
-              <option key={b.id} value={b.id}>{b.year} - {b.version}{b.isActive ? ' ★ Vigente' : ''}</option>
+              <option key={b.id} value={b.id}>{b.year} - {b.version}{b.isActive ? ` ★ ${t('common.active')}` : ''}</option>
             ))}
           </select>
           {activeBudget && selectedBudgetId === activeBudget.id && (
-            <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">★ Vigente</span>
+            <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">★ {t('common.active')}</span>
           )}
           <input type="text" value={filterText} onChange={e => setFilterText(e.target.value)}
             placeholder={t('filter.searchComma') || 'Filtrar (separar por comas)...'} className="border rounded px-3 py-1.5 text-sm w-64" />
@@ -211,14 +211,14 @@ export default function CommittedTransactionsPage() {
                 <td className="px-6 py-4 text-sm text-center text-gray-500">{getMonthFromDate(transaction.serviceDate)}</td>
                 <td className="px-6 py-4 text-sm text-center">
                   <span className={`px-2 py-1 rounded text-xs ${transaction.isCompensated ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                    {transaction.isCompensated ? 'Sí' : 'No'}
+                    {transaction.isCompensated ? t('msg.yes') : t('msg.no')}
                   </span>
                 </td>
                 <td className="px-6 py-4 text-sm space-x-2">
                   {!transaction.isCompensated && (
                     <>
-                      <button onClick={() => handleEdit(transaction)} className="icon-btn" title="Editar"><HiOutlinePencilSquare className="w-5 h-5" /></button>
-                      <button onClick={() => handleDelete(transaction)} className="icon-btn-danger" title="Eliminar"><HiOutlineTrash className="w-5 h-5" /></button>
+                      <button onClick={() => handleEdit(transaction)} className="icon-btn" title={t('btn.edit')}><HiOutlinePencilSquare className="w-5 h-5" /></button>
+                      <button onClick={() => handleDelete(transaction)} className="icon-btn-danger" title={t('btn.delete')}><HiOutlineTrash className="w-5 h-5" /></button>
                     </>
                   )}
                 </td>
@@ -280,7 +280,7 @@ export default function CommittedTransactionsPage() {
         </div>
       )}
 
-      <ConfirmationDialog isOpen={showDeleteDialog} message="¿Estás seguro de eliminar esta transacción?" onConfirm={confirmDelete} onCancel={() => { setShowDeleteDialog(false); setDeleteTargetId(null); }} />
+      <ConfirmationDialog isOpen={showDeleteDialog} message={t('transaction.deleteConfirm')} onConfirm={confirmDelete} onCancel={() => { setShowDeleteDialog(false); setDeleteTargetId(null); }} />
     </div>
   );
 }

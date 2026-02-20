@@ -2,11 +2,14 @@ import { useState, useEffect } from 'react';
 import { budgetApi, budgetLineApi } from '../services/api';
 import type { Budget, BudgetLine } from '../types';
 import { HiOutlineArrowDownTray } from 'react-icons/hi2';
+import { useI18n } from '../contexts/I18nContext';
 
-const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+const MONTHS_KEYS = [1,2,3,4,5,6,7,8,9,10,11,12];
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1'];
 
 export default function ReportsPage() {
+  const { t } = useI18n();
+  const MONTHS = MONTHS_KEYS.map(m => t(`month.short.${m}`));
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [selectedBudget, setSelectedBudget] = useState<string>('');
   const [budgetLines, setBudgetLines] = useState<BudgetLine[]>([]);
@@ -197,7 +200,7 @@ export default function ReportsPage() {
     </div>
   );
 
-  if (loading && !selectedBudget) return <div className="flex justify-center items-center h-64"><div className="text-lg text-gray-600">Cargando...</div></div>;
+  if (loading && !selectedBudget) return <div className="flex justify-center items-center h-64"><div className="text-lg text-gray-600">{t('msg.loading')}</div></div>;
 
   return (
     <div className="space-y-6">
@@ -205,7 +208,7 @@ export default function ReportsPage() {
         <div className="flex justify-between items-center mb-4">
           <div />
           <button onClick={exportToExcel} className="btn-success flex items-center gap-2">
-            <HiOutlineArrowDownTray className="w-5 h-5" /> Exportar Excel
+            <HiOutlineArrowDownTray className="w-5 h-5" /> {t('report.exportExcel')}
           </button>
         </div>
         <div className="max-w-md">
@@ -217,17 +220,17 @@ export default function ReportsPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow p-4"><p className="text-sm text-gray-500">Presupuesto Total</p><p className="text-xl font-bold text-blue-600">${totalBudget.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p></div>
-        <div className="bg-white rounded-lg shadow p-4"><p className="text-sm text-gray-500">Comprometido</p><p className="text-xl font-bold text-yellow-600">${totalCommitted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p></div>
-        <div className="bg-white rounded-lg shadow p-4"><p className="text-sm text-gray-500">Real</p><p className="text-xl font-bold text-green-600">${totalReal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p></div>
-        <div className="bg-white rounded-lg shadow p-4"><p className="text-sm text-gray-500">Disponible</p><p className="text-xl font-bold text-purple-600">${(totalBudget - totalCommitted - totalReal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p></div>
+        <div className="bg-white rounded-lg shadow p-4"><p className="text-sm text-gray-500">{t('report.totalBudget')}</p><p className="text-xl font-bold text-blue-600">${totalBudget.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p></div>
+        <div className="bg-white rounded-lg shadow p-4"><p className="text-sm text-gray-500">{t('report.committed')}</p><p className="text-xl font-bold text-yellow-600">${totalCommitted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p></div>
+        <div className="bg-white rounded-lg shadow p-4"><p className="text-sm text-gray-500">{t('report.real')}</p><p className="text-xl font-bold text-green-600">${totalReal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p></div>
+        <div className="bg-white rounded-lg shadow p-4"><p className="text-sm text-gray-500">{t('report.available')}</p><p className="text-xl font-bold text-purple-600">${(totalBudget - totalCommitted - totalReal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p></div>
       </div>
 
       <div className="grid grid-cols-2 gap-6">
         {/* 1. Pie: Budget by Category */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-bold mb-4">1. Presupuesto por Categoría</h3>
-          {categoryData.length === 0 ? <p className="text-gray-500 text-center py-8">Sin datos</p> : (
+          <h3 className="text-lg font-bold mb-4">{t('report.chart1')}</h3>
+          {categoryData.length === 0 ? <p className="text-gray-500 text-center py-8">{t('report.noData')}</p> : (
             <div className="space-y-2">
               {categoryData.slice(0, 8).map((item, idx) => {
                 const pct = totalCategory > 0 ? ((item.value / totalCategory) * 100).toFixed(1) : '0';
@@ -248,41 +251,41 @@ export default function ReportsPage() {
 
         {/* 2. Bar: Budget vs Committed vs Real */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-bold mb-4">2. Presupuesto vs Comprometido vs Real</h3>
-          <HBar label="Presupuesto" value={totalBudget} max={maxBVR} color="#3B82F6" />
-          <HBar label="Comprometido" value={totalCommitted} max={maxBVR} color="#F59E0B" />
-          <HBar label="Real" value={totalReal} max={maxBVR} color="#10B981" />
+          <h3 className="text-lg font-bold mb-4">{t('report.chart2')}</h3>
+          <HBar label={t('report.legendBudget')} value={totalBudget} max={maxBVR} color="#3B82F6" />
+          <HBar label={t('report.committed')} value={totalCommitted} max={maxBVR} color="#F59E0B" />
+          <HBar label={t('report.real')} value={totalReal} max={maxBVR} color="#10B981" />
         </div>
 
         {/* 3. Vertical: Monthly Budget */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-bold mb-4">3. Presupuesto Mensual</h3>
+          <h3 className="text-lg font-bold mb-4">{t('report.chart3')}</h3>
           <VBarChart data={MONTHS.map((m, i) => ({ label: m, value: monthlyBudget[i] }))} max={maxMonthlyBudget} colors={Array(12).fill('#3B82F6')} />
         </div>
 
         {/* 4. Vertical: Monthly Committed */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-bold mb-4">4. Comprometido Mensual</h3>
+          <h3 className="text-lg font-bold mb-4">{t('report.chart4')}</h3>
           <VBarChart data={MONTHS.map((m, i) => ({ label: m, value: monthlyCommitted[i] }))} max={maxMonthlyCommitted} colors={Array(12).fill('#F59E0B')} />
         </div>
 
         {/* 5. Vertical: Monthly Real */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-bold mb-4">5. Real Mensual</h3>
+          <h3 className="text-lg font-bold mb-4">{t('report.chart5')}</h3>
           <VBarChart data={MONTHS.map((m, i) => ({ label: m, value: monthlyReal[i] }))} max={maxMonthlyReal} colors={Array(12).fill('#10B981')} />
         </div>
 
         {/* 6. Bar: By User Area */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-bold mb-4">6. Presupuesto por Área</h3>
-          {areaData.length === 0 ? <p className="text-gray-500 text-center py-8">Sin datos</p> :
+          <h3 className="text-lg font-bold mb-4">{t('report.chart6')}</h3>
+          {areaData.length === 0 ? <p className="text-gray-500 text-center py-8">{t('report.noData')}</p> :
             areaData.map((item, idx) => <HBar key={idx} label={item.name} value={item.value} max={maxArea} color={COLORS[idx % COLORS.length]} />)}
         </div>
 
         {/* 7. Bar: Execution % */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-bold mb-4">7. % Ejecución por Gasto</h3>
-          {executionData.length === 0 ? <p className="text-gray-500 text-center py-8">Sin datos</p> :
+          <h3 className="text-lg font-bold mb-4">{t('report.chart7')}</h3>
+          {executionData.length === 0 ? <p className="text-gray-500 text-center py-8">{t('report.noData')}</p> :
             executionData.map((item, idx) => (
               <div key={idx} className="mb-2">
                 <div className="flex justify-between text-sm mb-1"><span>{item.name}</span><span className={item.pct > 100 ? 'text-red-600 font-bold' : 'text-gray-600'}>{item.pct.toFixed(1)}%</span></div>
@@ -295,13 +298,13 @@ export default function ReportsPage() {
 
         {/* 8. Bar: Top 10 Expenses */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-bold mb-4">8. Top 10 Gastos</h3>
+          <h3 className="text-lg font-bold mb-4">{t('report.chart8')}</h3>
           {top10.map((item, idx) => <HBar key={idx} label={item.name} value={item.value} max={maxTop10} color={COLORS[idx % COLORS.length]} />)}
         </div>
 
         {/* 9. Vertical: Monthly Budget vs Executed */}
         <div className="bg-white rounded-lg shadow p-6 col-span-2">
-          <h3 className="text-lg font-bold mb-4">9. Presupuesto vs Ejecutado Mensual</h3>
+          <h3 className="text-lg font-bold mb-4">{t('report.chart9')}</h3>
           <div className="flex items-end gap-1 h-48">
             {MONTHS.map((_m, i) => (
               <div key={i} className="flex-1 flex gap-0.5">
@@ -316,15 +319,15 @@ export default function ReportsPage() {
           </div>
           <div className="flex gap-1 mt-1">{MONTHS.map((m, i) => <div key={i} className="flex-1 text-center text-xs text-gray-500">{m}</div>)}</div>
           <div className="flex gap-4 mt-3 justify-center">
-            <span className="flex items-center gap-1 text-sm"><span className="w-3 h-3 bg-blue-400 rounded" /> Presupuesto</span>
-            <span className="flex items-center gap-1 text-sm"><span className="w-3 h-3 bg-green-400 rounded" /> Ejecutado</span>
+            <span className="flex items-center gap-1 text-sm"><span className="w-3 h-3 bg-blue-400 rounded" /> {t('report.legendBudget')}</span>
+            <span className="flex items-center gap-1 text-sm"><span className="w-3 h-3 bg-green-400 rounded" /> {t('report.legendExecuted')}</span>
           </div>
         </div>
 
         {/* 10. Bar: Savings Potential */}
         <div className="bg-white rounded-lg shadow p-6 col-span-2">
-          <h3 className="text-lg font-bold mb-4">10. Potencial de Ahorro por Gasto</h3>
-          {savingsData.length === 0 ? <p className="text-gray-500 text-center py-8">Sin datos</p> :
+          <h3 className="text-lg font-bold mb-4">{t('report.chart10')}</h3>
+          {savingsData.length === 0 ? <p className="text-gray-500 text-center py-8">{t('report.noData')}</p> :
             <div className="grid grid-cols-2 gap-x-6">
               {savingsData.map((item, idx) => <HBar key={idx} label={item.name} value={item.value} max={maxSavings} color={COLORS[idx % COLORS.length]} />)}
             </div>}

@@ -74,11 +74,11 @@ export default function AuditPage() {
 
   const actionLabel = (action: string) => {
     const labels: Record<string, string> = {
-      LOGIN: 'Inicio sesión', LOGOUT: 'Cierre sesión', LOGIN_FAILED: 'Login fallido',
-      VIEW: 'Visualización', CREATE: 'Creación', UPDATE: 'Modificación', DELETE: 'Eliminación',
-      APPROVE: 'Aprobación', REJECT: 'Rechazo', CREATE_VERSION: 'Nueva versión',
-      ADD_TO_BUDGET: 'Agregar a presupuesto', CHANGE_STATUS: 'Cambio estado',
-      CHANGE_PASSWORD: 'Cambio contraseña', MODIFY_TAG: 'Modificar etiqueta',
+      LOGIN: t('audit.login'), LOGOUT: t('audit.logout'), LOGIN_FAILED: t('audit.loginFailed'),
+      VIEW: t('audit.view'), CREATE: t('audit.create'), UPDATE: t('audit.update'), DELETE: t('audit.deleteAction'),
+      APPROVE: t('audit.approve'), REJECT: t('audit.reject'), CREATE_VERSION: t('audit.createVersion'),
+      ADD_TO_BUDGET: t('audit.addToBudget'), CHANGE_STATUS: t('audit.changeStatus'),
+      CHANGE_PASSWORD: t('audit.changePassword'), MODIFY_TAG: t('audit.modifyTag'),
     };
     return labels[action] || action;
   };
@@ -96,14 +96,14 @@ export default function AuditPage() {
   };
 
   const actionCategory = (action: string) => {
-    if (action === 'LOGIN' || action === 'LOGOUT' || action === 'LOGIN_FAILED') return '🔐 Sesión';
-    if (action === 'VIEW') return '👁 Navegación';
-    return '✏️ Escritura';
+    if (action === 'LOGIN' || action === 'LOGOUT' || action === 'LOGIN_FAILED') return t('audit.catSession');
+    if (action === 'VIEW') return t('audit.catNavigation');
+    return t('audit.catWrite');
   };
 
   // Render before/after diff for write operations
   const renderDetails = (log: AuditLog) => {
-    if (!log.details) return <span className="text-gray-400 text-xs">Sin detalles</span>;
+    if (!log.details) return <span className="text-gray-400 text-xs">{t('audit.noDetails')}</span>;
     const d = log.details as any;
 
     // If it has before/after, show diff
@@ -112,7 +112,7 @@ export default function AuditPage() {
         <div className="grid grid-cols-2 gap-4">
           {d.before && (
             <div>
-              <div className="text-xs font-semibold text-red-600 mb-1">ANTES:</div>
+              <div className="text-xs font-semibold text-red-600 mb-1">{t('audit.before')}</div>
               <pre className="text-xs bg-red-50 p-2 rounded overflow-x-auto max-h-60 whitespace-pre-wrap">
                 {JSON.stringify(d.before, null, 2)}
               </pre>
@@ -121,14 +121,14 @@ export default function AuditPage() {
           {d.after !== undefined && (
             <div>
               <div className="text-xs font-semibold text-green-600 mb-1">
-                {d.after === null ? 'ELIMINADO' : 'DESPUÉS:'}
+                {d.after === null ? t('audit.deleted') : t('audit.after')}
               </div>
               {d.after !== null ? (
                 <pre className="text-xs bg-green-50 p-2 rounded overflow-x-auto max-h-60 whitespace-pre-wrap">
                   {JSON.stringify(d.after, null, 2)}
                 </pre>
               ) : (
-                <div className="text-xs text-red-500 italic">Registro eliminado</div>
+                <div className="text-xs text-red-500 italic">{t('audit.recordDeleted')}</div>
               )}
             </div>
           )}
@@ -180,11 +180,11 @@ export default function AuditPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Desde</label>
+              <label className="block text-xs text-gray-500 mb-1">{t('audit.from')}</label>
               <input type="date" value={filterDateFrom} onChange={(e) => { setFilterDateFrom(e.target.value); setPage(1); }} className="w-full px-2 py-1.5 border rounded text-sm" />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Hasta</label>
+              <label className="block text-xs text-gray-500 mb-1">{t('audit.to')}</label>
               <input type="date" value={filterDateTo} onChange={(e) => { setFilterDateTo(e.target.value); setPage(1); }} className="w-full px-2 py-1.5 border rounded text-sm" />
             </div>
             <div className="flex items-end">
@@ -198,11 +198,11 @@ export default function AuditPage() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50">
             <tr>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Fecha/Hora</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Usuario</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Categoría</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Acción</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Entidad</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">{t('audit.dateTime')}</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">{t('audit.user')}</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">{t('audit.categoryCol')}</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">{t('audit.actionCol')}</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">{t('audit.entityCol')}</th>
             </tr>
           </thead>
           <tbody>
@@ -243,7 +243,7 @@ export default function AuditPage() {
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-500">Página {page} de {totalPages} ({total} registros)</div>
+          <div className="text-sm text-gray-500">{t('audit.page')} {page} {t('audit.of')} {totalPages} ({total} {t('audit.records')})</div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}

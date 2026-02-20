@@ -200,11 +200,11 @@ export default function RealTransactionsPage() {
         <div className="flex items-center gap-3">
           <select value={selectedBudgetId} onChange={e => handleBudgetChange(e.target.value)} className="border rounded px-3 py-1.5 text-sm min-w-[220px]">
             {allBudgets.map(b => (
-              <option key={b.id} value={b.id}>{b.year} - {b.version}{b.isActive ? ' ★ Vigente' : ''}</option>
+              <option key={b.id} value={b.id}>{b.year} - {b.version}{b.isActive ? ` ★ ${t('common.active')}` : ''}</option>
             ))}
           </select>
           {activeBudget && selectedBudgetId === activeBudget.id && (
-            <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">★ Vigente</span>
+            <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">★ {t('common.active')}</span>
           )}
           <input type="text" value={filterText} onChange={e => setFilterText(e.target.value)}
             placeholder={t('filter.searchComma') || 'Filtrar (separar por comas)...'} className="border rounded px-3 py-1.5 text-sm w-64" />
@@ -242,7 +242,7 @@ export default function RealTransactionsPage() {
                     <td className="px-3 py-2 text-right">{ct.transactionValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td className="px-3 py-2">{ct.transactionCurrency}</td>
                     <td className="px-3 py-2 text-center">
-                      <button onClick={() => handleCreateFromCommitted(ct)} className="text-accent hover:opacity-70 text-xs font-medium">Usar →</button>
+                      <button onClick={() => handleCreateFromCommitted(ct)} className="text-accent hover:opacity-70 text-xs font-medium">{t('transaction.use')}</button>
                     </td>
                   </tr>
                 ))}
@@ -277,8 +277,8 @@ export default function RealTransactionsPage() {
                 <td className="px-6 py-4 text-sm text-right text-gray-900">{transaction.transactionValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 <td className="px-6 py-4 text-sm text-center text-gray-500">{getMonthFromDate(transaction.serviceDate)}</td>
                 <td className="px-6 py-4 text-sm text-center space-x-2">
-                  <button onClick={() => handleEdit(transaction)} className="icon-btn" title="Editar"><HiOutlinePencilSquare className="w-5 h-5" /></button>
-                  <button onClick={() => handleDelete(transaction)} className="icon-btn-danger" title="Eliminar"><HiOutlineTrash className="w-5 h-5" /></button>
+                  <button onClick={() => handleEdit(transaction)} className="icon-btn" title={t('btn.edit')}><HiOutlinePencilSquare className="w-5 h-5" /></button>
+                  <button onClick={() => handleDelete(transaction)} className="icon-btn-danger" title={t('btn.delete')}><HiOutlineTrash className="w-5 h-5" /></button>
                 </td>
               </tr>
             ))}
@@ -340,7 +340,7 @@ export default function RealTransactionsPage() {
         </div>
       )}
 
-      <ConfirmationDialog isOpen={showDeleteDialog} message="¿Estás seguro de eliminar esta transacción?" onConfirm={confirmDelete} onCancel={() => { setShowDeleteDialog(false); setDeleteTargetId(null); }} />
+      <ConfirmationDialog isOpen={showDeleteDialog} message={t('transaction.deleteConfirm')} onConfirm={confirmDelete} onCancel={() => { setShowDeleteDialog(false); setDeleteTargetId(null); }} />
     </div>
   );
 }

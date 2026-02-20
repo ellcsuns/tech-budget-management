@@ -5,6 +5,7 @@ import { HiOutlinePencilSquare, HiOutlineTrash } from 'react-icons/hi2';
 import { fmt } from '../utils/formatters';
 import { showToast } from './Toast';
 import ConfirmationDialog from './ConfirmationDialog';
+import { useI18n } from '../contexts/I18nContext';
 
 interface Props {
   expense: ExpenseWithTags;
@@ -16,6 +17,7 @@ interface Props {
 const MONTHS = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12'];
 
 export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnly = false }: Props) {
+  const { t } = useI18n();
   const [showTagForm, setShowTagForm] = useState(false);
   const [editingTag, setEditingTag] = useState<CustomTag | null>(null);
   const [tagForm, setTagForm] = useState({ key: '', value: '', valueType: 'TEXT' as 'TEXT' | 'NUMBER' | 'DATE' | 'SELECT' });
@@ -87,39 +89,39 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnl
   const resetTagForm = () => { setTagForm({ key: '', value: '', valueType: 'TEXT' }); setEditingTag(null); setShowTagForm(false); };
 
   const renderTransactionTable = (txns: Transaction[], type: string) => {
-    if (loadingTxns) return <p className="text-center py-4 text-gray-400">Cargando...</p>;
-    if (txns.length === 0) return <p className="text-center py-4 text-gray-400">No hay transacciones {type}</p>;
+    if (loadingTxns) return <p className="text-center py-4 text-gray-400">{t('msg.loading')}</p>;
+    if (txns.length === 0) return <p className="text-center py-4 text-gray-400">{t('expense.detail.noTransactions')}</p>;
     return (
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-3 py-2 text-left text-xs text-gray-500">Ref. Doc</th>
-              <th className="px-3 py-2 text-left text-xs text-gray-500">Empresa</th>
-              <th className="px-3 py-2 text-left text-xs text-gray-500">Fecha Servicio</th>
-              <th className="px-3 py-2 text-left text-xs text-gray-500">Fecha Imputación</th>
-              <th className="px-3 py-2 text-left text-xs text-gray-500">Moneda</th>
-              <th className="px-3 py-2 text-right text-xs text-gray-500">Valor</th>
-              <th className="px-3 py-2 text-right text-xs text-gray-500">USD</th>
-              <th className="px-3 py-2 text-center text-xs text-gray-500">Mes</th>
-              {type === 'comprometidas' && <th className="px-3 py-2 text-center text-xs text-gray-500">Compensada</th>}
+              <th className="px-3 py-2 text-left text-xs text-gray-500">{t('expense.detail.refDoc')}</th>
+              <th className="px-3 py-2 text-left text-xs text-gray-500">{t('label.company')}</th>
+              <th className="px-3 py-2 text-left text-xs text-gray-500">{t('expense.detail.serviceDate')}</th>
+              <th className="px-3 py-2 text-left text-xs text-gray-500">{t('expense.detail.postingDate')}</th>
+              <th className="px-3 py-2 text-left text-xs text-gray-500">{t('label.currency')}</th>
+              <th className="px-3 py-2 text-right text-xs text-gray-500">{t('label.value')}</th>
+              <th className="px-3 py-2 text-right text-xs text-gray-500">{t('expense.detail.usd')}</th>
+              <th className="px-3 py-2 text-center text-xs text-gray-500">{t('label.month')}</th>
+              {type === 'comprometidas' && <th className="px-3 py-2 text-center text-xs text-gray-500">{t('expense.detail.compensated')}</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {txns.map(t => (
-              <tr key={t.id} className={t.isCompensated ? 'opacity-50' : ''}>
-                <td className="px-3 py-2">{t.referenceDocumentNumber}</td>
-                <td className="px-3 py-2">{t.financialCompany?.name || '-'}</td>
-                <td className="px-3 py-2">{new Date(t.serviceDate).toLocaleDateString()}</td>
-                <td className="px-3 py-2">{new Date(t.postingDate).toLocaleDateString()}</td>
-                <td className="px-3 py-2">{t.transactionCurrency}</td>
-                <td className="px-3 py-2 text-right">{fmt(Number(t.transactionValue))}</td>
-                <td className="px-3 py-2 text-right">{fmt(Number(t.usdValue))}</td>
-                <td className="px-3 py-2 text-center">{MONTHS[t.month - 1]}</td>
+            {txns.map(txn => (
+              <tr key={txn.id} className={txn.isCompensated ? 'opacity-50' : ''}>
+                <td className="px-3 py-2">{txn.referenceDocumentNumber}</td>
+                <td className="px-3 py-2">{txn.financialCompany?.name || '-'}</td>
+                <td className="px-3 py-2">{new Date(txn.serviceDate).toLocaleDateString()}</td>
+                <td className="px-3 py-2">{new Date(txn.postingDate).toLocaleDateString()}</td>
+                <td className="px-3 py-2">{txn.transactionCurrency}</td>
+                <td className="px-3 py-2 text-right">{fmt(Number(txn.transactionValue))}</td>
+                <td className="px-3 py-2 text-right">{fmt(Number(txn.usdValue))}</td>
+                <td className="px-3 py-2 text-center">{MONTHS[txn.month - 1]}</td>
                 {type === 'comprometidas' && (
                   <td className="px-3 py-2 text-center">
-                    <span className={`px-2 py-0.5 rounded text-xs ${t.isCompensated ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                      {t.isCompensated ? 'Sí' : 'No'}
+                    <span className={`px-2 py-0.5 rounded text-xs ${txn.isCompensated ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                      {txn.isCompensated ? t('msg.yes') : t('msg.no')}
                     </span>
                   </td>
                 )}
@@ -128,9 +130,9 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnl
           </tbody>
           <tfoot className="bg-gray-50 font-semibold">
             <tr>
-              <td colSpan={5} className="px-3 py-2">Total</td>
-              <td className="px-3 py-2 text-right">{fmt(txns.reduce((s, t) => s + Number(t.transactionValue), 0))}</td>
-              <td className="px-3 py-2 text-right">{fmt(txns.reduce((s, t) => s + Number(t.usdValue), 0))}</td>
+              <td colSpan={5} className="px-3 py-2">{t('label.total')}</td>
+              <td className="px-3 py-2 text-right">{fmt(txns.reduce((s, txn) => s + Number(txn.transactionValue), 0))}</td>
+              <td className="px-3 py-2 text-right">{fmt(txns.reduce((s, txn) => s + Number(txn.usdValue), 0))}</td>
               <td colSpan={type === 'comprometidas' ? 2 : 1}></td>
             </tr>
           </tfoot>
@@ -150,16 +152,16 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnl
 
           {/* Tabs */}
           <div className="flex border-b mb-4">
-            <button onClick={() => setActiveTab('info')} className={`px-4 py-2 text-sm font-medium border-b-2 ${activeTab === 'info' ? 'border-accent text-accent' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>Info & Tags</button>
+            <button onClick={() => setActiveTab('info')} className={`px-4 py-2 text-sm font-medium border-b-2 ${activeTab === 'info' ? 'border-accent text-accent' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>{t('expense.detail.infoTags')}</button>
             <button onClick={() => setActiveTab('committed')} className={`px-4 py-2 text-sm font-medium border-b-2 ${activeTab === 'committed' ? 'border-accent text-accent' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-              Comprometidas ({committedTxns.length})
+              {t('expense.detail.committed')} ({committedTxns.length})
             </button>
             <button onClick={() => setActiveTab('real')} className={`px-4 py-2 text-sm font-medium border-b-2 ${activeTab === 'real' ? 'border-accent text-accent' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-              Reales ({realTxns.length})
+              {t('expense.detail.real')} ({realTxns.length})
             </button>
             {activeSavings.length > 0 && (
               <button onClick={() => setActiveTab('savings')} className={`px-4 py-2 text-sm font-medium border-b-2 ${activeTab === 'savings' ? 'border-accent text-accent' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-                Ahorros ({activeSavings.length})
+                {t('expense.detail.savings')} ({activeSavings.length})
               </button>
             )}
           </div>
@@ -167,12 +169,12 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnl
           {activeTab === 'info' && (
             <>
               <div className="grid grid-cols-1 gap-4 mb-4 text-sm">
-                <div><span className="text-gray-500">Descripción:</span> {expense.longDescription}</div>
+                <div><span className="text-gray-500">{t('expense.detail.description')}</span> {expense.longDescription}</div>
               </div>
               {/* Last modification info */}
               {expenseBudgetLines.length > 0 && expenseBudgetLines.some(bl => bl.lastModifiedAt) && (
                 <div className="bg-gray-50 p-3 rounded mb-4 text-sm">
-                  <p className="text-xs text-gray-500 font-medium mb-1">Última modificación</p>
+                  <p className="text-xs text-gray-500 font-medium mb-1">{t('expense.detail.lastModification')}</p>
                   {expenseBudgetLines.filter(bl => bl.lastModifiedAt).map(bl => (
                     <div key={bl.id} className="flex gap-4">
                       <span className="text-gray-600">{bl.financialCompany?.code}:</span>
@@ -185,9 +187,9 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnl
               {/* Tags */}
               <div className="border-t pt-4">
                 <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-sm font-bold">Tags</h3>
+                  <h3 className="text-sm font-bold">{t('expense.detail.tags')}</h3>
                   {!readOnly && (
-                    <button onClick={() => setShowTagForm(!showTagForm)} className="text-xs px-3 py-1 bg-accent text-white rounded">{showTagForm ? 'Cancelar' : 'Agregar Tag'}</button>
+                    <button onClick={() => setShowTagForm(!showTagForm)} className="text-xs px-3 py-1 bg-accent text-white rounded">{showTagForm ? t('btn.cancel') : t('expense.detail.addTag')}</button>
                   )}
                 </div>
                 {showTagForm && (
@@ -195,29 +197,29 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnl
                     <form onSubmit={editingTag ? handleUpdateTag : handleAddTag}>
                       <div className="grid grid-cols-3 gap-3 mb-3">
                         <div>
-                          <label className="block text-xs font-medium mb-1">Clave</label>
+                          <label className="block text-xs font-medium mb-1">{t('expense.detail.tagKey')}</label>
                           <input type="text" value={tagForm.key} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTagForm({ ...tagForm, key: e.target.value })} className="w-full border rounded px-2 py-1 text-sm" required disabled={!!editingTag} />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium mb-1">Valor</label>
+                          <label className="block text-xs font-medium mb-1">{t('expense.detail.tagValue')}</label>
                           <input type={tagForm.valueType === 'NUMBER' ? 'number' : tagForm.valueType === 'DATE' ? 'date' : 'text'} value={tagForm.value} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTagForm({ ...tagForm, value: e.target.value })} className="w-full border rounded px-2 py-1 text-sm" required />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium mb-1">Tipo</label>
+                          <label className="block text-xs font-medium mb-1">{t('expense.detail.tagType')}</label>
                           <select value={tagForm.valueType} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setTagForm({ ...tagForm, valueType: e.target.value as any })} className="w-full border rounded px-2 py-1 text-sm">
-                            <option value="TEXT">Texto</option><option value="NUMBER">Número</option><option value="DATE">Fecha</option>
+                            <option value="TEXT">{t('expense.detail.tagText')}</option><option value="NUMBER">{t('expense.detail.tagNumber')}</option><option value="DATE">{t('expense.detail.tagDate')}</option>
                           </select>
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <button type="submit" className="text-xs px-3 py-1 bg-green-600 text-white rounded">{editingTag ? 'Actualizar' : 'Agregar'}</button>
-                        <button type="button" onClick={resetTagForm} className="text-xs px-3 py-1 bg-gray-300 rounded">Cancelar</button>
+                        <button type="submit" className="text-xs px-3 py-1 bg-green-600 text-white rounded">{editingTag ? t('btn.update') : t('btn.create')}</button>
+                        <button type="button" onClick={resetTagForm} className="text-xs px-3 py-1 bg-gray-300 rounded">{t('btn.cancel')}</button>
                       </div>
                     </form>
                   </div>
                 )}
                 {expense.customTags.length === 0 ? (
-                  <p className="text-gray-400 text-sm text-center py-2">Sin tags</p>
+                  <p className="text-gray-400 text-sm text-center py-2">{t('expense.detail.noTags')}</p>
                 ) : (
                   <div className="space-y-1">
                     {expense.customTags.map((tag, idx) => (
@@ -251,10 +253,10 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnl
                   <table className="min-w-full divide-y divide-gray-200 text-sm">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-2 py-1 text-xs text-gray-500">Mes</th>
-                        <th className="px-2 py-1 text-xs text-gray-500 text-right">Original</th>
-                        <th className="px-2 py-1 text-xs text-gray-500 text-right">Ahorro</th>
-                        <th className="px-2 py-1 text-xs text-gray-500 text-right">Consolidado</th>
+                        <th className="px-2 py-1 text-xs text-gray-500">{t('label.month')}</th>
+                        <th className="px-2 py-1 text-xs text-gray-500 text-right">{t('expense.detail.original')}</th>
+                        <th className="px-2 py-1 text-xs text-gray-500 text-right">{t('expense.detail.saving')}</th>
+                        <th className="px-2 py-1 text-xs text-gray-500 text-right">{t('expense.detail.consolidated')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -288,14 +290,14 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnl
           )}
 
           <div className="mt-4 flex justify-end">
-            <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">Cerrar</button>
+            <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">{t('btn.close')}</button>
           </div>
         </div>
       </div>
       {deleteTagKey && (
         <ConfirmationDialog
-          title="Eliminar Tag"
-          message={`¿Estás seguro de eliminar el tag "${deleteTagKey}"?`}
+          title={t('expense.detail.deleteTag')}
+          message={`${t('expense.detail.deleteTagConfirm')} "${deleteTagKey}"?`}
           onConfirm={() => { handleDeleteTag(deleteTagKey); setDeleteTagKey(null); }}
           onCancel={() => setDeleteTagKey(null)}
         />

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { expensesEnhancedApi, technologyDirectionApi, userAreaApi, expenseCategoryApi } from '../services/api';
 import type { ExpenseWithTags, TechnologyDirection, UserArea, ExpenseCategory } from '../types';
 import ExpenseDetailPopup from '../components/ExpenseDetailPopup';
-import { HiOutlineMagnifyingGlass, HiOutlineTrash, HiOutlineArrowPath, HiOutlinePlusCircle } from 'react-icons/hi2';
+import { HiOutlineMagnifyingGlass, HiOutlineTrash, HiOutlineArrowPath, HiOutlinePlusCircle, HiOutlinePencilSquare } from 'react-icons/hi2';
 import { showToast } from '../components/Toast';
 import ConfirmationDialog from '../components/ConfirmationDialog';
 import { useI18n } from '../contexts/I18nContext';
@@ -19,6 +19,7 @@ export default function ExpensesPage() {
   const [selectedExpense, setSelectedExpense] = useState<ExpenseWithTags | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [showFormModal, setShowFormModal] = useState(false);
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
   const [deactivateTargetId, setDeactivateTargetId] = useState<string | null>(null);
 
@@ -59,14 +60,34 @@ export default function ExpensesPage() {
   const handleCreateExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await expensesEnhancedApi.create(formData);
+      if (editingExpenseId) {
+        await expensesEnhancedApi.update(editingExpenseId, formData);
+        showToast(t('expense.updated') || 'Gasto actualizado correctamente', 'success');
+      } else {
+        await expensesEnhancedApi.create(formData);
+        showToast(t('expense.created') || 'Gasto creado correctamente', 'success');
+      }
       setShowFormModal(false);
+      setEditingExpenseId(null);
       resetForm();
       loadExpenses();
-      showToast('Gasto creado correctamente', 'success');
     } catch (error: any) {
-      showToast(error.response?.data?.error || 'Error al crear gasto', 'error');
+      showToast(error.response?.data?.error || 'Error al guardar gasto', 'error');
     }
+  };
+
+  const handleEditExpense = async (expense: ExpenseWithTags) => {
+    setEditingExpenseId(expense.id);
+    setFormData({
+      code: expense.code,
+      shortDescription: expense.shortDescription,
+      longDescription: expense.longDescription || (expense as any).longDescription || '',
+      technologyDirections: (expense as any).technologyDirections || [],
+      userAreas: (expense as any).userAreas || [],
+      parentExpenseId: (expense as any).parentExpenseId || '',
+      categoryId: (expense as any).category?.id || (expense as any).categoryId || ''
+    });
+    setShowFormModal(true);
   };
 
   const handleDeactivateExpense = async (id: string) => {
@@ -138,7 +159,7 @@ export default function ExpensesPage() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <div />
-        <button onClick={() => { resetForm(); setShowFormModal(true); }} className="btn-primary flex items-center gap-2">
+        <button onClick={() => { resetForm(); setEditingExpenseId(null); setShowFormModal(true); }} className="btn-primary flex items-center gap-2">
           <HiOutlinePlusCircle className="w-5 h-5" /> {t('expense.new')}
         </button>
       </div>
@@ -201,11 +222,14 @@ export default function ExpensesPage() {
                     </span>
                   </td>
                   <td className="p-3 text-center space-x-2">
-                    <button onClick={() => handleViewDetail(expense)} className="icon-btn" title="Ver Detalle"><HiOutlineMagnifyingGlass className="w-5 h-5" /></button>
+                    <button onClick={() => handleViewDetail(expense)} className="icon-btn" title={t('btn.viewDetail') || 'Ver Detalle'}><HiOutlineMagnifyingGlass className="w-5 h-5" /></button>
+                    {(expense as any).active !== false && (
+                      <button onClick={() => handleEditExpense(expense)} className="icon-btn" title={t('btn.edit') || 'Editar'}><HiOutlinePencilSquare className="w-5 h-5" /></button>
+                    )}
                     {(expense as any).active !== false ? (
-                      <button onClick={() => handleDeactivateExpense(expense.id)} className="icon-btn-danger" title="Desactivar"><HiOutlineTrash className="w-5 h-5" /></button>
+                      <button onClick={() => handleDeactivateExpense(expense.id)} className="icon-btn-danger" title={t('btn.deactivate') || 'Desactivar'}><HiOutlineTrash className="w-5 h-5" /></button>
                     ) : (
-                      <button onClick={() => handleReactivateExpense(expense.id)} className="icon-btn" title="Reactivar"><HiOutlineArrowPath className="w-5 h-5" /></button>
+                      <button onClick={() => handleReactivateExpense(expense.id)} className="icon-btn" title={t('btn.reactivate') || 'Reactivar'}><HiOutlineArrowPath className="w-5 h-5" /></button>
                     )}
                   </td>
                 </tr>
@@ -220,8 +244,8 @@ export default function ExpensesPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">{t('expense.createNew')}</h2>
-              <button onClick={() => setShowFormModal(false)} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+              <h2 className="text-xl font-bold">{editingExpenseId ? (t('expense.edit') || 'Editar Gasto') : t('expense.createNew')}</h2>
+              <button onClick={() => { setShowFormModal(false); setEditingExpenseId(null); }} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
             </div>
             <form onSubmit={handleCreateExpense}>
               <div className="grid grid-cols-2 gap-4">
@@ -268,8 +292,8 @@ export default function ExpensesPage() {
                 </div>
               </div>
               <div className="flex justify-end gap-2 mt-6">
-                <button type="button" onClick={() => setShowFormModal(false)} className="btn-cancel">{t('btn.cancel')}</button>
-                <button type="submit" className="btn-primary" disabled={formData.technologyDirections.length === 0 || formData.userAreas.length === 0}>{t('expense.createExpense')}</button>
+                <button type="button" onClick={() => { setShowFormModal(false); setEditingExpenseId(null); }} className="btn-cancel">{t('btn.cancel')}</button>
+                <button type="submit" className="btn-primary" disabled={formData.technologyDirections.length === 0 || formData.userAreas.length === 0}>{editingExpenseId ? (t('btn.save') || 'Guardar') : t('expense.createExpense')}</button>
               </div>
             </form>
           </div>
@@ -281,7 +305,7 @@ export default function ExpensesPage() {
           onUpdate={() => { loadExpenses(); if (selectedExpense) handleViewDetail(selectedExpense); }} />
       )}
 
-      <ConfirmationDialog isOpen={showDeactivateDialog} message="¿Desactivar este gasto? No se eliminará, solo se ocultará de los presupuestos activos." onConfirm={confirmDeactivate} onCancel={() => { setShowDeactivateDialog(false); setDeactivateTargetId(null); }} />
+      <ConfirmationDialog isOpen={showDeactivateDialog} message={t('expense.deactivateConfirm')} onConfirm={confirmDeactivate} onCancel={() => { setShowDeactivateDialog(false); setDeactivateTargetId(null); }} />
     </div>
   );
 }

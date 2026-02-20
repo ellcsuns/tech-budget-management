@@ -21,7 +21,7 @@ export default function TranslationsPage() {
   const [showNew, setShowNew] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
-  const [newData, setNewData] = useState({ key: '', es: '', en: '', category: 'general' });
+  const [newData, setNewData] = useState({ key: '', es: '', en: '', category: 'common' });
   const [loading, setLoading] = useState(true);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [filterCategory, setFilterCategory] = useState('');
@@ -74,7 +74,7 @@ export default function TranslationsPage() {
     if (!newData.key.trim()) return;
     await translationApi.create(newData);
     setShowNew(false);
-    setNewData({ key: '', es: '', en: '', category: 'general' });
+    setNewData({ key: '', es: '', en: '', category: 'common' });
     load();
   };
 
@@ -123,30 +123,25 @@ export default function TranslationsPage() {
               <input placeholder="English" value={newData.en} onChange={e => setNewData({...newData, en: e.target.value})} className="px-3 py-2 border rounded" />
               <div className="flex gap-2">
                 <select value={newData.category} onChange={e => setNewData({...newData, category: e.target.value})} className="px-3 py-2 border rounded flex-1">
-                  <option value="general">General</option>
-                  <option value="menu">Menu</option>
-                  <option value="button">Button</option>
-                  <option value="label">Label</option>
-                  <option value="message">Message</option>
-                  <option value="table">Table</option>
-                  <option value="budget">Budgets</option>
-                  <option value="expense">Expenses</option>
-                  <option value="saving">Savings</option>
-                  <option value="deferral">Deferrals</option>
                   <option value="common">Common</option>
-                  <option value="translations">Translations</option>
+                  <option value="sidebar">Sidebar</option>
+                  <option value="login">Login</option>
                   <option value="dashboard">Dashboard</option>
-                  <option value="transaction">Transactions</option>
-                  <option value="approval">Approvals</option>
-                  <option value="report">Reports</option>
-                  <option value="config">Configuration</option>
-                  <option value="page">Pages</option>
-                  <option value="month">Months</option>
-                  <option value="section">Sections</option>
-                  <option value="filter">Filters</option>
-                  <option value="theme">Themes</option>
-                  <option value="app">App</option>
-                  <option value="masterData">Master Data</option>
+                  <option value="presupuestos">Presupuestos</option>
+                  <option value="ahorros">Ahorros</option>
+                  <option value="diferidos">Diferidos</option>
+                  <option value="aprobaciones">Aprobaciones</option>
+                  <option value="gastos">Gastos</option>
+                  <option value="transacciones">Transacciones</option>
+                  <option value="tasas_cambio">Tasas de Cambio</option>
+                  <option value="reportes">Reportes</option>
+                  <option value="reportes_detallados">Reportes Detallados</option>
+                  <option value="configuracion">Configuración</option>
+                  <option value="datos_maestros">Datos Maestros</option>
+                  <option value="usuarios">Usuarios</option>
+                  <option value="roles">Roles</option>
+                  <option value="traducciones">Traducciones</option>
+                  <option value="auditoria">Auditoría</option>
                 </select>
                 <button onClick={handleCreate} className="px-3 py-2 btn-success text-sm">✓</button>
                 <button onClick={() => setShowNew(false)} className="px-3 py-2 btn-cancel text-sm">✕</button>

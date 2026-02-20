@@ -4,8 +4,10 @@ import { useActiveBudget } from '../contexts/ActiveBudgetContext';
 import { REPORT_DEFINITIONS } from '../config/reportDefinitions';
 import type { ReportDefinition } from '../config/reportDefinitions';
 import { showToast } from '../components/Toast';
+import { useI18n } from '../contexts/I18nContext';
 
 export default function DetailedReportsPage() {
+  const { t } = useI18n();
   const { activeBudget } = useActiveBudget();
   const [selectedReport, setSelectedReport] = useState<ReportDefinition | null>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -24,7 +26,7 @@ export default function DetailedReportsPage() {
       const res = await reportApi.get(selectedReport.id, { budgetId: activeBudget.id, ...filters });
       setData(res.data);
     } catch (err: any) {
-      showToast(err.response?.data?.error || 'Error al generar reporte', 'error');
+      showToast(err.response?.data?.error || t('detailedReport.errorGenerating'), 'error');
     } finally { setLoading(false); }
   };
 
@@ -69,7 +71,7 @@ export default function DetailedReportsPage() {
     <div className="space-y-6">
 
       {activeBudget && (
-        <p className="text-sm text-gray-500">Presupuesto: {activeBudget.year} {activeBudget.version}</p>
+        <p className="text-sm text-gray-500">{t('detailedReport.budgetLabel')} {activeBudget.year} {activeBudget.version}</p>
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -93,7 +95,7 @@ export default function DetailedReportsPage() {
                   <label className="block text-sm text-gray-600 mb-1">{f.label}</label>
                   <select value={filters[f.key] || ''} onChange={e => setFilters({...filters, [f.key]: e.target.value})}
                     className="px-3 py-2 border rounded-lg min-w-[150px]">
-                    <option value="">Todos</option>
+                    <option value="">{t('detailedReport.allFilter')}</option>
                     {getFilterOptions(f.key, f).map((o: any) => (
                       <option key={o.value} value={o.value}>{o.label}</option>
                     ))}
@@ -106,18 +108,18 @@ export default function DetailedReportsPage() {
           <div className="flex gap-2">
             <button onClick={runReport} disabled={loading || !activeBudget}
               className="btn-primary disabled:opacity-50">
-              {loading ? 'Generando...' : 'Generar Reporte'}
+              {loading ? t('detailedReport.generating') : t('detailedReport.generate')}
             </button>
             {data && data.rows.length > 0 && (
               <button onClick={exportExcel} className="btn-success">
-                Descargar CSV
+                {t('detailedReport.downloadCsv')}
               </button>
             )}
           </div>
 
           {data && (
             data.rows.length === 0 ? (
-              <p className="text-center py-8 text-gray-500">No se encontraron resultados para los filtros seleccionados.</p>
+              <p className="text-center py-8 text-gray-500">{t('detailedReport.noResults')}</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">

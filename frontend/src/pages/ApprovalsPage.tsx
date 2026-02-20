@@ -136,10 +136,10 @@ export default function ApprovalsPage() {
                   <td className="px-4 py-3 text-sm">{new Date(req.createdAt).toLocaleDateString()}</td>
                   <td className="px-4 py-3 text-center" onClick={e => e.stopPropagation()}>
                     <div className="flex justify-center gap-2">
-                      <button onClick={() => handleApprove(req.id)} disabled={isProcessing} className="text-green-600 hover:text-green-800" title="Aprobar">
+                      <button onClick={() => handleApprove(req.id)} disabled={isProcessing} className="text-green-600 hover:text-green-800" title={t('btn.approve')}>
                         <HiOutlineCheckCircle className="w-5 h-5" />
                       </button>
-                      <button onClick={() => handleReject(req.id)} disabled={isProcessing} className="text-red-600 hover:text-red-800" title="Rechazar">
+                      <button onClick={() => handleReject(req.id)} disabled={isProcessing} className="text-red-600 hover:text-red-800" title={t('btn.reject')}>
                         <HiOutlineXMark className="w-5 h-5" />
                       </button>
                     </div>
@@ -172,10 +172,10 @@ export default function ApprovalsPage() {
             {/* Month comparison table */}
             <div className="border rounded divide-y mb-4">
               <div className="flex items-center px-4 py-2 bg-gray-50 text-xs font-medium text-gray-500">
-                <span className="w-16">Mes</span>
-                <span className="w-28 text-right">Actual</span>
-                <span className="w-28 text-right">Propuesto</span>
-                <span className="flex-1 text-right">Diferencia</span>
+                <span className="w-16">{t('budget.month')}</span>
+                <span className="w-28 text-right">{t('approval.current')}</span>
+                <span className="w-28 text-right">{t('approval.proposed')}</span>
+                <span className="flex-1 text-right">{t('label.difference')}</span>
               </div>
               {MONTHS.map((m, i) => {
                 const current = (selectedRequest.currentValues as Record<string, number>)?.[`planM${i + 1}`] || 0;
@@ -229,9 +229,9 @@ export default function ApprovalsPage() {
       <ConfirmationDialog
         isOpen={!!confirmAction}
         message={
-          confirmAction?.type === 'approve' ? '¿Aprobar esta solicitud de cambio?' :
-          confirmAction?.type === 'reject' ? '¿Rechazar esta solicitud de cambio?' :
-          `¿Aprobar ${selectedIds.size} solicitud(es) de cambio seleccionadas?`
+          confirmAction?.type === 'approve' ? t('approval.confirmApprove') :
+          confirmAction?.type === 'reject' ? t('approval.confirmReject') :
+          t('approval.confirmApproveMultiple')
         }
         onConfirm={executeConfirmAction}
         onCancel={() => setConfirmAction(null)}

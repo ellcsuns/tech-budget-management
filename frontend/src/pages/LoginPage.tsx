@@ -1,6 +1,7 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useI18n } from '../contexts/I18nContext';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -9,6 +10,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -19,7 +21,7 @@ export default function LoginPage() {
       await login(username, password);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Credenciales inválidas');
+      setError(err.response?.data?.message || t('login.invalidCredentials'));
     } finally {
       setIsLoading(false);
     }
@@ -29,21 +31,21 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="bg-white p-8 rounded-lg shadow-lg w-96">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Tech Budget</h1>
-          <p className="text-gray-600 mt-2">Sistema de Gestión de Presupuesto</p>
+          <h1 className="text-3xl font-bold text-gray-800">{t('login.title')}</h1>
+          <p className="text-gray-600 mt-2">{t('login.subtitle')}</p>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Usuario
+              {t('login.username')}
             </label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Ingrese su usuario"
+              placeholder={t('login.userPlaceholder')}
               required
               disabled={isLoading}
             />
@@ -51,14 +53,14 @@ export default function LoginPage() {
 
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Contraseña
+              {t('login.password')}
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Ingrese su contraseña"
+              placeholder={t('login.passPlaceholder')}
               required
               disabled={isLoading}
             />
@@ -72,7 +74,7 @@ export default function LoginPage() {
 
           {username === 'admin' && password === 'admin' && (
             <div className="mb-4 p-3 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded text-sm">
-              ⚠️ Está usando la contraseña por defecto. Por favor cámbiela después de iniciar sesión.
+              {t('login.defaultWarning')}
             </div>
           )}
 
@@ -81,13 +83,13 @@ export default function LoginPage() {
             disabled={isLoading}
             className="w-full btn-primary py-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+            {isLoading ? t('login.submitting') : t('login.submit')}
           </button>
         </form>
 
         <div className="mt-6 text-center text-sm text-gray-600">
-          <p>Usuario por defecto: admin</p>
-          <p>Contraseña por defecto: admin</p>
+          <p>{t('login.defaultUser')}</p>
+          <p>{t('login.defaultPass')}</p>
         </div>
       </div>
     </div>

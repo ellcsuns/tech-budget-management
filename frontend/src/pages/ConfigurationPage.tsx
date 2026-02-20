@@ -6,20 +6,20 @@ import { showToast } from '../components/Toast';
 import ConfirmationDialog from '../components/ConfirmationDialog';
 
 const THEMES = [
-  { id: 'default', name: 'Azul Corporativo', primary: '#1E40AF', sidebar: '#111827', accent: '#3B82F6' },
-  { id: 'green', name: 'Verde Naturaleza', primary: '#065F46', sidebar: '#064E3B', accent: '#10B981' },
-  { id: 'purple', name: 'Púrpura Elegante', primary: '#5B21B6', sidebar: '#1E1B4B', accent: '#8B5CF6' },
-  { id: 'red', name: 'Rojo Ejecutivo', primary: '#991B1B', sidebar: '#1C1917', accent: '#EF4444' },
-  { id: 'teal', name: 'Teal Moderno', primary: '#0F766E', sidebar: '#134E4A', accent: '#14B8A6' },
-  { id: 'orange', name: 'Naranja Energético', primary: '#9A3412', sidebar: '#1C1917', accent: '#F97316' },
+  { id: 'default', nameKey: 'theme.default', primary: '#1E40AF', sidebar: '#111827', accent: '#3B82F6' },
+  { id: 'green', nameKey: 'theme.green', primary: '#065F46', sidebar: '#064E3B', accent: '#10B981' },
+  { id: 'purple', nameKey: 'theme.purple', primary: '#5B21B6', sidebar: '#1E1B4B', accent: '#8B5CF6' },
+  { id: 'red', nameKey: 'theme.red', primary: '#991B1B', sidebar: '#1C1917', accent: '#EF4444' },
+  { id: 'teal', nameKey: 'theme.teal', primary: '#0F766E', sidebar: '#134E4A', accent: '#14B8A6' },
+  { id: 'orange', nameKey: 'theme.orange', primary: '#9A3412', sidebar: '#1C1917', accent: '#F97316' },
 ];
 
 const FONT_SIZES = [
-  { id: 'xs', label: 'Muy pequeño', scale: 0.8 },
-  { id: 'sm', label: 'Pequeño', scale: 0.9 },
-  { id: 'md', label: 'Normal', scale: 1.0 },
-  { id: 'lg', label: 'Grande', scale: 1.1 },
-  { id: 'xl', label: 'Muy grande', scale: 1.2 },
+  { id: 'xs', labelKey: 'config.fontSize.xs', scale: 0.8 },
+  { id: 'sm', labelKey: 'config.fontSize.sm', scale: 0.9 },
+  { id: 'md', labelKey: 'config.fontSize.md', scale: 1.0 },
+  { id: 'lg', labelKey: 'config.fontSize.lg', scale: 1.1 },
+  { id: 'xl', labelKey: 'config.fontSize.xl', scale: 1.2 },
 ];
 
 export default function ConfigurationPage() {
@@ -51,7 +51,7 @@ export default function ConfigurationPage() {
   const handleSetActiveBudget = async () => {
     try {
       await budgetApi.setActive(selectedActiveBudget);
-      showToast('Presupuesto vigente actualizado', 'success');
+      showToast(t('config.activeUpdated'), 'success');
       setShowActivateConfirm(false);
       loadBudgets();
     } catch (error: any) {
@@ -85,11 +85,11 @@ export default function ConfigurationPage() {
 
       {/* Active Budget Selection */}
       <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-bold mb-4">Presupuesto Vigente</h2>
-        <p className="text-sm text-gray-600 mb-4">Selecciona el presupuesto que se usará como vigente en el Dashboard y reportes.</p>
+        <h2 className="text-xl font-bold mb-4">{t('config.activeBudget')}</h2>
+        <p className="text-sm text-gray-600 mb-4">{t('config.activeBudgetDesc')}</p>
         <div className="flex items-center gap-4">
           <select value={selectedActiveBudget} onChange={(e) => setSelectedActiveBudget(e.target.value)} className="border rounded px-3 py-2 w-64">
-            <option value="">Seleccionar presupuesto</option>
+            <option value="">{t('config.selectBudget')}</option>
             {allBudgets.map(b => (
               <option key={b.id} value={b.id}>
                 {b.year} - v{b.version} {b.isActive ? '(Vigente)' : ''}
@@ -98,12 +98,12 @@ export default function ConfigurationPage() {
           </select>
           {selectedActiveBudget && !allBudgets.find(b => b.id === selectedActiveBudget)?.isActive && (
             <button onClick={() => setShowActivateConfirm(true)} className="btn-primary">
-              Establecer como Vigente
+              {t('config.setActive')}
             </button>
           )}
           {allBudgets.find(b => b.isActive) && (
             <span className="px-3 py-1 bg-green-100 text-green-800 rounded text-sm">
-              Vigente: {allBudgets.find(b => b.isActive)?.year} v{allBudgets.find(b => b.isActive)?.version}
+              {t('config.currentActive')} {allBudgets.find(b => b.isActive)?.year} v{allBudgets.find(b => b.isActive)?.version}
             </span>
           )}
         </div>
@@ -112,8 +112,8 @@ export default function ConfigurationPage() {
       {showActivateConfirm && (
         <ConfirmationDialog
           isOpen={showActivateConfirm}
-          title="Cambiar Presupuesto Vigente"
-          message="¿Estás seguro de cambiar el presupuesto vigente? Esto afectará el Dashboard y los reportes."
+          title={t('config.changeActiveTitle')}
+          message={t('config.changeActiveConfirm')}
           onConfirm={handleSetActiveBudget}
           onCancel={() => setShowActivateConfirm(false)}
         />
@@ -150,13 +150,13 @@ export default function ConfigurationPage() {
                 onClick={() => applyFontSize(size.id)}
                 className={`px-4 py-2 rounded-lg border-2 transition-all ${fontSize === size.id ? 'border-accent bg-blue-50 ring-2 ring-accent' : 'border-gray-200 hover:border-gray-400'}`}
               >
-                <span style={{ fontSize: `${size.scale * 14}px` }} className="font-medium">{size.label}</span>
+                <span style={{ fontSize: `${size.scale * 14}px` }} className="font-medium">{t(size.labelKey)}</span>
               </button>
             ))}
           </div>
           <span className="text-xl text-gray-400">A</span>
         </div>
-        <p className="text-xs text-gray-400 mt-3">Vista previa: <span style={{ fontSize: `${(FONT_SIZES.find(s => s.id === fontSize)?.scale || 1) * 14}px` }}>Este es un texto de ejemplo con el tamaño seleccionado.</span></p>
+        <p className="text-xs text-gray-400 mt-3">{t('config.fontPreview')} <span style={{ fontSize: `${(FONT_SIZES.find(s => s.id === fontSize)?.scale || 1) * 14}px` }}>{t('config.fontPreviewText')}</span></p>
       </div>
 
       {/* Theme Selection */}
@@ -177,15 +177,15 @@ export default function ConfigurationPage() {
                 <div className="w-8 h-8 rounded-full" style={{ backgroundColor: theme.sidebar }} />
                 <div className="w-8 h-8 rounded-full" style={{ backgroundColor: theme.accent }} />
               </div>
-              <p className="text-sm font-medium text-gray-800">{theme.name}</p>
-              {currentTheme === theme.id && <p className="text-xs text-accent mt-1">✓ Activo</p>}
+              <p className="text-sm font-medium text-gray-800">{t(theme.nameKey)}</p>
+              {currentTheme === theme.id && <p className="text-xs text-accent mt-1">{t('config.themeActive')}</p>}
             </button>
           ))}
         </div>
 
         {previewData && (
           <div className="absolute right-0 top-16 w-72 bg-white rounded-lg shadow-xl border p-4 z-50">
-            <p className="text-sm font-bold mb-3">Preview: {previewData.name}</p>
+            <p className="text-sm font-bold mb-3">{t('config.themePreview')} {previewData ? t(previewData.nameKey) : ''}</p>
             <div className="rounded-lg overflow-hidden mb-3" style={{ backgroundColor: previewData.sidebar }}>
               <div className="p-3 border-b border-gray-600">
                 <p className="text-white text-sm font-bold">Tech Budget</p>
@@ -209,12 +209,12 @@ export default function ConfigurationPage() {
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-xl font-bold mb-4">{t('config.system_info') || 'Información del Sistema'}</h2>
         <div className="grid grid-cols-2 gap-4 text-sm">
-          <div><span className="text-gray-500">Aplicación:</span> <span className="font-medium">Tech Budget Management</span></div>
-          <div><span className="text-gray-500">Versión:</span> <span className="font-medium">2.0.0</span></div>
-          <div><span className="text-gray-500">Backend:</span> <span className="font-medium">Node.js + Express + Prisma</span></div>
-          <div><span className="text-gray-500">Frontend:</span> <span className="font-medium">React + TypeScript + Tailwind</span></div>
-          <div><span className="text-gray-500">Base de Datos:</span> <span className="font-medium">PostgreSQL</span></div>
-          <div><span className="text-gray-500">Hosting:</span> <span className="font-medium">AWS EC2</span></div>
+          <div><span className="text-gray-500">{t('config.sysApp')}</span> <span className="font-medium">Tech Budget Management</span></div>
+          <div><span className="text-gray-500">{t('config.sysVersion')}</span> <span className="font-medium">2.0.0</span></div>
+          <div><span className="text-gray-500">{t('config.sysBackend')}</span> <span className="font-medium">Node.js + Express + Prisma</span></div>
+          <div><span className="text-gray-500">{t('config.sysFrontend')}</span> <span className="font-medium">React + TypeScript + Tailwind</span></div>
+          <div><span className="text-gray-500">{t('config.sysDatabase')}</span> <span className="font-medium">PostgreSQL</span></div>
+          <div><span className="text-gray-500">{t('config.sysHosting')}</span> <span className="font-medium">AWS EC2</span></div>
         </div>
       </div>
     </div>

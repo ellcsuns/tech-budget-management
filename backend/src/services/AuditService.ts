@@ -24,9 +24,15 @@ export class AuditService {
 
   async log(input: AuditLogInput): Promise<void> {
     try {
+      // Validate userId exists before inserting to avoid FK constraint violations
+      let validUserId: string | null = input.userId || null;
+      if (validUserId) {
+        const user = await this.prisma.user.findUnique({ where: { id: validUserId }, select: { id: true } });
+        if (!user) validUserId = null;
+      }
       await this.prisma.auditLog.create({
         data: {
-          userId: input.userId || null,
+          userId: validUserId,
           action: input.action,
           entity: input.entity,
           entityId: input.entityId || null,

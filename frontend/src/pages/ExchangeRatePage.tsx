@@ -2,11 +2,14 @@ import { useState, useEffect } from 'react';
 import { budgetApi, conversionRateApi } from '../services/api';
 import type { Budget, ConversionRate } from '../types';
 import { showToast } from '../components/Toast';
+import { useI18n } from '../contexts/I18nContext';
 
-const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+const MONTHS_KEYS = [1,2,3,4,5,6,7,8,9,10,11,12];
 const CURRENCIES = ['CLP', 'EUR', 'BRL', 'MXN'];
 
 export default function ExchangeRatePage() {
+  const { t } = useI18n();
+  const MONTHS = MONTHS_KEYS.map(m => t(`month.short.${m}`));
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [selectedBudgetId, setSelectedBudgetId] = useState('');
   const [rates, setRates] = useState<ConversionRate[]>([]);
@@ -70,46 +73,45 @@ export default function ExchangeRatePage() {
           }
         }
       }
-      showToast(`${count} tasas de conversión guardadas`, 'success');
+      showToast(`${count} ${t('exchangeRate.saved')}`, 'success');
       loadRates(selectedBudgetId);
     } catch (error: any) {
-      showToast(error.response?.data?.error || 'Error al guardar tasas', 'error');
+      showToast(error.response?.data?.error || t('exchangeRate.errorSaving'), 'error');
     } finally { setIsSaving(false); }
   };
 
   const selectedBudget = budgets.find(b => b.id === selectedBudgetId);
 
-  if (isLoading) return <div className="text-center py-8">Cargando...</div>;
+  if (isLoading) return <div className="text-center py-8">{t('msg.loading')}</div>;
 
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-lg shadow p-4">
         <div className="flex items-center gap-4 mb-4">
-          <h2 className="text-lg font-bold">Tasas de Conversión a USD</h2>
+          <h2 className="text-lg font-bold">{t('exchangeRate.title')}</h2>
           <select value={selectedBudgetId} onChange={e => setSelectedBudgetId(e.target.value)}
             className="border rounded px-3 py-1.5 text-sm min-w-[220px]">
             {budgets.map(b => (
-              <option key={b.id} value={b.id}>{b.year} - {b.version}{b.isActive ? ' ★ Vigente' : ''}</option>
+              <option key={b.id} value={b.id}>{b.year} - {b.version}{b.isActive ? ` ${t('common.active')}` : ''}</option>
             ))}
           </select>
           {selectedBudget?.isActive && (
-            <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">★ Vigente</span>
+            <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">{t('common.active')}</span>
           )}
           <button onClick={handleSaveAll} disabled={isSaving}
             className="ml-auto px-4 py-2 bg-accent text-white rounded hover:opacity-90 text-sm disabled:opacity-50">
-            {isSaving ? 'Guardando...' : 'Guardar Todo'}
+            {isSaving ? t('exchangeRate.saving') : t('exchangeRate.saveAll')}
           </button>
         </div>
         <p className="text-xs text-gray-500 mb-4">
-          Ingrese la tasa de conversión de cada moneda a USD por mes. Ejemplo: CLP 0.00110 significa que 1 CLP = 0.00110 USD.
-          El valor USD de las transacciones se calcula multiplicando el monto por esta tasa según el mes de la transacción.
+          {t('exchangeRate.helpText')}
         </p>
 
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 text-sm">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Moneda</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('exchangeRate.currency')}</th>
                 {MONTHS.map((m, i) => (
                   <th key={i} className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase">{m}</th>
                 ))}
