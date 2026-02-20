@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { translationApi } from '../services/api';
 import { useI18n } from '../contexts/I18nContext';
+import ConfirmationDialog from '../components/ConfirmationDialog';
 
 interface Translation {
   id: string;
@@ -18,6 +19,8 @@ export default function TranslationsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState({ es: '', en: '' });
   const [showNew, setShowNew] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [newData, setNewData] = useState({ key: '', es: '', en: '', category: 'general' });
   const [loading, setLoading] = useState(true);
 
@@ -52,9 +55,17 @@ export default function TranslationsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('¿Eliminar esta traducción?')) return;
-    await translationApi.delete(id);
+    setDeleteTargetId(id);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTargetId) return;
+    await translationApi.delete(deleteTargetId);
     load();
+    setShowDeleteDialog(false);
+    setDeleteTargetId(null);
+  };
   };
 
   return (
@@ -137,6 +148,8 @@ export default function TranslationsPage() {
           </table>
         )}
       </div>
+
+      <ConfirmationDialog isOpen={showDeleteDialog} message="¿Eliminar esta traducción?" onConfirm={confirmDelete} onCancel={() => { setShowDeleteDialog(false); setDeleteTargetId(null); }} />
     </div>
   );
 }

@@ -191,8 +191,18 @@ export class TransactionService {
 
     // Remove fields that shouldn't be passed to update
     delete updateData.committedTransactionId;
-    delete updateData.budgetLineId;
     delete updateData.financialCompanyId;
+
+    // Allow budgetLineId update with validation
+    if (data.budgetLineId !== undefined) {
+      if (data.budgetLineId) {
+        const budgetLine = await this.prisma.budgetLine.findUnique({ where: { id: data.budgetLineId } });
+        if (!budgetLine) throw new Error('Línea de presupuesto no encontrada');
+        updateData.budgetLineId = data.budgetLineId;
+      } else {
+        updateData.budgetLineId = null;
+      }
+    }
 
     return await this.prisma.transaction.update({
       where: { id },

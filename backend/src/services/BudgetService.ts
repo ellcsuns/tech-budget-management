@@ -1,4 +1,4 @@
-import { PrismaClient, Budget } from '@prisma/client';
+import { PrismaClient, Budget, SavingStatus } from '@prisma/client';
 import { BudgetInput } from '../types';
 
 export class BudgetService {
@@ -63,10 +63,13 @@ export class BudgetService {
             expense: { include: { tagValues: { include: { tagDefinition: true } } } },
             financialCompany: true,
             technologyDirection: true,
-            transactions: true
+            transactions: true,
+            lastModifiedBy: { select: { id: true, username: true, fullName: true } },
+            savings: true
           }
         },
-        conversionRates: true
+        conversionRates: true,
+        reviewSubmittedBy: { select: { id: true, fullName: true } }
       }
     });
   }
@@ -109,15 +112,29 @@ export class BudgetService {
   }
 
   async getActiveBudget(): Promise<Budget | null> {
+    const budgetInclude = {
+      budgetLines: {
+        include: {
+          expense: true,
+          financialCompany: true,
+          technologyDirection: true,
+          transactions: true,
+          lastModifiedBy: { select: { id: true, username: true, fullName: true } },
+          savings: { where: { status: SavingStatus.ACTIVE } }
+        }
+      },
+      conversionRates: true,
+      reviewSubmittedBy: { select: { id: true, fullName: true } }
+    };
     const active = await this.prisma.budget.findFirst({
       where: { isActive: true },
-      include: { budgetLines: { include: { expense: true, financialCompany: true, technologyDirection: true, transactions: true } }, conversionRates: true }
+      include: budgetInclude
     });
     if (active) return active;
     // Fallback: most recent budget
     return await this.prisma.budget.findFirst({
       orderBy: [{ year: 'desc' }, { createdAt: 'desc' }],
-      include: { budgetLines: { include: { expense: true, financialCompany: true, technologyDirection: true, transactions: true } }, conversionRates: true }
+      include: budgetInclude
     });
   }
 
@@ -239,5 +256,23 @@ export class BudgetService {
 
   async removeBudgetLine(budgetLineId: string): Promise<void> {
     await this.prisma.budgetLine.delete({ where: { id: budgetLineId } });
+  }
+
+  async submitForReview(budgetId: string, userId: string): Promise<any> {
+    const budget = await this.prisma.budget.findUnique({ where: { id: budgetId } });
+    if (!budget) throw new Error('Presupuesto no encontrado');
+    if (budget.reviewStatus === 'IN_REVIEW') throw new Error('El presupuesto ya está en revisión');
+
+    return await this.prisma.budget.update({
+      where: { id: budgetId },
+      data: {
+        reviewStatus: 'IN_REVIEW',
+        reviewSubmittedAt: new Date(),
+        reviewSubmittedById: userId
+      },
+      include: {
+        reviewSubmittedBy: { select: { id: true, fullName: true } }
+      }
+    });
   }
 }

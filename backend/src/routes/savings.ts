@@ -93,9 +93,9 @@ export function savingsRouter(prisma: PrismaClient) {
       const saving = await savingService.createSaving(req.body, userId);
       res.status(201).json(saving);
     } catch (error: any) {
-      if (error.message.includes('greater than zero') || 
-          error.message.includes('not found') ||
-          error.message.includes('must be between')) {
+      if (error.message.includes('mayor a cero') || 
+          error.message.includes('no encontrad') ||
+          error.message.includes('negativos')) {
         return res.status(400).json({ error: error.message });
       }
       next(error);
@@ -103,10 +103,10 @@ export function savingsRouter(prisma: PrismaClient) {
   });
 
   /**
-   * POST /api/savings/approve
-   * Approve multiple savings
+   * POST /api/savings/activate
+   * Activate multiple savings
    */
-  router.post('/approve', requirePermission('budgets', 'MODIFY'), async (req, res, next) => {
+  router.post('/activate', requirePermission('budgets', 'MODIFY'), async (req, res, next) => {
     try {
       const { savingIds } = req.body;
 
@@ -114,13 +114,32 @@ export function savingsRouter(prisma: PrismaClient) {
         return res.status(400).json({ error: 'savingIds array is required' });
       }
 
-      const result = await savingService.approveSavings(savingIds);
+      const result = await savingService.activateSavings(savingIds);
       res.json(result);
     } catch (error: any) {
-      if (error.message.includes('not found')) {
+      if (error.message.includes('no encontrad')) {
         return res.status(404).json({ error: error.message });
       }
-      if (error.message.includes('already been approved')) {
+      if (error.message.includes('ya está')) {
+        return res.status(409).json({ error: error.message });
+      }
+      next(error);
+    }
+  });
+
+  /**
+   * POST /api/savings/:id/activate
+   * Activate a single saving
+   */
+  router.post('/:id/activate', requirePermission('budgets', 'MODIFY'), async (req, res, next) => {
+    try {
+      const saving = await savingService.activateSaving(req.params.id);
+      res.json(saving);
+    } catch (error: any) {
+      if (error.message.includes('no encontrado')) {
+        return res.status(404).json({ error: error.message });
+      }
+      if (error.message.includes('ya está')) {
         return res.status(409).json({ error: error.message });
       }
       next(error);
@@ -136,8 +155,14 @@ export function savingsRouter(prisma: PrismaClient) {
       await savingService.deleteSaving(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      if (error.message?.includes('no encontrado')) {
+        return res.status(404).json({ error: error.message });
+      }
+      if (error.message?.includes('activo')) {
+        return res.status(409).json({ error: error.message });
+      }
       if (error.code === 'P2025') {
-        return res.status(404).json({ error: 'Saving not found' });
+        return res.status(404).json({ error: 'Ahorro no encontrado' });
       }
       next(error);
     }

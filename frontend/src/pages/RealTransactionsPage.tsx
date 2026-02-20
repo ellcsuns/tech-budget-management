@@ -3,6 +3,7 @@ import { transactionApi, budgetApi, budgetLineApi } from '../services/api';
 import type { BudgetLine } from '../types';
 import { HiOutlinePencilSquare, HiOutlineTrash, HiOutlinePlusCircle, HiOutlineClipboardDocumentList } from 'react-icons/hi2';
 import { showToast } from '../components/Toast';
+import ConfirmationDialog from '../components/ConfirmationDialog';
 
 interface Transaction {
   id: string;
@@ -35,6 +36,8 @@ export default function RealTransactionsPage() {
     budgetLineId: '', financialCompanyId: '', serviceDate: '', postingDate: '', referenceDocumentNumber: '',
     externalPlatformLink: '', transactionCurrency: 'USD', transactionValue: ''
   });
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   useEffect(() => { loadData(); }, []);
 
@@ -118,9 +121,16 @@ export default function RealTransactionsPage() {
   };
 
   const handleDelete = async (transaction: Transaction) => {
-    if (!confirm('¿Eliminar esta transacción?')) return;
-    try { await transactionApi.delete(transaction.id); loadData(); }
+    setDeleteTargetId(transaction.id);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTargetId) return;
+    try { await transactionApi.delete(deleteTargetId); loadData(); }
     catch (error) { showToast('Error al eliminar transacción', 'error'); }
+    setShowDeleteDialog(false);
+    setDeleteTargetId(null);
   };
 
   const getMonthFromDate = (dateStr: string) => {
@@ -270,6 +280,8 @@ export default function RealTransactionsPage() {
           </div>
         </div>
       )}
+
+      <ConfirmationDialog isOpen={showDeleteDialog} message="¿Estás seguro de eliminar esta transacción?" onConfirm={confirmDelete} onCancel={() => { setShowDeleteDialog(false); setDeleteTargetId(null); }} />
     </div>
   );
 }

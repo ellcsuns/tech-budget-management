@@ -3,6 +3,7 @@ import { api, technologyDirectionApi } from '../services/api';
 import type { TechnologyDirection } from '../types';
 import { HiOutlinePencilSquare, HiOutlineTrash, HiOutlinePlusCircle } from 'react-icons/hi2';
 import { showToast } from '../components/Toast';
+import ConfirmationDialog from '../components/ConfirmationDialog';
 
 interface Role {
   id: string;
@@ -51,6 +52,8 @@ export default function RoleManagementPage() {
     approverTechDirectionIds: [] as string[],
     permissions: [] as Array<{ menuCode: string; permissionType: string }>
   });
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteTargetRole, setDeleteTargetRole] = useState<Role | null>(null);
 
   useEffect(() => { loadRoles(); loadTechDirections(); }, []);
 
@@ -103,8 +106,15 @@ export default function RoleManagementPage() {
   const handleDelete = async (role: Role) => {
     if (role.isSystem) { showToast('No se puede eliminar un rol del sistema', 'error'); return; }
     if (role.userCount > 0) { showToast(`No se puede eliminar: tiene ${role.userCount} usuarios asignados`, 'error'); return; }
-    if (!confirm(`¿Eliminar el rol "${role.name}"?`)) return;
-    try { await api.delete(`/roles/${role.id}`); loadRoles(); } catch (error) { showToast('Error al eliminar rol', 'error'); }
+    setDeleteTargetRole(role);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteRole = async () => {
+    if (!deleteTargetRole) return;
+    try { await api.delete(`/roles/${deleteTargetRole.id}`); loadRoles(); } catch (error) { showToast('Error al eliminar rol', 'error'); }
+    setShowDeleteDialog(false);
+    setDeleteTargetRole(null);
   };
 
   const togglePermission = (menuCode: string, permissionType: string) => {
@@ -262,6 +272,8 @@ export default function RoleManagementPage() {
           </div>
         </div>
       )}
+
+      <ConfirmationDialog isOpen={showDeleteDialog} message={`¿Eliminar el rol "${deleteTargetRole?.name}"?`} onConfirm={confirmDeleteRole} onCancel={() => { setShowDeleteDialog(false); setDeleteTargetRole(null); }} />
     </div>
   );
 }

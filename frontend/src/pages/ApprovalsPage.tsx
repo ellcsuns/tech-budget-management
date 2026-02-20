@@ -4,8 +4,9 @@ import type { ChangeRequest } from '../types';
 import { fmt } from '../utils/formatters';
 import { HiOutlineCheckCircle, HiOutlineXMark } from 'react-icons/hi2';
 import { showToast } from '../components/Toast';
+import ConfirmationDialog from '../components/ConfirmationDialog';
 
-const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+const MONTHS = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12'];
 
 export default function ApprovalsPage() {
   const [requests, setRequests] = useState<ChangeRequest[]>([]);
@@ -14,6 +15,7 @@ export default function ApprovalsPage() {
   const [selectedRequest, setSelectedRequest] = useState<ChangeRequest | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isProcessing, setIsProcessing] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{ type: 'approve' | 'reject' | 'approveMultiple'; id?: string } | null>(null);
 
   useEffect(() => { loadPending(); }, []);
 
@@ -43,37 +45,39 @@ export default function ApprovalsPage() {
   };
 
   const handleApprove = async (id: string) => {
-    if (!confirm('¿Aprobar esta solicitud de cambio?')) return;
-    try {
-      setIsProcessing(true);
-      await changeRequestApi.approve(id);
-      setSelectedRequest(null);
-      loadPending();
-    } catch (error: any) { showToast(error.response?.data?.error || 'Error al aprobar', 'error'); }
-    finally { setIsProcessing(false); }
+    setConfirmAction({ type: 'approve', id });
   };
 
   const handleApproveMultiple = async () => {
     if (selectedIds.size === 0) return;
-    if (!confirm(`¿Aprobar ${selectedIds.size} solicitud(es) de cambio seleccionadas?`)) return;
-    try {
-      setIsProcessing(true);
-      await changeRequestApi.approveMultiple(Array.from(selectedIds));
-      showToast(`${selectedIds.size} solicitud(es) aprobadas exitosamente`, 'success');
-      loadPending();
-    } catch (error: any) { showToast(error.response?.data?.error || 'Error al aprobar solicitudes', 'error'); }
-    finally { setIsProcessing(false); }
+    setConfirmAction({ type: 'approveMultiple' });
   };
 
   const handleReject = async (id: string) => {
-    if (!confirm('¿Rechazar esta solicitud de cambio?')) return;
+    setConfirmAction({ type: 'reject', id });
+  };
+
+  const executeConfirmAction = async () => {
+    if (!confirmAction) return;
     try {
       setIsProcessing(true);
-      await changeRequestApi.reject(id);
-      setSelectedRequest(null);
+      if (confirmAction.type === 'approve' && confirmAction.id) {
+        await changeRequestApi.approve(confirmAction.id);
+        setSelectedRequest(null);
+      } else if (confirmAction.type === 'approveMultiple') {
+        await changeRequestApi.approveMultiple(Array.from(selectedIds));
+        showToast(`${selectedIds.size} solicitud(es) aprobadas exitosamente`, 'success');
+      } else if (confirmAction.type === 'reject' && confirmAction.id) {
+        await changeRequestApi.reject(confirmAction.id);
+        setSelectedRequest(null);
+      }
       loadPending();
-    } catch (error: any) { showToast(error.response?.data?.error || 'Error al rechazar', 'error'); }
-    finally { setIsProcessing(false); }
+    } catch (error: any) {
+      showToast(error.response?.data?.error || 'Error al procesar solicitud', 'error');
+    } finally {
+      setIsProcessing(false);
+      setConfirmAction(null);
+    }
   };
 
   if (loading) return <div className="text-center py-8">Cargando...</div>;
@@ -219,6 +223,17 @@ export default function ApprovalsPage() {
           </div>
         </div>
       )}
+
+      <ConfirmationDialog
+        isOpen={!!confirmAction}
+        message={
+          confirmAction?.type === 'approve' ? '¿Aprobar esta solicitud de cambio?' :
+          confirmAction?.type === 'reject' ? '¿Rechazar esta solicitud de cambio?' :
+          `¿Aprobar ${selectedIds.size} solicitud(es) de cambio seleccionadas?`
+        }
+        onConfirm={executeConfirmAction}
+        onCancel={() => setConfirmAction(null)}
+      />
     </div>
   );
 }

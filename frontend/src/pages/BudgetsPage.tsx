@@ -9,7 +9,7 @@ import FilterPanel from '../components/FilterPanel';
 import { HiOutlineLockClosed, HiOutlinePlusCircle, HiOutlineTrash, HiOutlineStar, HiOutlineDocumentDuplicate } from 'react-icons/hi2';
 import { showToast } from '../components/Toast';
 
-const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+const MONTHS = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12'];
 
 export default function BudgetsPage() {
   const [allBudgets, setAllBudgets] = useState<Budget[]>([]);
@@ -42,6 +42,7 @@ export default function BudgetsPage() {
   const [myRequests, setMyRequests] = useState<ChangeRequest[]>([]);
   const [showMyRequests, setShowMyRequests] = useState(false);
   const [loadingRequests, setLoadingRequests] = useState(false);
+  const [selectedChangeRequest, setSelectedChangeRequest] = useState<ChangeRequest | null>(null);
 
   const [filters, setFilters] = useState({
     currencies: undefined as string[] | undefined,
@@ -169,6 +170,18 @@ export default function BudgetsPage() {
     }
   };
 
+  const handleSubmitForReview = async () => {
+    if (!selectedBudget) return;
+    try {
+      await budgetApi.submitForReview(selectedBudget.id);
+      showToast('Presupuesto enviado a revisión', 'success');
+      loadBudgetDetails(selectedBudget.id);
+      loadBudgets();
+    } catch (error: any) {
+      showToast(error.response?.data?.error || 'Error al enviar a revisión', 'error');
+    }
+  };
+
   const openEditPopup = (bl: BudgetLine) => {
     setEditPopupLine(bl);
     const vals: Record<number, string> = {};
@@ -279,6 +292,16 @@ export default function BudgetsPage() {
                 <HiOutlineStar className="w-4 h-4" /> Marcar Vigente
               </button>
             )}
+            {selectedBudget && !selectedBudget.reviewStatus && (
+              <button onClick={() => handleSubmitForReview()} className="flex items-center gap-1 px-3 py-1.5 bg-amber-50 text-amber-700 rounded text-sm hover:bg-amber-100" title="Enviar a revisión">
+                <HiOutlineLockClosed className="w-4 h-4" /> Enviar a Revisión
+              </button>
+            )}
+            {selectedBudget?.reviewStatus && (
+              <span className="px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs font-medium">
+                En Revisión {selectedBudget.reviewSubmittedBy ? `(${selectedBudget.reviewSubmittedBy.fullName})` : ''}
+              </span>
+            )}
             {isAdmin && (
               <button onClick={() => setShowCreateModal(true)} className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded text-sm hover:bg-blue-100">
                 <HiOutlinePlusCircle className="w-4 h-4" /> Nuevo Presupuesto
@@ -368,7 +391,7 @@ export default function BudgetsPage() {
                       {myRequests.map(req => {
                         const st = statusLabel(req.status);
                         return (
-                          <tr key={req.id} className="hover:bg-gray-50">
+                          <tr key={req.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => setSelectedChangeRequest(req)}>
                             <td className="px-3 py-2 whitespace-nowrap">{new Date(req.createdAt).toLocaleDateString()}</td>
                             <td className="px-3 py-2">{req.budgetLine?.expense?.code} - {req.budgetLine?.expense?.shortDescription}</td>
                             <td className="px-3 py-2">{req.budgetLine?.financialCompany?.name}</td>
@@ -510,6 +533,68 @@ export default function BudgetsPage() {
 
       <ConfirmationDialog isOpen={!!showDeleteDialog} message="¿Estás seguro de eliminar esta línea del presupuesto?" onConfirm={confirmRemoveRow} onCancel={() => setShowDeleteDialog(null)} />
       <ConfirmationDialog isOpen={showDeleteBudgetDialog} message={`¿Estás seguro de eliminar el presupuesto ${selectedBudget?.year} ${selectedBudget?.version}? Esta acción no se puede deshacer.`} onConfirm={handleDeleteBudget} onCancel={() => setShowDeleteBudgetDialog(false)} />
+
+      {/* Change Request Detail Popup */}
+      {selectedChangeRequest && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold">Detalle de Solicitud de Cambio</h2>
+              <button onClick={() => setSelectedChangeRequest(null)} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+            </div>
+            <div className="space-y-1 mb-4 text-sm">
+              <div><span className="text-gray-500">Gasto:</span> {selectedChangeRequest.budgetLine?.expense?.code} - {selectedChangeRequest.budgetLine?.expense?.shortDescription}</div>
+              <div><span className="text-gray-500">Empresa:</span> {selectedChangeRequest.budgetLine?.financialCompany?.name}</div>
+              <div><span className="text-gray-500">Estado:</span> <span className={`px-2 py-0.5 rounded text-xs font-medium ${statusLabel(selectedChangeRequest.status).cls}`}>{statusLabel(selectedChangeRequest.status).text}</span></div>
+              <div><span className="text-gray-500">Fecha:</span> {new Date(selectedChangeRequest.createdAt).toLocaleDateString()}</div>
+              {selectedChangeRequest.comment && <div><span className="text-gray-500">Comentario:</span> {selectedChangeRequest.comment}</div>}
+              {selectedChangeRequest.approvedBy && <div><span className="text-gray-500">Procesado por:</span> {selectedChangeRequest.approvedBy.fullName}</div>}
+            </div>
+            <div className="border rounded divide-y mb-4">
+              <div className="flex items-center px-4 py-2 bg-gray-50 text-xs font-medium text-gray-500">
+                <span className="w-16">Mes</span>
+                <span className="w-28 text-right">Anterior</span>
+                <span className="w-28 text-right">Propuesto</span>
+                <span className="flex-1 text-right">Diferencia</span>
+              </div>
+              {MONTHS.map((m, i) => {
+                const current = (selectedChangeRequest.currentValues as Record<string, number>)?.[`planM${i + 1}`] || 0;
+                const proposed = (selectedChangeRequest.proposedValues as Record<string, number>)?.[`planM${i + 1}`] || 0;
+                const diff = proposed - current;
+                const changed = diff !== 0;
+                return (
+                  <div key={i} className={`flex items-center px-4 py-2 ${changed ? 'bg-yellow-50' : ''}`}>
+                    <span className="text-sm font-medium text-gray-600 w-16">{m}</span>
+                    <span className="w-28 text-right text-sm text-gray-500">{fmt(current)}</span>
+                    <span className={`w-28 text-right text-sm ${changed ? 'font-semibold text-blue-700' : 'text-gray-500'}`}>{fmt(proposed)}</span>
+                    <span className={`flex-1 text-right text-sm ${diff > 0 ? 'text-red-600' : diff < 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                      {diff !== 0 ? (diff > 0 ? '+' : '') + fmt(diff) : '-'}
+                    </span>
+                  </div>
+                );
+              })}
+              {(() => {
+                const totalCurrent = Object.values((selectedChangeRequest.currentValues || {}) as Record<string, number>).reduce((s, v) => s + (v || 0), 0);
+                const totalProposed = Object.values((selectedChangeRequest.proposedValues || {}) as Record<string, number>).reduce((s, v) => s + (v || 0), 0);
+                const totalDiff = totalProposed - totalCurrent;
+                return (
+                  <div className="flex items-center px-4 py-2 bg-gray-100 font-bold">
+                    <span className="text-sm w-16">Total</span>
+                    <span className="w-28 text-right text-sm">{fmt(totalCurrent)}</span>
+                    <span className="w-28 text-right text-sm text-blue-700">{fmt(totalProposed)}</span>
+                    <span className={`flex-1 text-right text-sm ${totalDiff > 0 ? 'text-red-600' : totalDiff < 0 ? 'text-green-600' : ''}`}>
+                      {totalDiff !== 0 ? (totalDiff > 0 ? '+' : '') + fmt(totalDiff) : '-'}
+                    </span>
+                  </div>
+                );
+              })()}
+            </div>
+            <div className="flex justify-end">
+              <button onClick={() => setSelectedChangeRequest(null)} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">Cerrar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

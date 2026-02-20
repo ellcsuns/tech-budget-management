@@ -3,6 +3,7 @@ import { budgetApi, budgetLineApi } from '../services/api';
 import { fmt, MONTH_NAMES } from '../utils/formatters';
 import type { BudgetLine } from '../types';
 import { showToast } from '../components/Toast';
+import ConfirmationDialog from '../components/ConfirmationDialog';
 
 interface Budget {
   id: string;
@@ -18,6 +19,8 @@ export default function PlanValuesPage() {
   const [editingCell, setEditingCell] = useState<{ lineId: string; month: number } | null>(null);
   const [editValue, setEditValue] = useState('');
   const [pendingChanges, setPendingChanges] = useState<Map<string, { lineId: string; month: number; value: number }>>(new Map());
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showDiscardDialog, setShowDiscardDialog] = useState(false);
 
   useEffect(() => { loadBudgets(); }, []);
   useEffect(() => { if (selectedBudgetId) loadBudgetData(); }, [selectedBudgetId]);
@@ -83,7 +86,11 @@ export default function PlanValuesPage() {
 
   const handleSaveChanges = async () => {
     if (pendingChanges.size === 0) { showToast('No hay cambios pendientes', 'info'); return; }
-    if (!confirm(`¿Guardar ${pendingChanges.size} cambios en valores plan?`)) return;
+    setShowSaveDialog(true);
+  };
+
+  const confirmSave = async () => {
+    setShowSaveDialog(false);
 
     try {
       // Group changes by budgetLine
@@ -107,7 +114,12 @@ export default function PlanValuesPage() {
   };
 
   const handleDiscardChanges = () => {
-    if (confirm('¿Descartar todos los cambios pendientes?')) setPendingChanges(new Map());
+    setShowDiscardDialog(true);
+  };
+
+  const confirmDiscard = () => {
+    setPendingChanges(new Map());
+    setShowDiscardDialog(false);
   };
 
   const getLineTotal = (line: BudgetLine): number => {
@@ -190,6 +202,9 @@ export default function PlanValuesPage() {
           </tbody>
         </table>
       </div>
+
+      <ConfirmationDialog isOpen={showSaveDialog} message={`¿Guardar ${pendingChanges.size} cambios en valores plan?`} onConfirm={confirmSave} onCancel={() => setShowSaveDialog(false)} />
+      <ConfirmationDialog isOpen={showDiscardDialog} message="¿Descartar todos los cambios pendientes?" onConfirm={confirmDiscard} onCancel={() => setShowDiscardDialog(false)} />
     </div>
   );
 }

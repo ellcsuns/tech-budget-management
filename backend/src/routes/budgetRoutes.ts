@@ -30,6 +30,18 @@ export function budgetRouter(prisma: PrismaClient) {
     }
   });
 
+  router.post('/:id/submit-review', async (req, res, next) => {
+    try {
+      const userId = (req as any).user?.userId;
+      if (!userId) return res.status(401).json({ error: 'No autenticado' });
+      res.json(await budgetService.submitForReview(req.params.id, userId));
+    } catch (error: any) {
+      if (error.message?.includes('no encontrado')) return res.status(404).json({ error: error.message });
+      if (error.message?.includes('ya está')) return res.status(409).json({ error: error.message });
+      next(error);
+    }
+  });
+
   router.get('/compare', async (req, res, next) => {
     try {
       const { budgetA, budgetB } = req.query;

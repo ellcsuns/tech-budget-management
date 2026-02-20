@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { expensesEnhancedApi, transactionApi, budgetApi, budgetLineApi } from '../services/api';
-import type { ExpenseWithTags, CustomTag, Transaction, BudgetLine } from '../types';
+import { expensesEnhancedApi, transactionApi, budgetApi, budgetLineApi, savingsApi } from '../services/api';
+import type { ExpenseWithTags, CustomTag, Transaction, BudgetLine, Saving } from '../types';
 import { HiOutlinePencilSquare, HiOutlineTrash } from 'react-icons/hi2';
 import { fmt } from '../utils/formatters';
 import { showToast } from './Toast';
+import ConfirmationDialog from './ConfirmationDialog';
 
 interface Props {
   expense: ExpenseWithTags;
@@ -12,42 +13,49 @@ interface Props {
   readOnly?: boolean;
 }
 
-const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+const MONTHS = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12'];
 
 export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnly = false }: Props) {
   const [showTagForm, setShowTagForm] = useState(false);
   const [editingTag, setEditingTag] = useState<CustomTag | null>(null);
   const [tagForm, setTagForm] = useState({ key: '', value: '', valueType: 'TEXT' as 'TEXT' | 'NUMBER' | 'DATE' | 'SELECT' });
   const [, setBudgetLines] = useState<BudgetLine[]>([]);
+  const [expenseBudgetLines, setExpenseBudgetLines] = useState<BudgetLine[]>([]);
+  const [activeSavings, setActiveSavings] = useState<Saving[]>([]);
   const [committedTxns, setCommittedTxns] = useState<Transaction[]>([]);
   const [realTxns, setRealTxns] = useState<Transaction[]>([]);
   const [loadingTxns, setLoadingTxns] = useState(true);
-  const [activeTab, setActiveTab] = useState<'info' | 'committed' | 'real'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'committed' | 'real' | 'savings'>('info');
+  const [deleteTagKey, setDeleteTagKey] = useState<string | null>(null);
 
   useEffect(() => { loadTransactions(); }, [expense.id]);
 
   const loadTransactions = async () => {
     try {
       setLoadingTxns(true);
-      const budgetsRes = await budgetApi.getAll();
-      if (budgetsRes.data.length > 0) {
-        const active = budgetsRes.data.find((b: any) => b.isActive);
-        const latest = active || budgetsRes.data[0];
-        const linesRes = await budgetLineApi.getByBudget(latest.id);
-        const expenseLines = linesRes.data.filter((bl: BudgetLine) => bl.expenseId === expense.id);
-        setBudgetLines(expenseLines);
-        const allCommitted: Transaction[] = [];
-        const allReal: Transaction[] = [];
-        for (const bl of expenseLines) {
-          const txnRes = await transactionApi.getByBudgetLine(bl.id);
-          txnRes.data.forEach((t: Transaction) => {
-            if (t.type === 'COMMITTED') allCommitted.push(t);
-            else allReal.push(t);
-          });
-        }
-        setCommittedTxns(allCommitted);
-        setRealTxns(allReal);
+      const budgetsRes = await budgetApi.getActive();
+      const latest = budgetsRes.data;
+      const linesRes = await budgetLineApi.getByBudget(latest.id);
+      const expenseLines = linesRes.data.filter((bl: BudgetLine) => bl.expenseId === expense.id);
+      setBudgetLines(expenseLines);
+      setExpenseBudgetLines(expenseLines);
+      const allCommitted: Transaction[] = [];
+      const allReal: Transaction[] = [];
+      for (const bl of expenseLines) {
+        const txnRes = await transactionApi.getByBudgetLine(bl.id);
+        txnRes.data.forEach((t: Transaction) => {
+          if (t.type === 'COMMITTED') allCommitted.push(t);
+          else allReal.push(t);
+        });
       }
+      setCommittedTxns(allCommitted);
+      setRealTxns(allReal);
+      // Load active savings
+      try {
+        const savingsRes = await savingsApi.getAll({ budgetId: latest.id, status: 'ACTIVE' });
+        const lineSavings = savingsRes.data.filter((s: Saving) => expenseLines.some((bl: BudgetLine) => bl.id === s.budgetLineId));
+        setActiveSavings(lineSavings);
+      } catch { setActiveSavings([]); }
     } catch (error) { console.error('Error loading transactions:', error); }
     finally { setLoadingTxns(false); }
   };
@@ -66,7 +74,6 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnl
   };
 
   const handleDeleteTag = async (tagKey: string) => {
-    if (!confirm('¿Estás seguro de eliminar este tag?')) return;
     try { await expensesEnhancedApi.removeTag(expense.id, tagKey); onUpdate?.(); }
     catch (error: any) { showToast(error.response?.data?.error || 'Error al eliminar tag', 'error'); }
   };
@@ -150,6 +157,11 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnl
             <button onClick={() => setActiveTab('real')} className={`px-4 py-2 text-sm font-medium border-b-2 ${activeTab === 'real' ? 'border-accent text-accent' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
               Reales ({realTxns.length})
             </button>
+            {activeSavings.length > 0 && (
+              <button onClick={() => setActiveTab('savings')} className={`px-4 py-2 text-sm font-medium border-b-2 ${activeTab === 'savings' ? 'border-accent text-accent' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+                Ahorros ({activeSavings.length})
+              </button>
+            )}
           </div>
 
           {activeTab === 'info' && (
@@ -157,6 +169,19 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnl
               <div className="grid grid-cols-1 gap-4 mb-4 text-sm">
                 <div><span className="text-gray-500">Descripción:</span> {expense.longDescription}</div>
               </div>
+              {/* Last modification info */}
+              {expenseBudgetLines.length > 0 && expenseBudgetLines.some(bl => bl.lastModifiedAt) && (
+                <div className="bg-gray-50 p-3 rounded mb-4 text-sm">
+                  <p className="text-xs text-gray-500 font-medium mb-1">Última modificación</p>
+                  {expenseBudgetLines.filter(bl => bl.lastModifiedAt).map(bl => (
+                    <div key={bl.id} className="flex gap-4">
+                      <span className="text-gray-600">{bl.financialCompany?.code}:</span>
+                      <span>{new Date(bl.lastModifiedAt!).toLocaleString()}</span>
+                      <span className="text-gray-500">por {bl.lastModifiedBy?.fullName || '-'}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
               {/* Tags */}
               <div className="border-t pt-4">
                 <div className="flex justify-between items-center mb-3">
@@ -201,7 +226,7 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnl
                         {!readOnly && (
                           <div className="flex gap-1">
                             <button onClick={() => startEditTag(tag)} className="text-gray-400 hover:text-blue-600"><HiOutlinePencilSquare className="w-4 h-4" /></button>
-                            <button onClick={() => handleDeleteTag(tag.key)} className="text-gray-400 hover:text-red-600"><HiOutlineTrash className="w-4 h-4" /></button>
+                            <button onClick={() => setDeleteTagKey(tag.key)} className="text-gray-400 hover:text-red-600"><HiOutlineTrash className="w-4 h-4" /></button>
                           </div>
                         )}
                       </div>
@@ -215,11 +240,66 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnl
           {activeTab === 'committed' && renderTransactionTable(committedTxns, 'comprometidas')}
           {activeTab === 'real' && renderTransactionTable(realTxns, 'reales')}
 
+          {activeTab === 'savings' && (
+            <div className="overflow-x-auto">
+              {activeSavings.map(saving => (
+                <div key={saving.id} className="mb-4 border rounded p-3">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium">{saving.description}</span>
+                    <span className="text-xs px-2 py-0.5 rounded bg-green-100 text-green-800">Activo</span>
+                  </div>
+                  <table className="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-2 py-1 text-xs text-gray-500">Mes</th>
+                        <th className="px-2 py-1 text-xs text-gray-500 text-right">Original</th>
+                        <th className="px-2 py-1 text-xs text-gray-500 text-right">Ahorro</th>
+                        <th className="px-2 py-1 text-xs text-gray-500 text-right">Consolidado</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {MONTHS.map((m, i) => {
+                        const bl = expenseBudgetLines.find(b => b.id === saving.budgetLineId);
+                        const original = bl ? Number((bl as any)[`planM${i + 1}`]) || 0 : 0;
+                        const savingVal = Number((saving as any)[`savingM${i + 1}`]) || 0;
+                        const consolidated = original - savingVal;
+                        return (
+                          <tr key={i} className={savingVal > 0 ? 'bg-amber-50' : ''}>
+                            <td className="px-2 py-1">{m}</td>
+                            <td className="px-2 py-1 text-right">{fmt(original)}</td>
+                            <td className="px-2 py-1 text-right text-amber-700">{savingVal > 0 ? fmt(savingVal) : '-'}</td>
+                            <td className="px-2 py-1 text-right font-medium">{fmt(consolidated)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot className="bg-gray-50 font-semibold">
+                      <tr>
+                        <td className="px-2 py-1">Total</td>
+                        <td className="px-2 py-1 text-right">{fmt(Number(saving.totalAmount) + Number(saving.totalAmount))}</td>
+                        <td className="px-2 py-1 text-right text-amber-700">{fmt(Number(saving.totalAmount))}</td>
+                        <td className="px-2 py-1 text-right"></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="mt-4 flex justify-end">
             <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">Cerrar</button>
           </div>
         </div>
       </div>
+      {deleteTagKey && (
+        <ConfirmationDialog
+          title="Eliminar Tag"
+          message={`¿Estás seguro de eliminar el tag "${deleteTagKey}"?`}
+          onConfirm={() => { handleDeleteTag(deleteTagKey); setDeleteTagKey(null); }}
+          onCancel={() => setDeleteTagKey(null)}
+        />
+      )}
     </div>
   );
 }

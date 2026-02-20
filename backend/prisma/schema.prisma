@@ -12,14 +12,18 @@ datasource db {
 
 // Budget model
 model Budget {
-  id              String            @id @default(uuid())
-  year            Int
-  version         String
-  isActive        Boolean           @default(false)
-  budgetLines     BudgetLine[]
-  conversionRates ConversionRate[]
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  id                  String            @id @default(uuid())
+  year                Int
+  version             String
+  isActive            Boolean           @default(false)
+  reviewStatus        String?
+  reviewSubmittedAt   DateTime?
+  reviewSubmittedById String?
+  reviewSubmittedBy   User?             @relation("BudgetReviewer", fields: [reviewSubmittedById], references: [id])
+  budgetLines         BudgetLine[]
+  conversionRates     ConversionRate[]
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
   
   @@unique([year, version])
   @@index([year])
@@ -74,6 +78,9 @@ model BudgetLine {
   savings                 Saving[]
   deferrals               Deferral[]
   changeRequests          BudgetLineChangeRequest[]
+  lastModifiedAt          DateTime?
+  lastModifiedById        String?
+  lastModifiedBy          User?                   @relation("BudgetLineModifier", fields: [lastModifiedById], references: [id])
   createdAt               DateTime                @default(now())
   updatedAt               DateTime                @updatedAt
 
@@ -240,6 +247,8 @@ model User {
   deferrals               Deferral[]
   changeRequests          BudgetLineChangeRequest[] @relation("ChangeRequestCreator")
   approvedRequests        BudgetLineChangeRequest[] @relation("ChangeRequestApprover")
+  modifiedBudgetLines     BudgetLine[]              @relation("BudgetLineModifier")
+  reviewedBudgets         Budget[]                  @relation("BudgetReviewer")
   auditLogs               AuditLog[]
   
   @@index([username])
@@ -375,10 +384,22 @@ model Saving {
   description          String
   status               SavingStatus    @default(PENDING)
   monthlyDistribution  Json
+  savingM1             Decimal         @default(0) @db.Decimal(15, 2)
+  savingM2             Decimal         @default(0) @db.Decimal(15, 2)
+  savingM3             Decimal         @default(0) @db.Decimal(15, 2)
+  savingM4             Decimal         @default(0) @db.Decimal(15, 2)
+  savingM5             Decimal         @default(0) @db.Decimal(15, 2)
+  savingM6             Decimal         @default(0) @db.Decimal(15, 2)
+  savingM7             Decimal         @default(0) @db.Decimal(15, 2)
+  savingM8             Decimal         @default(0) @db.Decimal(15, 2)
+  savingM9             Decimal         @default(0) @db.Decimal(15, 2)
+  savingM10            Decimal         @default(0) @db.Decimal(15, 2)
+  savingM11            Decimal         @default(0) @db.Decimal(15, 2)
+  savingM12            Decimal         @default(0) @db.Decimal(15, 2)
   createdAt            DateTime        @default(now())
   createdBy            String
   user                 User            @relation(fields: [createdBy], references: [id])
-  approvedAt           DateTime?
+  activatedAt          DateTime?
   
   @@index([budgetLineId])
   @@index([status])
@@ -387,7 +408,7 @@ model Saving {
 
 enum SavingStatus {
   PENDING
-  APPROVED
+  ACTIVE
 }
 
 // ============================================

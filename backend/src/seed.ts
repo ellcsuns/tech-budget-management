@@ -433,6 +433,8 @@ async function main() {
     await prisma.permission.create({ data: { roleId: adminRole.id, menuCode, permissionType: PermissionType.VIEW } });
     await prisma.permission.create({ data: { roleId: adminRole.id, menuCode, permissionType: PermissionType.MODIFY } });
   }
+  // Admin also gets APPROVE_BUDGET on approvals
+  await prisma.permission.create({ data: { roleId: adminRole.id, menuCode: 'approvals', permissionType: PermissionType.APPROVE_BUDGET } });
   for (const menuCode of allMenuCodes) {
     await prisma.permission.create({ data: { roleId: viewerRole.id, menuCode, permissionType: PermissionType.VIEW } });
   }
@@ -586,15 +588,15 @@ async function main() {
   console.log('💵 Creando ahorros...');
 
   const savingsData = [
-    { blIdx: 0, amount: 5000, desc: 'Optimización de instancias EC2 con Reserved Instances', status: SavingStatus.APPROVED, dist: [0, 0, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500] },
-    { blIdx: 1, amount: 3000, desc: 'Migración a instancias spot para ambientes de desarrollo', status: SavingStatus.APPROVED, dist: [0, 0, 0, 500, 500, 500, 500, 500, 500, 0, 0, 0] },
+    { blIdx: 0, amount: 5000, desc: 'Optimización de instancias EC2 con Reserved Instances', status: SavingStatus.ACTIVE, dist: [0, 0, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500] },
+    { blIdx: 1, amount: 3000, desc: 'Migración a instancias spot para ambientes de desarrollo', status: SavingStatus.ACTIVE, dist: [0, 0, 0, 500, 500, 500, 500, 500, 500, 0, 0, 0] },
     { blIdx: 5, amount: 2000, desc: 'Consolidación de licencias IDE duplicadas', status: SavingStatus.PENDING, dist: [0, 0, 0, 0, 400, 400, 400, 400, 400, 0, 0, 0] },
-    { blIdx: 11, amount: 1500, desc: 'Renegociación contrato antivirus corporativo', status: SavingStatus.APPROVED, dist: [125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125] },
+    { blIdx: 11, amount: 1500, desc: 'Renegociación contrato antivirus corporativo', status: SavingStatus.ACTIVE, dist: [125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125] },
     { blIdx: 14, amount: 8000, desc: 'Migración data warehouse a solución cloud más económica', status: SavingStatus.PENDING, dist: [0, 0, 0, 0, 0, 1000, 1000, 1000, 1000, 1000, 1000, 2000] },
-    { blIdx: 25, amount: 10000, desc: 'Renegociación licencias Microsoft 365 por volumen', status: SavingStatus.APPROVED, dist: [833, 833, 833, 833, 833, 833, 833, 833, 833, 833, 833, 837] },
+    { blIdx: 25, amount: 10000, desc: 'Renegociación licencias Microsoft 365 por volumen', status: SavingStatus.ACTIVE, dist: [833, 833, 833, 833, 833, 833, 833, 833, 833, 833, 833, 837] },
     { blIdx: 27, amount: 15000, desc: 'Optimización módulos SAP no utilizados', status: SavingStatus.PENDING, dist: [0, 0, 0, 0, 0, 0, 2500, 2500, 2500, 2500, 2500, 2500] },
-    { blIdx: 23, amount: 4000, desc: 'Reducción de nodos Kubernetes en horario nocturno', status: SavingStatus.APPROVED, dist: [333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 337] },
-    { blIdx: 17, amount: 2400, desc: 'Optimización ancho de banda WAN', status: SavingStatus.APPROVED, dist: [200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200] },
+    { blIdx: 23, amount: 4000, desc: 'Reducción de nodos Kubernetes en horario nocturno', status: SavingStatus.ACTIVE, dist: [333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 337] },
+    { blIdx: 17, amount: 2400, desc: 'Optimización ancho de banda WAN', status: SavingStatus.ACTIVE, dist: [200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200] },
     { blIdx: 20, amount: 6000, desc: 'Uso de modelos ML open source en lugar de propietarios', status: SavingStatus.PENDING, dist: [0, 0, 0, 1000, 1000, 1000, 1000, 1000, 1000, 0, 0, 0] },
   ];
 
@@ -609,8 +611,8 @@ async function main() {
         description: s.desc,
         status: s.status,
         monthlyDistribution: monthlyDist,
-        createdBy: s.status === SavingStatus.APPROVED ? user1.id : user2.id,
-        approvedAt: s.status === SavingStatus.APPROVED ? new Date() : null,
+        createdBy: s.status === SavingStatus.ACTIVE ? user1.id : user2.id,
+        approvedAt: s.status === SavingStatus.ACTIVE ? new Date() : null,
       }
     });
   }

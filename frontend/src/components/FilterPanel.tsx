@@ -8,6 +8,7 @@ interface FilterPanelProps {
   filters: {
     currencies?: string[];
     financialCompanyIds?: string[];
+    categories?: string[];
     searchText?: string;
     visibleColumns: {
       budget: boolean;
@@ -36,6 +37,10 @@ export default function FilterPanel({ budgetLines, filters, onFiltersChange }: F
     budgetLines.map(bl => bl.currency).filter(Boolean)
   ));
 
+  const categories = Array.from(new Set(
+    budgetLines.map(bl => (bl.expense as any)?.category).filter(Boolean)
+  )) as string[];
+
   const toggleCurrency = (currency: string) => {
     const current = filters.currencies || [];
     const next = current.includes(currency) ? current.filter(c => c !== currency) : [...current, currency];
@@ -48,12 +53,18 @@ export default function FilterPanel({ budgetLines, filters, onFiltersChange }: F
     onFiltersChange({ ...filters, financialCompanyIds: next.length > 0 ? next : undefined });
   };
 
+  const toggleCategory = (category: string) => {
+    const current = filters.categories || [];
+    const next = current.includes(category) ? current.filter(c => c !== category) : [...current, category];
+    onFiltersChange({ ...filters, categories: next.length > 0 ? next : undefined });
+  };
+
   const toggleColumn = (column: 'budget' | 'committed' | 'real') => {
     onFiltersChange({ ...filters, visibleColumns: { ...filters.visibleColumns, [column]: !filters.visibleColumns[column] } });
   };
 
   const clearFilters = () => {
-    onFiltersChange({ currencies: undefined, financialCompanyIds: undefined, searchText: '', visibleColumns: { budget: true, committed: true, real: true } });
+    onFiltersChange({ currencies: undefined, financialCompanyIds: undefined, categories: undefined, searchText: '', visibleColumns: { budget: true, committed: true, real: true } });
   };
 
   const handleSearchChange = (value: string) => {
@@ -93,7 +104,17 @@ export default function FilterPanel({ budgetLines, filters, onFiltersChange }: F
         <>
           <div className="flex items-center gap-1">
             {financialCompanies.map(company => (
-              <button key={company.id} onClick={() => toggleFinancialCompany(company.id)} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${(filters.financialCompanyIds?.includes(company.id) ?? true) ? accentOn : accentOff}`}>{company.name}</button>
+              <button key={company.id} onClick={() => toggleFinancialCompany(company.id)} title={company.name} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${(filters.financialCompanyIds?.includes(company.id) ?? true) ? accentOn : accentOff}`}>{company.code}</button>
+            ))}
+          </div>
+          <div className="w-px h-6 bg-gray-300" />
+        </>
+      )}
+      {categories.length > 0 && (
+        <>
+          <div className="flex items-center gap-1">
+            {categories.map(cat => (
+              <button key={cat} onClick={() => toggleCategory(cat)} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${(filters.categories?.includes(cat) ?? true) ? accentOn : accentOff}`}>{cat}</button>
             ))}
           </div>
           <div className="w-px h-6 bg-gray-300" />

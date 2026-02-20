@@ -4,6 +4,7 @@ import type { ExpenseWithTags, TechnologyDirection, UserArea } from '../types';
 import ExpenseDetailPopup from '../components/ExpenseDetailPopup';
 import { HiOutlineMagnifyingGlass, HiOutlineTrash, HiOutlineArrowPath, HiOutlinePlusCircle } from 'react-icons/hi2';
 import { showToast } from '../components/Toast';
+import ConfirmationDialog from '../components/ConfirmationDialog';
 
 export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<ExpenseWithTags[]>([]);
@@ -15,6 +16,8 @@ export default function ExpensesPage() {
   const [selectedExpense, setSelectedExpense] = useState<ExpenseWithTags | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
+  const [deactivateTargetId, setDeactivateTargetId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     code: '',
@@ -75,13 +78,20 @@ export default function ExpensesPage() {
   };
 
   const handleDeactivateExpense = async (id: string) => {
-    if (!confirm('¿Desactivar este gasto? No se eliminará, solo se ocultará de los presupuestos activos.')) return;
+    setDeactivateTargetId(id);
+    setShowDeactivateDialog(true);
+  };
+
+  const confirmDeactivate = async () => {
+    if (!deactivateTargetId) return;
     try {
-      await expensesEnhancedApi.delete(id);
+      await expensesEnhancedApi.delete(deactivateTargetId);
       loadExpenses();
     } catch (error: any) {
       showToast(error.response?.data?.error || 'Error al desactivar gasto', 'error');
     }
+    setShowDeactivateDialog(false);
+    setDeactivateTargetId(null);
   };
 
   const handleReactivateExpense = async (id: string) => {
@@ -228,6 +238,8 @@ export default function ExpensesPage() {
         <ExpenseDetailPopup expense={selectedExpense} onClose={() => { setShowDetail(false); setSelectedExpense(null); }}
           onUpdate={() => { loadExpenses(); if (selectedExpense) handleViewDetail(selectedExpense); }} />
       )}
+
+      <ConfirmationDialog isOpen={showDeactivateDialog} message="¿Desactivar este gasto? No se eliminará, solo se ocultará de los presupuestos activos." onConfirm={confirmDeactivate} onCancel={() => { setShowDeactivateDialog(false); setDeactivateTargetId(null); }} />
     </div>
   );
 }

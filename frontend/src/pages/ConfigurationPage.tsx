@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useI18n } from '../contexts/I18nContext';
+import { budgetApi } from '../services/api';
+import type { Budget } from '../types';
+import { showToast } from '../components/Toast';
+import ConfirmationDialog from '../components/ConfirmationDialog';
 
 const THEMES = [
   { id: 'default', name: 'Azul Corporativo', primary: '#1E40AF', sidebar: '#111827', accent: '#3B82F6' },
@@ -23,13 +27,38 @@ export default function ConfigurationPage() {
   const [currentTheme, setCurrentTheme] = useState('default');
   const [previewTheme, setPreviewTheme] = useState<string | null>(null);
   const [fontSize, setFontSize] = useState('md');
+  const [allBudgets, setAllBudgets] = useState<Budget[]>([]);
+  const [selectedActiveBudget, setSelectedActiveBudget] = useState<string>('');
+  const [showActivateConfirm, setShowActivateConfirm] = useState(false);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('app_theme');
     if (savedTheme) setCurrentTheme(savedTheme);
     const savedFont = localStorage.getItem('app_font_size');
     if (savedFont) setFontSize(savedFont);
+    loadBudgets();
   }, []);
+
+  const loadBudgets = async () => {
+    try {
+      const res = await budgetApi.getAll();
+      setAllBudgets(res.data);
+      const active = res.data.find((b: Budget) => b.isActive);
+      if (active) setSelectedActiveBudget(active.id);
+    } catch (error) { console.error('Error loading budgets:', error); }
+  };
+
+  const handleSetActiveBudget = async () => {
+    try {
+      await budgetApi.setActive(selectedActiveBudget);
+      showToast('Presupuesto vigente actualizado', 'success');
+      setShowActivateConfirm(false);
+      loadBudgets();
+    } catch (error: any) {
+      showToast(error.response?.data?.error || 'Error al cambiar presupuesto vigente', 'error');
+      setShowActivateConfirm(false);
+    }
+  };
 
   const applyTheme = (themeId: string) => {
     const theme = THEMES.find(t => t.id === themeId);
@@ -53,6 +82,41 @@ export default function ConfigurationPage() {
 
   return (
     <div className="space-y-6">
+
+      {/* Active Budget Selection */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-bold mb-4">Presupuesto Vigente</h2>
+        <p className="text-sm text-gray-600 mb-4">Selecciona el presupuesto que se usará como vigente en el Dashboard y reportes.</p>
+        <div className="flex items-center gap-4">
+          <select value={selectedActiveBudget} onChange={(e) => setSelectedActiveBudget(e.target.value)} className="border rounded px-3 py-2 w-64">
+            <option value="">Seleccionar presupuesto</option>
+            {allBudgets.map(b => (
+              <option key={b.id} value={b.id}>
+                {b.year} - v{b.version} {b.isActive ? '(Vigente)' : ''}
+              </option>
+            ))}
+          </select>
+          {selectedActiveBudget && !allBudgets.find(b => b.id === selectedActiveBudget)?.isActive && (
+            <button onClick={() => setShowActivateConfirm(true)} className="btn-primary">
+              Establecer como Vigente
+            </button>
+          )}
+          {allBudgets.find(b => b.isActive) && (
+            <span className="px-3 py-1 bg-green-100 text-green-800 rounded text-sm">
+              Vigente: {allBudgets.find(b => b.isActive)?.year} v{allBudgets.find(b => b.isActive)?.version}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {showActivateConfirm && (
+        <ConfirmationDialog
+          title="Cambiar Presupuesto Vigente"
+          message="¿Estás seguro de cambiar el presupuesto vigente? Esto afectará el Dashboard y los reportes."
+          onConfirm={handleSetActiveBudget}
+          onCancel={() => setShowActivateConfirm(false)}
+        />
+      )}
 
       {/* Language Selection */}
       <div className="bg-white rounded-lg shadow p-6">

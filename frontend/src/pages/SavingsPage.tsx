@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
 import { savingsApi, budgetApi, budgetLineApi } from '../services/api';
 import type { Saving, Budget, BudgetLine } from '../types';
-import { HiOutlineTrash, HiOutlinePlusCircle } from 'react-icons/hi2';
+import { HiOutlineTrash, HiOutlinePlusCircle, HiOutlinePlay } from 'react-icons/hi2';
 import { showToast } from '../components/Toast';
+import ConfirmationDialog from '../components/ConfirmationDialog';
+import { fmt } from '../utils/formatters';
+
+const MONTHS = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12'];
 
 export default function SavingsPage() {
   const [savings, setSavings] = useState<Saving[]>([]);
@@ -13,22 +17,15 @@ export default function SavingsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [selectedSavings, setSelectedSavings] = useState<Set<string>>(new Set());
+  const [detailSaving, setDetailSaving] = useState<Saving | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [activateTarget, setActivateTarget] = useState<string | null>(null);
 
-  const [formData, setFormData] = useState({
-    budgetLineId: '',
-    totalAmount: 0,
-    description: '',
-    distributionStrategy: 'EVEN' as 'EVEN' | 'SINGLE_MONTH' | 'CUSTOM',
-    targetMonth: 1,
-    customDistribution: {} as Record<number, number>
-  });
+  const [monthlyValues, setMonthlyValues] = useState<number[]>(Array(12).fill(0));
+  const [formData, setFormData] = useState({ budgetLineId: '', description: '' });
 
   useEffect(() => { loadBudgets(); loadSavings(); }, []);
-
-  useEffect(() => {
-    if (selectedBudget) loadBudgetLines(selectedBudget);
-  }, [selectedBudget]);
+  useEffect(() => { if (selectedBudget) loadBudgetLines(selectedBudget); }, [selectedBudget]);
 
   const loadBudgets = async () => {
     try {
@@ -36,17 +33,14 @@ export default function SavingsPage() {
       setBudgets(res.data);
       if (res.data.length > 0) {
         const active = res.data.find((b: any) => b.isActive);
-        const latest = active || res.data[0];
-        setSelectedBudget(latest.id);
+        setSelectedBudget((active || res.data[0]).id);
       }
     } catch (error) { console.error('Error loading budgets:', error); }
   };
 
   const loadBudgetLines = async (budgetId: string) => {
-    try {
-      const res = await budgetLineApi.getByBudget(budgetId);
-      setBudgetLines(res.data);
-    } catch (error) { console.error('Error loading budget lines:', error); }
+    try { setBudgetLines((await budgetLineApi.getByBudget(budgetId)).data); }
+    catch (error) { console.error('Error loading budget lines:', error); }
   };
 
   const loadSavings = async () => {
@@ -55,53 +49,41 @@ export default function SavingsPage() {
       const filters: any = {};
       if (selectedBudgetLine) filters.budgetLineId = selectedBudgetLine;
       if (statusFilter) filters.status = statusFilter;
-      const res = await savingsApi.getAll(filters);
-      setSavings(res.data);
+      if (selectedBudget) filters.budgetId = selectedBudget;
+      setSavings((await savingsApi.getAll(filters)).data);
     } catch (error) { console.error('Error loading savings:', error); }
     finally { setIsLoading(false); }
   };
 
+  const total = monthlyValues.reduce((a, b) => a + b, 0);
+
   const handleCreateSaving = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await savingsApi.create(formData);
+      const data: any = { ...formData };
+      MONTHS.forEach((_, i) => { data[`savingM${i + 1}`] = monthlyValues[i]; });
+      await savingsApi.create(data);
       setShowForm(false);
-      resetForm();
+      setFormData({ budgetLineId: '', description: '' });
+      setMonthlyValues(Array(12).fill(0));
       loadSavings();
+      showToast('Ahorro creado exitosamente', 'success');
     } catch (error: any) { showToast(error.response?.data?.error || 'Error al crear ahorro', 'error'); }
   };
 
-  const handleApproveSavings = async () => {
-    if (selectedSavings.size === 0) { showToast('Selecciona al menos un ahorro para aprobar', 'info'); return; }
-    try {
-      await savingsApi.approve(Array.from(selectedSavings));
-      setSelectedSavings(new Set());
-      loadSavings();
-      showToast('Ahorros aprobados exitosamente', 'success');
-    } catch (error: any) { showToast(error.response?.data?.error || 'Error al aprobar ahorros', 'error'); }
+  const handleDeleteSaving = async () => {
+    if (!deleteTarget) return;
+    try { await savingsApi.delete(deleteTarget); setDeleteTarget(null); loadSavings(); showToast('Ahorro eliminado', 'success'); }
+    catch (error: any) { showToast(error.response?.data?.error || 'Error al eliminar ahorro', 'error'); setDeleteTarget(null); }
   };
 
-  const handleDeleteSaving = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar este ahorro?')) return;
-    try { await savingsApi.delete(id); loadSavings(); }
-    catch (error: any) { showToast(error.response?.data?.error || 'Error al eliminar ahorro', 'error'); }
+  const handleActivateSaving = async () => {
+    if (!activateTarget) return;
+    try { await savingsApi.activate(activateTarget); setActivateTarget(null); loadSavings(); showToast('Ahorro activado exitosamente', 'success'); }
+    catch (error: any) { showToast(error.response?.data?.error || 'Error al activar ahorro', 'error'); setActivateTarget(null); }
   };
 
-  const resetForm = () => {
-    setFormData({ budgetLineId: '', totalAmount: 0, description: '', distributionStrategy: 'EVEN', targetMonth: 1, customDistribution: {} });
-  };
-
-  const toggleSavingSelection = (id: string) => {
-    const newSelection = new Set(selectedSavings);
-    if (newSelection.has(id)) newSelection.delete(id);
-    else newSelection.add(id);
-    setSelectedSavings(newSelection);
-  };
-
-  const getBudgetLineLabel = (bl?: BudgetLine) => {
-    if (!bl) return '-';
-    return `${bl.expense?.code || ''} - ${bl.financialCompany?.name || ''}`;
-  };
+  const getBudgetLineLabel = (bl?: BudgetLine) => bl ? `${bl.expense?.code || ''} - ${bl.financialCompany?.code || ''}` : '-';
 
   return (
     <div className="p-6">
@@ -127,7 +109,7 @@ export default function SavingsPage() {
             <label className="block text-sm font-medium mb-1">Línea Presupuesto</label>
             <select value={selectedBudgetLine} onChange={(e) => setSelectedBudgetLine(e.target.value)} className="w-full border rounded px-3 py-2" disabled={!selectedBudget}>
               <option value="">Todas</option>
-              {budgetLines.map(bl => (<option key={bl.id} value={bl.id}>{bl.expense?.code} - {bl.financialCompany?.name}</option>))}
+              {budgetLines.map(bl => (<option key={bl.id} value={bl.id}>{bl.expense?.code} - {bl.financialCompany?.code}</option>))}
             </select>
           </div>
           <div>
@@ -135,7 +117,7 @@ export default function SavingsPage() {
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-full border rounded px-3 py-2">
               <option value="">Todos</option>
               <option value="PENDING">Pendiente</option>
-              <option value="APPROVED">Aprobado</option>
+              <option value="ACTIVE">Activo</option>
             </select>
           </div>
         </div>
@@ -152,51 +134,35 @@ export default function SavingsPage() {
                 <label className="block text-sm font-medium mb-1">Línea de Presupuesto *</label>
                 <select value={formData.budgetLineId} onChange={(e) => setFormData({ ...formData, budgetLineId: e.target.value })} className="w-full border rounded px-3 py-2" required>
                   <option value="">Seleccionar</option>
-                  {budgetLines.map(bl => (<option key={bl.id} value={bl.id}>{bl.expense?.code} - {bl.expense?.shortDescription} ({bl.financialCompany?.name})</option>))}
+                  {budgetLines.map(bl => (<option key={bl.id} value={bl.id}>{bl.expense?.code} - {bl.expense?.shortDescription} ({bl.financialCompany?.code})</option>))}
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Monto Total *</label>
-                <input type="number" step="0.01" value={formData.totalAmount} onChange={(e) => setFormData({ ...formData, totalAmount: parseFloat(e.target.value) })} className="w-full border rounded px-3 py-2" required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Estrategia de Distribución *</label>
-                <select value={formData.distributionStrategy} onChange={(e) => setFormData({ ...formData, distributionStrategy: e.target.value as any })} className="w-full border rounded px-3 py-2">
-                  <option value="EVEN">Homogénea (12 meses)</option>
-                  <option value="SINGLE_MONTH">Un solo mes</option>
-                  <option value="CUSTOM">Personalizada</option>
-                </select>
+              <div className="col-span-2">
+                <label className="block text-sm font-medium mb-1">Descripción *</label>
+                <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full border rounded px-3 py-2" rows={2} required />
               </div>
             </div>
-            {formData.distributionStrategy === 'SINGLE_MONTH' && (
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Mes *</label>
-                <select value={formData.targetMonth} onChange={(e) => setFormData({ ...formData, targetMonth: parseInt(e.target.value) })} className="w-full border rounded px-3 py-2">
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (<option key={m} value={m}>Mes {m}</option>))}
-                </select>
-              </div>
-            )}
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Descripción *</label>
-              <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full border rounded px-3 py-2" rows={3} required />
+              <label className="block text-sm font-medium mb-2">Valores Mensuales</label>
+              <div className="grid grid-cols-6 gap-2">
+                {MONTHS.map((m, i) => (
+                  <div key={i}>
+                    <label className="block text-xs text-gray-500 mb-1">{m}</label>
+                    <input type="number" step="0.01" min="0" value={monthlyValues[i] || ''} onChange={(e) => { const v = [...monthlyValues]; v[i] = parseFloat(e.target.value) || 0; setMonthlyValues(v); }} className="w-full border rounded px-2 py-1 text-sm" />
+                  </div>
+                ))}
+              </div>
+              <div className="mt-2 text-right text-sm font-semibold">Total: ${fmt(total)}</div>
             </div>
             <div className="flex gap-2">
-              <button type="submit" className="btn-success">Crear Ahorro</button>
+              <button type="submit" className="btn-success" disabled={total <= 0}>Crear Ahorro</button>
               <button type="button" onClick={() => setShowForm(false)} className="btn-cancel">Cancelar</button>
             </div>
           </form>
         </div>
       )}
 
-      {selectedSavings.size > 0 && (
-        <div className="bg-yellow-100 p-4 rounded shadow mb-6">
-          <div className="flex justify-between items-center">
-            <span>{selectedSavings.size} ahorro(s) seleccionado(s)</span>
-            <button onClick={handleApproveSavings} className="btn-success">Aprobar Seleccionados</button>
-          </div>
-        </div>
-      )}
-
+      {/* Table */}
       <div className="bg-white rounded shadow">
         {isLoading ? (
           <div className="p-8 text-center">Cargando...</div>
@@ -206,7 +172,6 @@ export default function SavingsPage() {
           <table className="w-full">
             <thead className="bg-gray-100">
               <tr>
-                <th className="p-3 text-left">Sel</th>
                 <th className="p-3 text-left">Línea Presupuesto</th>
                 <th className="p-3 text-left">Descripción</th>
                 <th className="p-3 text-right">Monto</th>
@@ -218,27 +183,27 @@ export default function SavingsPage() {
             </thead>
             <tbody>
               {savings.map(saving => (
-                <tr key={saving.id} className="border-t hover:bg-gray-50">
-                  <td className="p-3">
-                    {saving.status === 'PENDING' && (
-                      <input type="checkbox" checked={selectedSavings.has(saving.id)} onChange={() => toggleSavingSelection(saving.id)} />
-                    )}
-                  </td>
+                <tr key={saving.id} className="border-t hover:bg-gray-50 cursor-pointer" onClick={() => setDetailSaving(saving)}>
                   <td className="p-3">{getBudgetLineLabel(saving.budgetLine)}</td>
                   <td className="p-3">{saving.description}</td>
-                  <td className="p-3 text-right">${Number(saving.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  <td className="p-3 text-right">${fmt(Number(saving.totalAmount))}</td>
                   <td className="p-3">
-                    <span className={`px-2 py-1 rounded text-xs ${saving.status === 'APPROVED' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                      {saving.status === 'APPROVED' ? 'Aprobado' : 'Pendiente'}
+                    <span className={`px-2 py-1 rounded text-xs ${saving.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                      {saving.status === 'ACTIVE' ? 'Activo' : 'Pendiente'}
                     </span>
                   </td>
                   <td className="p-3">{saving.user?.fullName}</td>
                   <td className="p-3">{new Date(saving.createdAt).toLocaleDateString()}</td>
-                  <td className="p-3">
+                  <td className="p-3 flex gap-1" onClick={(e) => e.stopPropagation()}>
                     {saving.status === 'PENDING' && (
-                      <button onClick={() => handleDeleteSaving(saving.id)} className="icon-btn-danger" title="Eliminar">
-                        <HiOutlineTrash className="w-5 h-5" />
-                      </button>
+                      <>
+                        <button onClick={() => setActivateTarget(saving.id)} className="icon-btn-success" title="Activar">
+                          <HiOutlinePlay className="w-5 h-5" />
+                        </button>
+                        <button onClick={() => setDeleteTarget(saving.id)} className="icon-btn-danger" title="Eliminar">
+                          <HiOutlineTrash className="w-5 h-5" />
+                        </button>
+                      </>
                     )}
                   </td>
                 </tr>
@@ -247,6 +212,69 @@ export default function SavingsPage() {
           </table>
         )}
       </div>
+
+      {/* Detail Popup */}
+      {detailSaving && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[80vh] overflow-y-auto p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold">Detalle del Ahorro</h2>
+              <button onClick={() => setDetailSaving(null)} className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+            </div>
+            <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
+              <div><span className="text-gray-500">Línea:</span> {getBudgetLineLabel(detailSaving.budgetLine)}</div>
+              <div><span className="text-gray-500">Estado:</span> <span className={`px-2 py-0.5 rounded text-xs ${detailSaving.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{detailSaving.status === 'ACTIVE' ? 'Activo' : 'Pendiente'}</span></div>
+              <div><span className="text-gray-500">Descripción:</span> {detailSaving.description}</div>
+              <div><span className="text-gray-500">Creado por:</span> {detailSaving.user?.fullName}</div>
+            </div>
+            <table className="w-full text-sm divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-3 py-2 text-left">Mes</th>
+                  <th className="px-3 py-2 text-right">Valor Ahorro</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {MONTHS.map((m, i) => {
+                  const val = Number((detailSaving as any)[`savingM${i + 1}`]) || 0;
+                  return (
+                    <tr key={i} className={val > 0 ? 'bg-amber-50' : ''}>
+                      <td className="px-3 py-2">{m}</td>
+                      <td className="px-3 py-2 text-right">{val > 0 ? `$${fmt(val)}` : '-'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot className="bg-gray-50 font-semibold">
+                <tr>
+                  <td className="px-3 py-2">Total</td>
+                  <td className="px-3 py-2 text-right">${fmt(Number(detailSaving.totalAmount))}</td>
+                </tr>
+              </tfoot>
+            </table>
+            <div className="mt-4 flex justify-end">
+              <button onClick={() => setDetailSaving(null)} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">Cerrar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <ConfirmationDialog
+          title="Eliminar Ahorro"
+          message="¿Estás seguro de eliminar este ahorro?"
+          onConfirm={handleDeleteSaving}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+      {activateTarget && (
+        <ConfirmationDialog
+          title="Activar Ahorro"
+          message="¿Estás seguro de activar este ahorro? Los valores se reflejarán en el Dashboard."
+          onConfirm={handleActivateSaving}
+          onCancel={() => setActivateTarget(null)}
+        />
+      )}
     </div>
   );
 }

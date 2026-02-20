@@ -63,7 +63,8 @@ export class BudgetLineService {
         expense: { include: { tagValues: { include: { tagDefinition: true } } } },
         financialCompany: true,
         technologyDirection: true,
-        transactions: true
+        transactions: true,
+        lastModifiedBy: { select: { id: true, username: true, fullName: true } }
       },
       orderBy: { expense: { code: 'asc' } }
     });
@@ -77,19 +78,24 @@ export class BudgetLineService {
         financialCompany: true,
         technologyDirection: true,
         budget: true,
-        transactions: true
+        transactions: true,
+        lastModifiedBy: { select: { id: true, username: true, fullName: true } }
       }
     });
   }
 
-  async updatePlanValues(id: string, values: MonthlyPlanValues) {
+  async updatePlanValues(id: string, values: MonthlyPlanValues, userId?: string) {
     const budgetLine = await this.prisma.budgetLine.findUnique({ where: { id } });
     if (!budgetLine) throw new Error('Línea de presupuesto no encontrada');
 
     return await this.prisma.budgetLine.update({
       where: { id },
-      data: values,
-      include: { expense: true, financialCompany: true }
+      data: {
+        ...values,
+        lastModifiedAt: new Date(),
+        ...(userId ? { lastModifiedById: userId } : {})
+      },
+      include: { expense: true, financialCompany: true, lastModifiedBy: true }
     });
   }
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { technologyDirectionApi, userAreaApi, financialCompanyApi } from '../services/api';
 import { HiOutlinePencilSquare, HiOutlineTrash, HiOutlinePlusCircle } from 'react-icons/hi2';
 import { showToast } from '../components/Toast';
+import ConfirmationDialog from '../components/ConfirmationDialog';
 
 type TabType = 'tech' | 'areas' | 'companies';
 
@@ -12,6 +13,8 @@ export default function MasterDataPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [form, setForm] = useState({ code: '', name: '', description: '', taxId: '' });
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
 
   useEffect(() => { loadData(); }, [activeTab]);
 
@@ -68,9 +71,14 @@ export default function MasterDataPage() {
   };
 
   const handleDelete = async (item: any) => {
-    if (!confirm(`¿Eliminar "${item.name}"?`)) return;
+    setDeleteTarget(item);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await getApi().delete(item.id);
+      await getApi().delete(deleteTarget.id);
       loadData();
     } catch (error: any) {
       showToast(error.response?.data?.error || 'Error al eliminar. Puede estar en uso.', 'error');
@@ -175,6 +183,8 @@ export default function MasterDataPage() {
           )}
         </div>
       </div>
+
+      <ConfirmationDialog isOpen={showDeleteDialog} message={`¿Eliminar "${deleteTarget?.name}"?`} onConfirm={confirmDelete} onCancel={() => { setShowDeleteDialog(false); setDeleteTarget(null); }} />
     </div>
   );
 }

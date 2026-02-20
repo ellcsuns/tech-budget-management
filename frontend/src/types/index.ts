@@ -3,6 +3,10 @@ export interface Budget {
   year: number;
   version: string;
   isActive: boolean;
+  reviewStatus?: string;
+  reviewSubmittedAt?: string;
+  reviewSubmittedById?: string;
+  reviewSubmittedBy?: { id: string; fullName: string };
   budgetLines?: BudgetLine[];
   conversionRates?: ConversionRate[];
   createdAt: string;
@@ -46,6 +50,10 @@ export interface BudgetLine {
   financialCompany?: FinancialCompany;
   technologyDirection?: TechnologyDirection;
   transactions?: Transaction[];
+  savings?: Saving[];
+  lastModifiedAt?: string;
+  lastModifiedById?: string;
+  lastModifiedBy?: { id: string; username: string; fullName: string };
   createdAt: string;
   updatedAt: string;
 }
@@ -219,12 +227,23 @@ export interface Saving {
   budgetLineId: string;
   totalAmount: number;
   description: string;
-  status: 'PENDING' | 'APPROVED';
+  status: 'PENDING' | 'ACTIVE';
   monthlyDistribution: Record<number, number>;
+  savingM1: number;
+  savingM2: number;
+  savingM3: number;
+  savingM4: number;
+  savingM5: number;
+  savingM6: number;
+  savingM7: number;
+  savingM8: number;
+  savingM9: number;
+  savingM10: number;
+  savingM11: number;
+  savingM12: number;
   createdBy: string;
-  approvedAt?: string;
+  activatedAt?: string;
   createdAt: string;
-  updatedAt: string;
   budgetLine?: BudgetLine;
   user?: {
     id: string;
@@ -298,4 +317,16 @@ export interface AuditLog {
     username: string;
     fullName: string;
   };
+}
+
+
+// Company Totals for Dashboard
+export interface CompanyTotals {
+  companyId: string;
+  companyCode: string;
+  companyName: string;
+  budget: number;
+  committed: number;
+  real: number;
+  diff: number;
 }

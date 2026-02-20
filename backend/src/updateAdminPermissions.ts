@@ -33,6 +33,9 @@ async function main() {
     { roleId: adminRole.id, menuCode, permissionType: PermissionType.MODIFY }
   ]);
 
+  // Admin also gets APPROVE_BUDGET on approvals
+  allPermissions.push({ roleId: adminRole.id, menuCode: 'approvals', permissionType: PermissionType.APPROVE_BUDGET });
+
   await prisma.permission.createMany({
     data: allPermissions
   });

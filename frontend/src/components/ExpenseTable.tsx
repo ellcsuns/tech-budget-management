@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
-import type { BudgetLine, ExpenseWithTags } from '../types';
+import type { BudgetLine, ExpenseWithTags, Saving } from '../types';
 import { expensesEnhancedApi } from '../services/api';
 import { fmt } from '../utils/formatters';
 import ExpenseDetailPopup from './ExpenseDetailPopup';
@@ -10,12 +10,13 @@ interface ExpenseTableProps {
   filters: any;
   readOnly?: boolean;
   onTotalsChange?: (totals: { budget: number; committed: number; real: number; diff: number }) => void;
+  activeSavings?: Saving[];
 }
 
 type SortField = 'code' | 'description' | 'total' | `month-${number}`;
 type SortDir = 'asc' | 'desc';
 
-export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly = false, onTotalsChange }: ExpenseTableProps) {
+export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly = false, onTotalsChange, activeSavings = [] }: ExpenseTableProps) {
   const [selectedExpense, setSelectedExpense] = useState<ExpenseWithTags | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [descWidth, setDescWidth] = useState(180);
@@ -37,7 +38,7 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
 
   const handleCloseDetail = () => { setShowDetail(false); setSelectedExpense(null); };
 
-  const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  const months = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12'];
 
   const getPlanValue = (bl: BudgetLine, month: number): number => {
     const key = `planM${month}` as keyof BudgetLine;
@@ -51,14 +52,24 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
   };
 
   const getMonthlyValues = (bl: BudgetLine) => {
+    const lineSavings = activeSavings.filter(s => s.budgetLineId === bl.id);
     const values: any[] = [];
     for (let month = 1; month <= 12; month++) {
-      const budget = getPlanValue(bl, month);
+      const originalBudget = getPlanValue(bl, month);
+      let savingAmount = 0;
+      lineSavings.forEach(s => {
+        savingAmount += Number((s as any)[`savingM${month}`]) || 0;
+      });
+      const budget = originalBudget - savingAmount;
+      const hasSaving = savingAmount > 0;
       const committedTxns = bl.transactions?.filter(t => t.month === month && t.type === 'COMMITTED' && !t.isCompensated) || [];
       const realTxns = bl.transactions?.filter(t => t.month === month && t.type === 'REAL') || [];
       values.push({
         month,
         budget,
+        originalBudget,
+        savingAmount,
+        hasSaving,
         committed: committedTxns.reduce((sum, t) => sum + Number(t.transactionValue), 0),
         real: realTxns.reduce((sum, t) => sum + Number(t.transactionValue), 0)
       });
@@ -266,7 +277,7 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
                   <td className="px-3 py-3 text-sm text-gray-500 whitespace-nowrap">{bl.financialCompany?.code || '-'}</td>
                   {monthlyValues.map((value) => (
                     <React.Fragment key={value.month}>
-                      {filters.visibleColumns.budget && <td className="px-2 py-3 text-sm text-right text-gray-900">{value.budget > 0 ? fmt(value.budget) : '-'}</td>}
+                      {filters.visibleColumns.budget && <td className={`px-2 py-3 text-sm text-right ${value.hasSaving ? 'bg-amber-50 text-amber-800' : 'text-gray-900'}`} title={value.hasSaving ? `Original: ${fmt(value.originalBudget)} | Ahorro: ${fmt(value.savingAmount)}` : undefined}>{value.budget > 0 ? fmt(value.budget) : '-'}</td>}
                       {filters.visibleColumns.committed && <td className="px-2 py-3 text-sm text-right text-blue-600">{value.committed > 0 ? fmt(value.committed) : '-'}</td>}
                       {filters.visibleColumns.real && <td className="px-2 py-3 text-sm text-right text-green-600">{value.real > 0 ? fmt(value.real) : '-'}</td>}
                       {(() => { const diff = value.budget - (value.committed + value.real); return <td className={`px-2 py-3 text-sm text-right font-medium ${getDiffColor(diff)}`}>{diff !== 0 ? fmt(diff) : '-'}</td>; })()}

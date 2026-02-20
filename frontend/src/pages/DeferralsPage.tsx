@@ -3,8 +3,9 @@ import { budgetApi, budgetLineApi, deferralApi } from '../services/api';
 import type { Budget, BudgetLine, Deferral } from '../types';
 import { HiOutlineTrash, HiOutlinePlusCircle } from 'react-icons/hi2';
 import { showToast } from '../components/Toast';
+import ConfirmationDialog from '../components/ConfirmationDialog';
 
-const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+const MONTHS = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12'];
 
 export default function DeferralsPage() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
@@ -13,6 +14,8 @@ export default function DeferralsPage() {
   const [deferrals, setDeferrals] = useState<Deferral[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [searchText, setSearchText] = useState('');
   const [selectedBudgetLine, setSelectedBudgetLine] = useState<BudgetLine | null>(null);
   const [form, setForm] = useState({
@@ -91,9 +94,17 @@ export default function DeferralsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('¿Eliminar este diferido?')) return;
-    try { await deferralApi.delete(id); loadData(selectedBudget); }
+    setDeleteTargetId(id);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTargetId) return;
+    try { await deferralApi.delete(deleteTargetId); loadData(selectedBudget); }
     catch (error) { console.error('Error:', error); }
+    setShowDeleteDialog(false);
+    setDeleteTargetId(null);
+  };
   };
 
   const getBudgetLineLabel = (bl?: BudgetLine) => {
@@ -199,6 +210,8 @@ export default function DeferralsPage() {
           </div>
         )}
       </div>
+
+      <ConfirmationDialog isOpen={showDeleteDialog} message="¿Estás seguro de eliminar este diferido?" onConfirm={confirmDelete} onCancel={() => { setShowDeleteDialog(false); setDeleteTargetId(null); }} />
     </div>
   );
 }

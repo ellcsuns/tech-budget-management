@@ -66,6 +66,7 @@ export const budgetApi = {
   createNewVersion: (budgetId: string, planValueChanges: any[]) =>
     api.post(`/budgets/${budgetId}/versions`, { planValueChanges }),
   getActive: () => api.get<Budget>('/budgets/active'),
+  submitForReview: (id: string) => api.post(`/budgets/${id}/submit-review`),
   compare: (budgetAId: string, budgetBId: string) =>
     api.get(`/budgets/compare?budgetA=${budgetAId}&budgetB=${budgetBId}`),
   addBudgetLine: (budgetId: string, expenseId: string, financialCompanyId: string, technologyDirectionId?: string) =>
@@ -167,6 +168,8 @@ export const savingsApi = {
   getById: (id: string) => api.get<Saving>(`/savings/${id}`),
   create: (data: any) => api.post<Saving>('/savings', data),
   approve: (savingIds: string[]) => api.post('/savings/approve', { savingIds }),
+  activate: (id: string) => api.post(`/savings/${id}/activate`),
+  activateMultiple: (savingIds: string[]) => api.post('/savings/activate', { savingIds }),
   delete: (id: string) => api.delete(`/savings/${id}`)
 };
 

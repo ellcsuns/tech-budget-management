@@ -36,7 +36,8 @@ export function budgetLineRouter(prisma: PrismaClient) {
 
   router.put('/:id', async (req, res, next) => {
     try {
-      const line = await budgetLineService.updatePlanValues(req.params.id, req.body);
+      const userId = (req as any).user?.userId;
+      const line = await budgetLineService.updatePlanValues(req.params.id, req.body, userId);
       res.json(line);
     } catch (error: any) {
       if (error.message?.includes('no encontrada')) return res.status(404).json({ error: error.message });
