@@ -60,7 +60,7 @@ export class BudgetService {
       include: {
         budgetLines: {
           include: {
-            expense: { include: { tagValues: { include: { tagDefinition: true } } } },
+            expense: { include: { category: true, tagValues: { include: { tagDefinition: true } } } },
             financialCompany: true,
             technologyDirection: true,
             transactions: true,
@@ -115,7 +115,7 @@ export class BudgetService {
     const budgetInclude = {
       budgetLines: {
         include: {
-          expense: true,
+          expense: { include: { category: true } },
           financialCompany: true,
           technologyDirection: true,
           transactions: true,

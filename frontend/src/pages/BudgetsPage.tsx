@@ -47,6 +47,7 @@ export default function BudgetsPage() {
   const [filters, setFilters] = useState({
     currencies: undefined as string[] | undefined,
     financialCompanyIds: undefined as string[] | undefined,
+    categories: undefined as string[] | undefined,
     searchText: '',
     visibleColumns: { budget: true, committed: true, real: true }
   });
@@ -239,6 +240,10 @@ export default function BudgetsPage() {
     }
     if (filters.financialCompanyIds && filters.financialCompanyIds.length > 0) {
       if (!filters.financialCompanyIds.includes(bl.financialCompanyId)) return false;
+    }
+    if (filters.categories && filters.categories.length > 0) {
+      const catId = (bl.expense as any)?.categoryId;
+      if (!catId || !filters.categories.includes(catId)) return false;
     }
     return true;
   }), [budgetLines, filters, allUserAreas]);
