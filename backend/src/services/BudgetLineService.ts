@@ -60,7 +60,7 @@ export class BudgetLineService {
     return await this.prisma.budgetLine.findMany({
       where: { budgetId },
       include: {
-        expense: { include: { tagValues: { include: { tagDefinition: true } } } },
+        expense: { include: { category: true, tagValues: { include: { tagDefinition: true } } } },
         financialCompany: true,
         technologyDirection: true,
         transactions: true,
@@ -74,7 +74,7 @@ export class BudgetLineService {
     return await this.prisma.budgetLine.findUnique({
       where: { id },
       include: {
-        expense: true,
+        expense: { include: { category: true } },
         financialCompany: true,
         technologyDirection: true,
         budget: true,

@@ -27,6 +27,9 @@ export default function SavingsPage() {
   useEffect(() => { loadBudgets(); loadSavings(); }, []);
   useEffect(() => { if (selectedBudget) loadBudgetLines(selectedBudget); }, [selectedBudget]);
 
+  const activeBudgetId = budgets.find(b => b.isActive)?.id || '';
+  const isActiveBudgetSelected = selectedBudget === activeBudgetId;
+
   const loadBudgets = async () => {
     try {
       const res = await budgetApi.getAll();
@@ -88,8 +91,12 @@ export default function SavingsPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <div />
-        <button onClick={() => setShowForm(!showForm)} className="btn-primary flex items-center gap-2">
+        <div>
+          {!isActiveBudgetSelected && selectedBudget && (
+            <span className="text-sm text-amber-600 bg-amber-50 px-3 py-1 rounded">Solo lectura — solo el presupuesto vigente permite modificaciones</span>
+          )}
+        </div>
+        <button onClick={() => setShowForm(!showForm)} className="btn-primary flex items-center gap-2" disabled={!isActiveBudgetSelected}>
           <HiOutlinePlusCircle className="w-5 h-5" />
           {showForm ? 'Cancelar' : 'Nuevo Ahorro'}
         </button>
@@ -100,9 +107,9 @@ export default function SavingsPage() {
         <div className="grid grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">Presupuesto</label>
-            <select value={selectedBudget} onChange={(e) => setSelectedBudget(e.target.value)} className="w-full border rounded px-3 py-2">
+            <select value={selectedBudget} onChange={(e) => { setSelectedBudget(e.target.value); setShowForm(false); }} className="w-full border rounded px-3 py-2">
               <option value="">Todos</option>
-              {budgets.map(b => (<option key={b.id} value={b.id}>{b.year} - v{b.version}</option>))}
+              {budgets.map(b => (<option key={b.id} value={b.id}>{b.year} - v{b.version}{b.isActive ? ' (vigente)' : ''}</option>))}
             </select>
           </div>
           <div>
@@ -195,7 +202,7 @@ export default function SavingsPage() {
                   <td className="p-3">{saving.user?.fullName}</td>
                   <td className="p-3">{new Date(saving.createdAt).toLocaleDateString()}</td>
                   <td className="p-3 flex gap-1" onClick={(e) => e.stopPropagation()}>
-                    {saving.status === 'PENDING' && (
+                    {saving.status === 'PENDING' && isActiveBudgetSelected && (
                       <>
                         <button onClick={() => setActivateTarget(saving.id)} className="icon-btn-success" title="Activar">
                           <HiOutlinePlay className="w-5 h-5" />

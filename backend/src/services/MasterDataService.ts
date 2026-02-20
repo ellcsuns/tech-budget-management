@@ -1,4 +1,4 @@
-import { PrismaClient, TechnologyDirection, UserArea, FinancialCompany } from '@prisma/client';
+import { PrismaClient, TechnologyDirection, UserArea, FinancialCompany, ExpenseCategory } from '@prisma/client';
 import { MasterDataInput, FinancialCompanyInput } from '../types';
 
 export class MasterDataService {
@@ -236,7 +236,7 @@ export class MasterDataService {
   }
 
   // Validation
-  async isInUse(type: 'TECH_DIRECTION' | 'USER_AREA' | 'FINANCIAL_COMPANY', id: string): Promise<boolean> {
+  async isInUse(type: 'TECH_DIRECTION' | 'USER_AREA' | 'FINANCIAL_COMPANY' | 'EXPENSE_CATEGORY', id: string): Promise<boolean> {
     switch (type) {
       case 'TECH_DIRECTION':
         const expensesWithTechDir = await this.prisma.expense.findFirst({
@@ -266,8 +266,45 @@ export class MasterDataService {
         });
         return !!budgetLinesWithFinancialCompany;
 
+      case 'EXPENSE_CATEGORY':
+        const expensesWithCategory = await this.prisma.expense.findFirst({
+          where: { categoryId: id }
+        });
+        return !!expensesWithCategory;
+
       default:
         return false;
     }
+  }
+
+  // Expense Categories
+  async createExpenseCategory(data: MasterDataInput): Promise<ExpenseCategory> {
+    const existing = await this.prisma.expenseCategory.findUnique({ where: { code: data.code } });
+    if (existing) throw new Error(`Ya existe una categoría con el código ${data.code}`);
+    return await this.prisma.expenseCategory.create({
+      data: { code: data.code, name: data.name, description: data.description }
+    });
+  }
+
+  async getExpenseCategories(): Promise<ExpenseCategory[]> {
+    return await this.prisma.expenseCategory.findMany({ orderBy: { code: 'asc' } });
+  }
+
+  async getExpenseCategory(id: string): Promise<ExpenseCategory | null> {
+    return await this.prisma.expenseCategory.findUnique({ where: { id } });
+  }
+
+  async updateExpenseCategory(id: string, data: Partial<MasterDataInput>): Promise<ExpenseCategory> {
+    if (data.code) {
+      const existing = await this.prisma.expenseCategory.findFirst({ where: { code: data.code, NOT: { id } } });
+      if (existing) throw new Error(`Ya existe una categoría con el código ${data.code}`);
+    }
+    return await this.prisma.expenseCategory.update({ where: { id }, data });
+  }
+
+  async deleteExpenseCategory(id: string): Promise<void> {
+    const inUse = await this.isInUse('EXPENSE_CATEGORY', id);
+    if (inUse) throw new Error('No se puede eliminar la categoría porque está en uso por gastos existentes');
+    await this.prisma.expenseCategory.delete({ where: { id } });
   }
 }

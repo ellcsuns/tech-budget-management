@@ -151,13 +151,16 @@ export default function PlanValuesPage() {
         </div>
       </div>
 
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Presupuesto</label>
-        <select value={selectedBudgetId} onChange={(e) => setSelectedBudgetId(e.target.value)} className="px-3 py-2 border rounded-md">
+      <div className="mb-4 flex items-center gap-3">
+        <label className="text-sm font-medium text-gray-600">Presupuesto:</label>
+        <select value={selectedBudgetId} onChange={(e) => setSelectedBudgetId(e.target.value)} className="px-3 py-1.5 border rounded text-sm min-w-[220px]">
           {budgets.map(budget => (
-            <option key={budget.id} value={budget.id}>{budget.year} - {budget.version}</option>
+            <option key={budget.id} value={budget.id}>{budget.year} - {budget.version}{(budget as any).isActive ? ' ★ Vigente' : ''}</option>
           ))}
         </select>
+        {budgets.find((b: any) => b.isActive && b.id === selectedBudgetId) && (
+          <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">★ Vigente</span>
+        )}
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-x-auto">

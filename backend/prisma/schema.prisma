@@ -30,24 +30,41 @@ model Budget {
   @@index([isActive])
 }
 
+// ExpenseCategory model - Categoría de gasto
+model ExpenseCategory {
+  id          String    @id @default(uuid())
+  code        String    @unique
+  name        String
+  description String?
+  active      Boolean   @default(true)
+  expenses    Expense[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([active])
+}
+
 // Expense model - Entidad maestra independiente
 model Expense {
-  id                    String        @id @default(uuid())
-  code                  String        @unique
+  id                    String           @id @default(uuid())
+  code                  String           @unique
   shortDescription      String
   longDescription       String
   technologyDirections  String[]
   userAreas             String[]
+  categoryId            String?
+  category              ExpenseCategory? @relation(fields: [categoryId], references: [id])
   parentExpenseId       String?
-  parentExpense         Expense?      @relation("ExpenseHierarchy", fields: [parentExpenseId], references: [id])
-  childExpenses         Expense[]     @relation("ExpenseHierarchy")
+  parentExpense         Expense?         @relation("ExpenseHierarchy", fields: [parentExpenseId], references: [id])
+  childExpenses         Expense[]        @relation("ExpenseHierarchy")
   budgetLines           BudgetLine[]
   tagValues             TagValue[]
-  active                Boolean       @default(true)
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
+  active                Boolean          @default(true)
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
 
   @@index([active])
+  @@index([categoryId])
 }
 
 // BudgetLine model - Vincula gasto con presupuesto y empresa financiera

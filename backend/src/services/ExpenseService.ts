@@ -62,11 +62,13 @@ export class ExpenseService {
         longDescription: data.longDescription,
         technologyDirections: data.technologyDirections,
         userAreas: data.userAreas,
-        parentExpenseId: data.parentExpenseId
+        parentExpenseId: data.parentExpenseId,
+        categoryId: data.categoryId
       },
       include: {
         parentExpense: true,
-        childExpenses: true
+        childExpenses: true,
+        category: true
       }
     });
   }
@@ -77,6 +79,7 @@ export class ExpenseService {
       include: {
         parentExpense: true,
         childExpenses: true,
+        category: true,
         tagValues: {
           include: { tagDefinition: true }
         }
@@ -112,7 +115,8 @@ export class ExpenseService {
       data,
       include: {
         parentExpense: true,
-        childExpenses: true
+        childExpenses: true,
+        category: true
       }
     });
   }
@@ -158,6 +162,7 @@ export class ExpenseService {
       where,
       include: {
         parentExpense: true,
+        category: true,
         tagValues: { include: { tagDefinition: true } }
       },
       orderBy: { code: 'asc' }
@@ -249,6 +254,7 @@ export class ExpenseService {
       include: {
         parentExpense: true,
         childExpenses: true,
+        category: true,
         tagValues: { include: { tagDefinition: true } }
       }
     });

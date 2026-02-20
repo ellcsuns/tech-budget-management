@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { technologyDirectionApi, userAreaApi, financialCompanyApi } from '../services/api';
+import { technologyDirectionApi, userAreaApi, financialCompanyApi, expenseCategoryApi } from '../services/api';
 import { HiOutlinePencilSquare, HiOutlineTrash, HiOutlinePlusCircle } from 'react-icons/hi2';
 import { showToast } from '../components/Toast';
 import ConfirmationDialog from '../components/ConfirmationDialog';
 
-type TabType = 'tech' | 'areas' | 'companies';
+type TabType = 'tech' | 'areas' | 'companies' | 'categories';
 
 export default function MasterDataPage() {
   const [activeTab, setActiveTab] = useState<TabType>('tech');
@@ -26,6 +26,7 @@ export default function MasterDataPage() {
         case 'tech': response = await technologyDirectionApi.getAll(); break;
         case 'areas': response = await userAreaApi.getAll(); break;
         case 'companies': response = await financialCompanyApi.getAll(); break;
+        case 'categories': response = await expenseCategoryApi.getAll(); break;
       }
       setItems(response.data);
     } catch (error) {
@@ -40,6 +41,7 @@ export default function MasterDataPage() {
       case 'tech': return technologyDirectionApi;
       case 'areas': return userAreaApi;
       case 'companies': return financialCompanyApi;
+      case 'categories': return expenseCategoryApi;
     }
   };
 
@@ -83,9 +85,11 @@ export default function MasterDataPage() {
     } catch (error: any) {
       showToast(error.response?.data?.error || 'Error al eliminar. Puede estar en uso.', 'error');
     }
+    setShowDeleteDialog(false);
+    setDeleteTarget(null);
   };
 
-  const tabLabel = activeTab === 'tech' ? 'Dirección Tecnológica' : activeTab === 'areas' ? 'Área de Usuario' : 'Empresa Financiera';
+  const tabLabel = activeTab === 'tech' ? 'Dirección Tecnológica' : activeTab === 'areas' ? 'Área de Usuario' : activeTab === 'companies' ? 'Empresa Financiera' : 'Categoría de Gasto';
 
   return (
     <div className="space-y-6">
@@ -102,9 +106,10 @@ export default function MasterDataPage() {
         <div className="border-b border-gray-200">
           <nav className="flex -mb-px">
             {[
-              { key: 'tech' as TabType, label: 'Direcciones Tecnológicas' },
+              { key: 'tech' as TabType, label: 'Dir. Tecnológicas' },
               { key: 'areas' as TabType, label: 'Áreas de Usuario' },
-              { key: 'companies' as TabType, label: 'Empresas Financieras' }
+              { key: 'companies' as TabType, label: 'Empresas Financieras' },
+              { key: 'categories' as TabType, label: 'Categorías de Gasto' }
             ].map(tab => (
               <button key={tab.key} onClick={() => { setActiveTab(tab.key); setShowForm(false); }}
                 className={`px-6 py-3 text-sm font-medium ${activeTab === tab.key ? 'tab-active' : 'text-gray-500 hover:text-gray-700'}`}>
@@ -141,11 +146,8 @@ export default function MasterDataPage() {
                 </div>
               )}
               <div className="col-span-2 flex gap-2">
-                <button type="submit" className="btn-success">
-                  {editingItem ? 'Actualizar' : 'Crear'}
-                </button>
-                <button type="button" onClick={() => { setShowForm(false); setEditingItem(null); }}
-                  className="btn-cancel">Cancelar</button>
+                <button type="submit" className="btn-success">{editingItem ? 'Actualizar' : 'Crear'}</button>
+                <button type="button" onClick={() => { setShowForm(false); setEditingItem(null); }} className="btn-cancel">Cancelar</button>
               </div>
             </form>
           </div>

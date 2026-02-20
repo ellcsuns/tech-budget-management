@@ -13,6 +13,16 @@ export interface Budget {
   updatedAt: string;
 }
 
+export interface ExpenseCategory {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  active?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Expense {
   id: string;
   code: string;
@@ -20,6 +30,8 @@ export interface Expense {
   longDescription: string;
   technologyDirections: string[];
   userAreas: string[];
+  categoryId?: string;
+  category?: ExpenseCategory;
   parentExpenseId?: string;
   active?: boolean;
   tagValues?: TagValue[];

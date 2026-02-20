@@ -45,14 +45,18 @@ export default function Dashboard() {
       if (filters.currencies && !filters.currencies.includes(bl.currency)) return false;
       if (filters.financialCompanyIds && !filters.financialCompanyIds.includes(bl.financialCompanyId)) return false;
       if (filters.categories) {
-        const cat = (bl.expense as any)?.category;
-        if (!cat || !filters.categories.includes(cat)) return false;
+        const catId = (bl.expense as any)?.categoryId;
+        if (!catId || !filters.categories.includes(catId)) return false;
       }
       if (filters.searchText) {
-        const search = filters.searchText.toLowerCase();
-        const code = bl.expense?.code?.toLowerCase() || '';
-        const desc = bl.expense?.shortDescription?.toLowerCase() || '';
-        if (!code.includes(search) && !desc.includes(search)) return false;
+        const searchTerms = filters.searchText.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+        if (searchTerms.length > 0) {
+          const code = bl.expense?.code?.toLowerCase() || '';
+          const desc = bl.expense?.shortDescription?.toLowerCase() || '';
+          const catName = (bl.expense as any)?.category?.name?.toLowerCase() || '';
+          const matchesAny = searchTerms.some(term => code.includes(term) || desc.includes(term) || catName.includes(term));
+          if (!matchesAny) return false;
+        }
       }
       return true;
     });

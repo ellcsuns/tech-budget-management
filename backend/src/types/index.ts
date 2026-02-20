@@ -20,6 +20,7 @@ export interface ExpenseInput {
   technologyDirections: string[];
   userAreas: string[];
   parentExpenseId?: string;
+  categoryId?: string;
 }
 
 export interface ExpenseFilters {

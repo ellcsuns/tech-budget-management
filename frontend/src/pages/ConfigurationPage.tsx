@@ -111,6 +111,7 @@ export default function ConfigurationPage() {
 
       {showActivateConfirm && (
         <ConfirmationDialog
+          isOpen={showActivateConfirm}
           title="Cambiar Presupuesto Vigente"
           message="¿Estás seguro de cambiar el presupuesto vigente? Esto afectará el Dashboard y los reportes."
           onConfirm={handleSetActiveBudget}

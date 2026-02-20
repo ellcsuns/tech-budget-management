@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { financialCompanyApi } from '../services/api';
-import type { BudgetLine, FinancialCompany } from '../types';
+import { financialCompanyApi, expenseCategoryApi } from '../services/api';
+import type { BudgetLine, FinancialCompany, ExpenseCategory } from '../types';
 import { HiOutlineXMark } from 'react-icons/hi2';
 
 interface FilterPanelProps {
@@ -21,8 +21,12 @@ interface FilterPanelProps {
 
 export default function FilterPanel({ budgetLines, filters, onFiltersChange }: FilterPanelProps) {
   const [financialCompanies, setFinancialCompanies] = useState<FinancialCompany[]>([]);
+  const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
 
-  useEffect(() => { loadFinancialCompanies(); }, []);
+  useEffect(() => {
+    loadFinancialCompanies();
+    loadExpenseCategories();
+  }, []);
 
   const loadFinancialCompanies = async () => {
     try {
@@ -33,13 +37,18 @@ export default function FilterPanel({ budgetLines, filters, onFiltersChange }: F
     }
   };
 
+  const loadExpenseCategories = async () => {
+    try {
+      const response = await expenseCategoryApi.getAll();
+      setExpenseCategories(response.data);
+    } catch (error) {
+      console.error('Error loading expense categories:', error);
+    }
+  };
+
   const currencies = Array.from(new Set(
     budgetLines.map(bl => bl.currency).filter(Boolean)
   ));
-
-  const categories = Array.from(new Set(
-    budgetLines.map(bl => (bl.expense as any)?.category).filter(Boolean)
-  )) as string[];
 
   const toggleCurrency = (currency: string) => {
     const current = filters.currencies || [];
@@ -53,9 +62,9 @@ export default function FilterPanel({ budgetLines, filters, onFiltersChange }: F
     onFiltersChange({ ...filters, financialCompanyIds: next.length > 0 ? next : undefined });
   };
 
-  const toggleCategory = (category: string) => {
+  const toggleCategory = (categoryId: string) => {
     const current = filters.categories || [];
-    const next = current.includes(category) ? current.filter(c => c !== category) : [...current, category];
+    const next = current.includes(categoryId) ? current.filter(c => c !== categoryId) : [...current, categoryId];
     onFiltersChange({ ...filters, categories: next.length > 0 ? next : undefined });
   };
 
@@ -80,8 +89,8 @@ export default function FilterPanel({ budgetLines, filters, onFiltersChange }: F
         type="text"
         value={filters.searchText || ''}
         onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearchChange(e.target.value)}
-        placeholder="Buscar gasto..."
-        className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent w-48"
+        placeholder="Buscar gasto (separar por comas para múltiples)..."
+        className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent w-64"
       />
       <div className="w-px h-6 bg-gray-300" />
       <div className="flex items-center gap-1">
@@ -110,11 +119,11 @@ export default function FilterPanel({ budgetLines, filters, onFiltersChange }: F
           <div className="w-px h-6 bg-gray-300" />
         </>
       )}
-      {categories.length > 0 && (
+      {expenseCategories.length > 0 && (
         <>
-          <div className="flex items-center gap-1">
-            {categories.map(cat => (
-              <button key={cat} onClick={() => toggleCategory(cat)} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${(filters.categories?.includes(cat) ?? true) ? accentOn : accentOff}`}>{cat}</button>
+          <div className="flex items-center gap-1 flex-wrap">
+            {expenseCategories.map(cat => (
+              <button key={cat.id} onClick={() => toggleCategory(cat.id)} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${(filters.categories?.includes(cat.id) ?? true) ? accentOn : accentOff}`}>{cat.name}</button>
             ))}
           </div>
           <div className="w-px h-6 bg-gray-300" />

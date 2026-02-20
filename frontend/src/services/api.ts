@@ -13,7 +13,8 @@ import type {
   ExpenseWithTags,
   CustomTag,
   Deferral,
-  ChangeRequest
+  ChangeRequest,
+  ExpenseCategory
 } from '../types';
 
 const API_BASE_URL = '/api';
@@ -234,9 +235,19 @@ export const changeRequestApi = {
     api.post<ChangeRequest>('/change-requests', data),
   getMyRequests: () => api.get<ChangeRequest[]>('/change-requests/my'),
   getPending: () => api.get<ChangeRequest[]>('/change-requests/pending'),
+  getPendingCount: () => api.get<{ count: number }>('/change-requests/pending-count'),
   approve: (id: string) => api.post<ChangeRequest>(`/change-requests/${id}/approve`),
   approveMultiple: (requestIds: string[]) => api.post('/change-requests/approve-multiple', { requestIds }),
   reject: (id: string) => api.post<ChangeRequest>(`/change-requests/${id}/reject`),
+};
+
+// ExpenseCategory API
+export const expenseCategoryApi = {
+  getAll: () => api.get<ExpenseCategory[]>('/expense-categories'),
+  getById: (id: string) => api.get<ExpenseCategory>(`/expense-categories/${id}`),
+  create: (data: any) => api.post<ExpenseCategory>('/expense-categories', data),
+  update: (id: string, data: Partial<ExpenseCategory>) => api.put<ExpenseCategory>(`/expense-categories/${id}`, data),
+  delete: (id: string) => api.delete(`/expense-categories/${id}`)
 };
 
 // Audit API

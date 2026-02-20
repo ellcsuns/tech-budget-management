@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useI18n } from '../contexts/I18nContext';
+import { changeRequestApi } from '../services/api';
 import Logo from './icons/Logo';
 import {
   HiOutlineChartBarSquare,
@@ -64,10 +65,23 @@ export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(() => {
     return localStorage.getItem('sidebar_collapsed') === 'true';
   });
+  const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
     localStorage.setItem('sidebar_collapsed', String(collapsed));
   }, [collapsed]);
+
+  useEffect(() => {
+    const loadPendingCount = async () => {
+      try {
+        const res = await changeRequestApi.getPendingCount();
+        setPendingCount(res.data.count || 0);
+      } catch { setPendingCount(0); }
+    };
+    loadPendingCount();
+    const interval = setInterval(loadPendingCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const visibleMenuItems = menuItems.filter(item => hasPermission(item.menuCode, 'VIEW'));
   const mainItems = visibleMenuItems.filter(i => !i.section);
@@ -127,12 +141,18 @@ export default function Sidebar() {
         {mainItems.map((item) => {
           const isActive = location.pathname === item.path;
           const Icon = item.icon;
+          const showBadge = item.menuCode === 'approvals' && pendingCount > 0;
           return (
             <Link key={item.path} to={item.path}
               title={collapsed ? (t(item.labelKey) || item.fallback) : undefined}
-              className={`flex items-center ${collapsed ? 'justify-center' : 'space-x-3 px-4'} py-3 rounded-lg transition-colors ${isActive ? 'bg-accent text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}`}>
+              className={`flex items-center ${collapsed ? 'justify-center' : 'space-x-3 px-4'} py-3 rounded-lg transition-colors relative ${isActive ? 'bg-accent text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}`}>
               <Icon className="w-5 h-5 flex-shrink-0" />
               {!collapsed && <span className="text-sm font-medium">{t(item.labelKey) || item.fallback}</span>}
+              {showBadge && (
+                <span className={`${collapsed ? 'absolute -top-1 -right-1' : 'ml-auto'} bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1`}>
+                  {pendingCount}
+                </span>
+              )}
             </Link>
           );
         })}

@@ -19,6 +19,7 @@ async function main() {
   await prisma.transaction.deleteMany();
   await prisma.budgetLine.deleteMany();
   await prisma.expense.deleteMany();
+  await prisma.expenseCategory.deleteMany();
   await prisma.conversionRate.deleteMany();
   await prisma.budget.deleteMany();
   await prisma.financialCompany.deleteMany();
@@ -79,6 +80,24 @@ async function main() {
   ]);
 
   // ============================================
+  // CATEGORÍAS DE GASTO
+  // ============================================
+  console.log('📂 Creando categorías de gasto...');
+
+  const expenseCategories = await Promise.all([
+    prisma.expenseCategory.create({ data: { code: 'CLOUD', name: 'Cloud', description: 'Servicios de computación en la nube' } }),
+    prisma.expenseCategory.create({ data: { code: 'SEGURIDAD', name: 'Seguridad', description: 'Seguridad informática y ciberseguridad' } }),
+    prisma.expenseCategory.create({ data: { code: 'LICENCIAS', name: 'Licencias', description: 'Licencias de software' } }),
+    prisma.expenseCategory.create({ data: { code: 'INFRAESTRUCTURA', name: 'Infraestructura', description: 'Infraestructura física y de red' } }),
+    prisma.expenseCategory.create({ data: { code: 'DESARROLLO', name: 'Desarrollo', description: 'Herramientas y servicios de desarrollo' } }),
+    prisma.expenseCategory.create({ data: { code: 'DATOS', name: 'Datos & Analytics', description: 'Almacenamiento y análisis de datos' } }),
+    prisma.expenseCategory.create({ data: { code: 'CONSULTORIA', name: 'Consultoría', description: 'Servicios de consultoría externa' } }),
+    prisma.expenseCategory.create({ data: { code: 'TELECOMUNICACIONES', name: 'Telecomunicaciones', description: 'Telefonía y comunicaciones' } }),
+    prisma.expenseCategory.create({ data: { code: 'CAPACITACION', name: 'Capacitación', description: 'Formación y certificaciones' } }),
+    prisma.expenseCategory.create({ data: { code: 'IA', name: 'Inteligencia Artificial', description: 'IA, ML y automatización' } }),
+  ]);
+
+  // ============================================
   // ETIQUETAS (TAG DEFINITIONS)
   // ============================================
   console.log('🏷️  Creando definiciones de etiquetas...');
@@ -133,41 +152,41 @@ async function main() {
   console.log('📝 Creando gastos (entidades maestras)...');
 
   const expenseDefinitions = [
-    { code: 'INFRA-001', short: 'Servidores Cloud AWS', long: 'Instancias EC2, RDS y servicios AWS para producción', techIdx: [0, 4], areaIdx: [6], compIdx: 0 },
-    { code: 'INFRA-002', short: 'Servidores Cloud Azure', long: 'Máquinas virtuales y servicios Azure para desarrollo', techIdx: [0, 4], areaIdx: [6], compIdx: 0 },
-    { code: 'INFRA-003', short: 'Data Center On-Premise', long: 'Mantenimiento y operación del data center principal', techIdx: [0], areaIdx: [6, 1], compIdx: 0 },
-    { code: 'INFRA-004', short: 'Storage & Backup', long: 'Almacenamiento S3, Glacier y soluciones de backup', techIdx: [0, 4], areaIdx: [6], compIdx: 1 },
-    { code: 'INFRA-005', short: 'CDN & Distribución', long: 'CloudFront y servicios de distribución de contenido', techIdx: [0, 5], areaIdx: [6, 2], compIdx: 0 },
-    { code: 'DEV-001', short: 'Licencias IDE & Tools', long: 'JetBrains, VS Code Enterprise, herramientas de desarrollo', techIdx: [1], areaIdx: [6], compIdx: 0 },
-    { code: 'DEV-002', short: 'Plataforma GitHub Enterprise', long: 'Licencias GitHub Enterprise para repositorios y CI/CD', techIdx: [1, 7], areaIdx: [6], compIdx: 3 },
-    { code: 'DEV-003', short: 'Testing & QA Tools', long: 'Herramientas de testing automatizado y QA', techIdx: [1], areaIdx: [6], compIdx: 3 },
-    { code: 'DEV-004', short: 'Desarrollo App Móvil', long: 'Desarrollo de aplicación móvil corporativa', techIdx: [1], areaIdx: [6, 5], compIdx: 3 },
-    { code: 'DEV-005', short: 'Portal Web Clientes', long: 'Desarrollo y mantenimiento del portal web de clientes', techIdx: [1], areaIdx: [9, 5], compIdx: 0 },
-    { code: 'SEC-001', short: 'Firewall & WAF', long: 'Firewalls de nueva generación y Web Application Firewall', techIdx: [2], areaIdx: [6], compIdx: 0 },
-    { code: 'SEC-002', short: 'Antivirus Corporativo', long: 'Licencias de antivirus y endpoint protection', techIdx: [2], areaIdx: [6], compIdx: 1 },
-    { code: 'SEC-003', short: 'SIEM & Monitoreo', long: 'Sistema de gestión de eventos de seguridad', techIdx: [2, 3], areaIdx: [6], compIdx: 4 },
-    { code: 'SEC-004', short: 'Pentesting & Auditoría', long: 'Servicios de pentesting y auditoría de seguridad', techIdx: [2], areaIdx: [6, 4], compIdx: 4 },
-    { code: 'DATA-001', short: 'Data Warehouse', long: 'Infraestructura de data warehouse y ETL', techIdx: [3, 4], areaIdx: [6, 0], compIdx: 0 },
-    { code: 'DATA-002', short: 'Herramientas BI', long: 'Power BI, Tableau y herramientas de visualización', techIdx: [3], areaIdx: [0, 7], compIdx: 0 },
-    { code: 'DATA-003', short: 'Data Lake', long: 'Almacenamiento y procesamiento de datos no estructurados', techIdx: [3, 4], areaIdx: [6], compIdx: 0 },
-    { code: 'NET-001', short: 'Conectividad WAN', long: 'Enlaces WAN entre oficinas y data centers', techIdx: [5], areaIdx: [6, 1], compIdx: 1 },
-    { code: 'NET-002', short: 'WiFi Corporativo', long: 'Infraestructura WiFi para todas las oficinas', techIdx: [5], areaIdx: [6], compIdx: 1 },
-    { code: 'NET-003', short: 'VPN & Acceso Remoto', long: 'Soluciones VPN para trabajo remoto', techIdx: [5, 2], areaIdx: [6, 3], compIdx: 2 },
-    { code: 'AI-001', short: 'Plataforma ML', long: 'Plataforma de Machine Learning y modelos predictivos', techIdx: [6, 3], areaIdx: [6], compIdx: 3 },
-    { code: 'AI-002', short: 'Chatbot Corporativo', long: 'Chatbot con IA para atención al cliente', techIdx: [6, 1], areaIdx: [9, 5], compIdx: 3 },
-    { code: 'AI-003', short: 'Automatización RPA', long: 'Robots de automatización de procesos', techIdx: [6], areaIdx: [1, 0], compIdx: 4 },
-    { code: 'DEVOPS-001', short: 'Kubernetes & Containers', long: 'Plataforma de contenedores y orquestación', techIdx: [7, 4], areaIdx: [6], compIdx: 0 },
-    { code: 'DEVOPS-002', short: 'Monitoreo APM', long: 'Datadog, New Relic y monitoreo de aplicaciones', techIdx: [7], areaIdx: [6], compIdx: 4 },
-    { code: 'LIC-001', short: 'Microsoft 365', long: 'Licencias Microsoft 365 Enterprise para toda la empresa', techIdx: [1], areaIdx: [6, 3], compIdx: 0 },
-    { code: 'LIC-002', short: 'Salesforce CRM', long: 'Licencias Salesforce para equipo comercial', techIdx: [1], areaIdx: [5, 2], compIdx: 0 },
-    { code: 'LIC-003', short: 'SAP ERP', long: 'Licencias y mantenimiento SAP', techIdx: [1], areaIdx: [0, 1], compIdx: 0 },
-    { code: 'LIC-004', short: 'Jira & Confluence', long: 'Herramientas de gestión de proyectos Atlassian', techIdx: [1, 7], areaIdx: [6], compIdx: 3 },
-    { code: 'CONS-001', short: 'Consultoría Cloud', long: 'Servicios de consultoría para migración cloud', techIdx: [4], areaIdx: [6, 7], compIdx: 4 },
-    { code: 'CONS-002', short: 'Consultoría Seguridad', long: 'Asesoría en ciberseguridad y compliance', techIdx: [2], areaIdx: [6, 4], compIdx: 4 },
-    { code: 'CONS-003', short: 'Consultoría Data', long: 'Consultoría en estrategia de datos', techIdx: [3, 6], areaIdx: [7, 0], compIdx: 4 },
-    { code: 'TEL-001', short: 'Telefonía IP', long: 'Sistema de telefonía IP corporativa', techIdx: [5], areaIdx: [6, 9], compIdx: 2 },
-    { code: 'TEL-002', short: 'Contact Center', long: 'Plataforma de contact center omnicanal', techIdx: [5, 6], areaIdx: [9], compIdx: 2 },
-    { code: 'CAP-001', short: 'Capacitación TI', long: 'Programas de capacitación y certificaciones TI', techIdx: [1], areaIdx: [6, 3], compIdx: 0 },
+    { code: 'INFRA-001', short: 'Servidores Cloud AWS', long: 'Instancias EC2, RDS y servicios AWS para producción', techIdx: [0, 4], areaIdx: [6], compIdx: 0, catIdx: 0 },
+    { code: 'INFRA-002', short: 'Servidores Cloud Azure', long: 'Máquinas virtuales y servicios Azure para desarrollo', techIdx: [0, 4], areaIdx: [6], compIdx: 0, catIdx: 0 },
+    { code: 'INFRA-003', short: 'Data Center On-Premise', long: 'Mantenimiento y operación del data center principal', techIdx: [0], areaIdx: [6, 1], compIdx: 0, catIdx: 3 },
+    { code: 'INFRA-004', short: 'Storage & Backup', long: 'Almacenamiento S3, Glacier y soluciones de backup', techIdx: [0, 4], areaIdx: [6], compIdx: 1, catIdx: 0 },
+    { code: 'INFRA-005', short: 'CDN & Distribución', long: 'CloudFront y servicios de distribución de contenido', techIdx: [0, 5], areaIdx: [6, 2], compIdx: 0, catIdx: 0 },
+    { code: 'DEV-001', short: 'Licencias IDE & Tools', long: 'JetBrains, VS Code Enterprise, herramientas de desarrollo', techIdx: [1], areaIdx: [6], compIdx: 0, catIdx: 2 },
+    { code: 'DEV-002', short: 'Plataforma GitHub Enterprise', long: 'Licencias GitHub Enterprise para repositorios y CI/CD', techIdx: [1, 7], areaIdx: [6], compIdx: 3, catIdx: 4 },
+    { code: 'DEV-003', short: 'Testing & QA Tools', long: 'Herramientas de testing automatizado y QA', techIdx: [1], areaIdx: [6], compIdx: 3, catIdx: 4 },
+    { code: 'DEV-004', short: 'Desarrollo App Móvil', long: 'Desarrollo de aplicación móvil corporativa', techIdx: [1], areaIdx: [6, 5], compIdx: 3, catIdx: 4 },
+    { code: 'DEV-005', short: 'Portal Web Clientes', long: 'Desarrollo y mantenimiento del portal web de clientes', techIdx: [1], areaIdx: [9, 5], compIdx: 0, catIdx: 4 },
+    { code: 'SEC-001', short: 'Firewall & WAF', long: 'Firewalls de nueva generación y Web Application Firewall', techIdx: [2], areaIdx: [6], compIdx: 0, catIdx: 1 },
+    { code: 'SEC-002', short: 'Antivirus Corporativo', long: 'Licencias de antivirus y endpoint protection', techIdx: [2], areaIdx: [6], compIdx: 1, catIdx: 1 },
+    { code: 'SEC-003', short: 'SIEM & Monitoreo', long: 'Sistema de gestión de eventos de seguridad', techIdx: [2, 3], areaIdx: [6], compIdx: 4, catIdx: 1 },
+    { code: 'SEC-004', short: 'Pentesting & Auditoría', long: 'Servicios de pentesting y auditoría de seguridad', techIdx: [2], areaIdx: [6, 4], compIdx: 4, catIdx: 1 },
+    { code: 'DATA-001', short: 'Data Warehouse', long: 'Infraestructura de data warehouse y ETL', techIdx: [3, 4], areaIdx: [6, 0], compIdx: 0, catIdx: 5 },
+    { code: 'DATA-002', short: 'Herramientas BI', long: 'Power BI, Tableau y herramientas de visualización', techIdx: [3], areaIdx: [0, 7], compIdx: 0, catIdx: 5 },
+    { code: 'DATA-003', short: 'Data Lake', long: 'Almacenamiento y procesamiento de datos no estructurados', techIdx: [3, 4], areaIdx: [6], compIdx: 0, catIdx: 5 },
+    { code: 'NET-001', short: 'Conectividad WAN', long: 'Enlaces WAN entre oficinas y data centers', techIdx: [5], areaIdx: [6, 1], compIdx: 1, catIdx: 7 },
+    { code: 'NET-002', short: 'WiFi Corporativo', long: 'Infraestructura WiFi para todas las oficinas', techIdx: [5], areaIdx: [6], compIdx: 1, catIdx: 7 },
+    { code: 'NET-003', short: 'VPN & Acceso Remoto', long: 'Soluciones VPN para trabajo remoto', techIdx: [5, 2], areaIdx: [6, 3], compIdx: 2, catIdx: 1 },
+    { code: 'AI-001', short: 'Plataforma ML', long: 'Plataforma de Machine Learning y modelos predictivos', techIdx: [6, 3], areaIdx: [6], compIdx: 3, catIdx: 9 },
+    { code: 'AI-002', short: 'Chatbot Corporativo', long: 'Chatbot con IA para atención al cliente', techIdx: [6, 1], areaIdx: [9, 5], compIdx: 3, catIdx: 9 },
+    { code: 'AI-003', short: 'Automatización RPA', long: 'Robots de automatización de procesos', techIdx: [6], areaIdx: [1, 0], compIdx: 4, catIdx: 9 },
+    { code: 'DEVOPS-001', short: 'Kubernetes & Containers', long: 'Plataforma de contenedores y orquestación', techIdx: [7, 4], areaIdx: [6], compIdx: 0, catIdx: 0 },
+    { code: 'DEVOPS-002', short: 'Monitoreo APM', long: 'Datadog, New Relic y monitoreo de aplicaciones', techIdx: [7], areaIdx: [6], compIdx: 4, catIdx: 4 },
+    { code: 'LIC-001', short: 'Microsoft 365', long: 'Licencias Microsoft 365 Enterprise para toda la empresa', techIdx: [1], areaIdx: [6, 3], compIdx: 0, catIdx: 2 },
+    { code: 'LIC-002', short: 'Salesforce CRM', long: 'Licencias Salesforce para equipo comercial', techIdx: [1], areaIdx: [5, 2], compIdx: 0, catIdx: 2 },
+    { code: 'LIC-003', short: 'SAP ERP', long: 'Licencias y mantenimiento SAP', techIdx: [1], areaIdx: [0, 1], compIdx: 0, catIdx: 2 },
+    { code: 'LIC-004', short: 'Jira & Confluence', long: 'Herramientas de gestión de proyectos Atlassian', techIdx: [1, 7], areaIdx: [6], compIdx: 3, catIdx: 2 },
+    { code: 'CONS-001', short: 'Consultoría Cloud', long: 'Servicios de consultoría para migración cloud', techIdx: [4], areaIdx: [6, 7], compIdx: 4, catIdx: 6 },
+    { code: 'CONS-002', short: 'Consultoría Seguridad', long: 'Asesoría en ciberseguridad y compliance', techIdx: [2], areaIdx: [6, 4], compIdx: 4, catIdx: 6 },
+    { code: 'CONS-003', short: 'Consultoría Data', long: 'Consultoría en estrategia de datos', techIdx: [3, 6], areaIdx: [7, 0], compIdx: 4, catIdx: 6 },
+    { code: 'TEL-001', short: 'Telefonía IP', long: 'Sistema de telefonía IP corporativa', techIdx: [5], areaIdx: [6, 9], compIdx: 2, catIdx: 7 },
+    { code: 'TEL-002', short: 'Contact Center', long: 'Plataforma de contact center omnicanal', techIdx: [5, 6], areaIdx: [9], compIdx: 2, catIdx: 7 },
+    { code: 'CAP-001', short: 'Capacitación TI', long: 'Programas de capacitación y certificaciones TI', techIdx: [1], areaIdx: [6, 3], compIdx: 0, catIdx: 8 },
   ];
 
   // Create expenses as independent master data (no budgetId, no financialCompanyId)
@@ -180,6 +199,7 @@ async function main() {
         longDescription: def.long,
         technologyDirections: def.techIdx.map(i => techDirections[i].id),
         userAreas: def.areaIdx.map(i => userAreas[i].id),
+        categoryId: def.catIdx !== undefined ? expenseCategories[def.catIdx].id : null,
       }
     });
     allExpenses.push({ ...expense, compIdx: def.compIdx });

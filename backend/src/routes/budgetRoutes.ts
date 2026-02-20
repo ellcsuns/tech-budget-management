@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { BudgetService } from '../services/BudgetService';
+import { Request, Response, NextFunction } from 'express';
 
-export function budgetRouter(prisma: PrismaClient) {
+export function budgetRouter(prisma: PrismaClient, authenticateJWT?: (req: Request, res: Response, next: NextFunction) => void) {
   const router = Router();
   const budgetService = new BudgetService(prisma);
 
@@ -30,9 +31,9 @@ export function budgetRouter(prisma: PrismaClient) {
     }
   });
 
-  router.post('/:id/submit-review', async (req, res, next) => {
+  router.post('/:id/submit-review', ...(authenticateJWT ? [authenticateJWT] : []), async (req, res, next) => {
     try {
-      const userId = (req as any).user?.userId;
+      const userId = req.user?.userId || (req as any).user?.userId;
       if (!userId) return res.status(401).json({ error: 'No autenticado' });
       res.json(await budgetService.submitForReview(req.params.id, userId));
     } catch (error: any) {

@@ -30,6 +30,8 @@ import { PasswordService } from './services/PasswordService';
 import { UserService } from './services/UserService';
 import { RoleService } from './services/RoleService';
 
+import { createAuthenticateJWT } from './middleware/authenticateJWT';
+
 dotenv.config();
 
 const app = express();
@@ -44,6 +46,7 @@ const authService = new AuthService(prisma, passwordService, userService, roleSe
 authService.ensureDefaultAdmin().catch(console.error);
 
 const auditService = new AuditService(prisma);
+const authenticateJWT = createAuthenticateJWT(authService);
 
 app.use(cors());
 app.use(express.json());
@@ -56,13 +59,14 @@ app.use('/api/users', userRouter(prisma));
 app.use('/api/roles', roleRouter(prisma));
 
 // Core Routes
-app.use('/api/budgets', budgetRouter(prisma));
+app.use('/api/budgets', budgetRouter(prisma, authenticateJWT));
 app.use('/api/expenses', expenseRouter(prisma));
 app.use('/api/transactions', transactionRouter(prisma));
 app.use('/api/budget-lines', budgetLineRouter(prisma));
 app.use('/api/technology-directions', masterDataRouter(prisma, 'TECH_DIRECTION'));
 app.use('/api/user-areas', masterDataRouter(prisma, 'USER_AREA'));
 app.use('/api/financial-companies', masterDataRouter(prisma, 'FINANCIAL_COMPANY'));
+app.use('/api/expense-categories', masterDataRouter(prisma, 'EXPENSE_CATEGORY'));
 app.use('/api/tag-definitions', taggingRouter(prisma));
 app.use('/api/conversion-rates', conversionRateRouter(prisma));
 

@@ -27,6 +27,7 @@ const translations: TranslationSeed[] = [
   { key: 'menu.compareBudgets', es: 'Comparar Presupuestos', en: 'Compare Budgets', category: 'menu' },
   { key: 'menu.approvals', es: 'Aprobaciones', en: 'Approvals', category: 'menu' },
   { key: 'menu.audit', es: 'Auditoría', en: 'Audit Log', category: 'menu' },
+  { key: 'menu.exchangeRates', es: 'Tasas de Cambio', en: 'Exchange Rates', category: 'menu' },
 
   // Section headers
   { key: 'section.administration', es: 'Administración', en: 'Administration', category: 'section' },
@@ -212,6 +213,81 @@ const translations: TranslationSeed[] = [
   // App name
   { key: 'app.name', es: 'Tech Budget', en: 'Tech Budget', category: 'app' },
   { key: 'app.subtitle', es: 'Gestión de Presupuesto', en: 'Budget Management', category: 'app' },
+
+  // Table headers - Transactions
+  { key: 'table.budgetLine', es: 'Línea Presupuesto', en: 'Budget Line', category: 'table' },
+  { key: 'table.serviceDate', es: 'Fecha Servicio', en: 'Service Date', category: 'table' },
+  { key: 'table.postingDate', es: 'Fecha Imputación', en: 'Posting Date', category: 'table' },
+  { key: 'table.refDocument', es: 'Ref. Documento', en: 'Ref. Document', category: 'table' },
+  { key: 'table.currency', es: 'Moneda', en: 'Currency', category: 'table' },
+  { key: 'table.value', es: 'Valor', en: 'Value', category: 'table' },
+  { key: 'table.month', es: 'Mes', en: 'Month', category: 'table' },
+  { key: 'table.compensated', es: 'Compensada', en: 'Compensated', category: 'table' },
+  { key: 'table.actions', es: 'Acciones', en: 'Actions', category: 'table' },
+  { key: 'table.code', es: 'Código', en: 'Code', category: 'table' },
+  { key: 'table.description', es: 'Descripción', en: 'Description', category: 'table' },
+  { key: 'table.company', es: 'Empresa', en: 'Company', category: 'table' },
+  { key: 'table.area', es: 'Área', en: 'Area', category: 'table' },
+  { key: 'table.category', es: 'Categoría', en: 'Category', category: 'table' },
+  { key: 'table.total', es: 'Total', en: 'Total', category: 'table' },
+  { key: 'table.tags', es: 'Tags', en: 'Tags', category: 'table' },
+  { key: 'table.status', es: 'Estado', en: 'Status', category: 'table' },
+  { key: 'table.expense', es: 'Gasto', en: 'Expense', category: 'table' },
+  { key: 'table.budget', es: 'Presupuesto', en: 'Budget', category: 'table' },
+  { key: 'table.requestedBy', es: 'Solicitado por', en: 'Requested by', category: 'table' },
+  { key: 'table.comment', es: 'Comentario', en: 'Comment', category: 'table' },
+  { key: 'table.date', es: 'Fecha', en: 'Date', category: 'table' },
+  { key: 'table.approvedBy', es: 'Aprobado por', en: 'Approved by', category: 'table' },
+  { key: 'table.lastModified', es: 'Última Modif.', en: 'Last Modified', category: 'table' },
+  { key: 'table.modifiedBy', es: 'Modificado por', en: 'Modified by', category: 'table' },
+  { key: 'table.externalLink', es: 'Link Externo', en: 'External Link', category: 'table' },
+
+  // Transaction page
+  { key: 'transaction.new', es: 'Nueva Transacción', en: 'New Transaction', category: 'transaction' },
+  { key: 'transaction.committed', es: 'Transacción Comprometida', en: 'Committed Transaction', category: 'transaction' },
+  { key: 'transaction.real', es: 'Transacción Real', en: 'Real Transaction', category: 'transaction' },
+  { key: 'transaction.fromCommitted', es: 'Desde Comprometida', en: 'From Committed', category: 'transaction' },
+  { key: 'transaction.hideCommitted', es: 'Ocultar Comprometidas', en: 'Hide Committed', category: 'transaction' },
+
+  // Expense page
+  { key: 'expense.new', es: 'Nuevo Gasto', en: 'New Expense', category: 'expense' },
+  { key: 'expense.search', es: 'Buscar por código, descripción o tags...', en: 'Search by code, description or tags...', category: 'expense' },
+  { key: 'expense.showInactive', es: 'Ver desactivados', en: 'Show inactive', category: 'expense' },
+  { key: 'expense.deactivate', es: 'Desactivar', en: 'Deactivate', category: 'expense' },
+  { key: 'expense.reactivate', es: 'Reactivar', en: 'Reactivate', category: 'expense' },
+  { key: 'expense.noTags', es: 'Sin tags', en: 'No tags', category: 'expense' },
+
+  // Approvals
+  { key: 'approval.pending', es: 'Aprobaciones Pendientes', en: 'Pending Approvals', category: 'approval' },
+  { key: 'approval.approveSelected', es: 'Aprobar seleccionadas', en: 'Approve selected', category: 'approval' },
+  { key: 'approval.noPending', es: 'No hay solicitudes pendientes de aprobación', en: 'No pending approval requests', category: 'approval' },
+  { key: 'approval.detail', es: 'Detalle de Solicitud', en: 'Request Detail', category: 'approval' },
+  { key: 'approval.current', es: 'Actual', en: 'Current', category: 'approval' },
+  { key: 'approval.proposed', es: 'Propuesto', en: 'Proposed', category: 'approval' },
+
+  // Savings
+  { key: 'saving.new', es: 'Nuevo Ahorro', en: 'New Saving', category: 'saving' },
+  { key: 'saving.readOnly', es: 'Solo lectura - Solo se pueden modificar ahorros del presupuesto vigente', en: 'Read only - Savings can only be modified on the active budget', category: 'saving' },
+
+  // Budget page
+  { key: 'budget.addLine', es: 'Agregar Línea', en: 'Add Line', category: 'budget' },
+  { key: 'budget.requestChange', es: 'Solicitar Cambio de Presupuesto', en: 'Request Budget Change', category: 'budget' },
+  { key: 'budget.submitReview', es: 'Enviar a Revisión', en: 'Submit for Review', category: 'budget' },
+  { key: 'budget.setActive', es: 'Marcar Vigente', en: 'Set Active', category: 'budget' },
+  { key: 'budget.newBudget', es: 'Nuevo Presupuesto', en: 'New Budget', category: 'budget' },
+  { key: 'budget.myRequests', es: 'Mis Solicitudes', en: 'My Requests', category: 'budget' },
+  { key: 'budget.readOnly', es: 'Solo lectura', en: 'Read only', category: 'budget' },
+
+  // Filter panel
+  { key: 'filter.search', es: 'Buscar gasto...', en: 'Search expense...', category: 'filter' },
+  { key: 'filter.clearFilters', es: 'Limpiar filtros', en: 'Clear filters', category: 'filter' },
+  { key: 'filter.all', es: 'Todas', en: 'All', category: 'filter' },
+
+  // Page titles for exchange rates
+  { key: 'page.exchangeRates', es: 'Tasas de Cambio', en: 'Exchange Rates', category: 'page' },
+
+  // Master data page
+  { key: 'masterData.expenseCategories', es: 'Categorías de Gasto', en: 'Expense Categories', category: 'masterData' },
 ];
 
 export async function seedTranslations(prisma: PrismaClient) {

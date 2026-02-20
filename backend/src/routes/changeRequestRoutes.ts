@@ -51,6 +51,15 @@ export function changeRequestRouter(prisma: PrismaClient) {
     } catch (error) { next(error); }
   });
 
+  // Get pending count for badge
+  router.get('/pending-count', authenticateJWT, async (req, res, next) => {
+    try {
+      const userId = req.user!.userId;
+      const pending = await service.getPendingForApprover(userId);
+      res.json({ count: pending.length });
+    } catch (error) { res.json({ count: 0 }); }
+  });
+
   // Approve single request
   router.post('/:id/approve', authenticateJWT, requirePermission(MENU_CODES.APPROVALS, PermissionType.APPROVE_BUDGET), async (req, res, next) => {
     try {

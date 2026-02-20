@@ -7,7 +7,8 @@ import { showToast } from '../components/Toast';
 
 export default function BudgetComparePage() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [yearA, setYearA] = useState<number>(0);
+  const [yearB, setYearB] = useState<number>(0);
   const [budgetAId, setBudgetAId] = useState('');
   const [budgetBId, setBudgetBId] = useState('');
   const [rows, setRows] = useState<ComparisonRow[]>([]);
@@ -18,11 +19,19 @@ export default function BudgetComparePage() {
   const [showDescription, setShowDescription] = useState(false);
 
   useEffect(() => {
-    budgetApi.getAll().then(res => setBudgets(res.data));
+    budgetApi.getAll().then(res => {
+      setBudgets(res.data);
+      const allYears = [...new Set(res.data.map((b: Budget) => b.year))].sort((a, b) => b - a);
+      if (allYears.length > 0) {
+        setYearA(allYears[0]);
+        setYearB(allYears[0]);
+      }
+    });
   }, []);
 
   const years = [...new Set(budgets.map(b => b.year))].sort((a, b) => b - a);
-  const yearBudgets = budgets.filter(b => b.year === selectedYear);
+  const budgetsForYearA = budgets.filter(b => b.year === yearA);
+  const budgetsForYearB = budgets.filter(b => b.year === yearB);
 
   const compare = async () => {
     if (!budgetAId || !budgetBId) return;
@@ -51,30 +60,49 @@ export default function BudgetComparePage() {
     <div className="space-y-6">
 
       <div className="bg-white rounded-lg shadow p-6">
-        <div className="grid grid-cols-4 gap-4 items-end">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Año</label>
-            <select value={selectedYear} onChange={e => { setSelectedYear(Number(e.target.value)); setBudgetAId(''); setBudgetBId(''); }}
-              className="w-full px-3 py-2 border rounded-lg">
-              {years.map(y => <option key={y} value={y}>{y}</option>)}
-            </select>
+        <div className="grid grid-cols-2 gap-6">
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-gray-600 uppercase">Presupuesto A</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Año</label>
+                <select value={yearA} onChange={e => { setYearA(Number(e.target.value)); setBudgetAId(''); }}
+                  className="w-full px-3 py-2 border rounded-lg">
+                  {years.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Versión</label>
+                <select value={budgetAId} onChange={e => setBudgetAId(e.target.value)} className="w-full px-3 py-2 border rounded-lg">
+                  <option value="">Seleccionar...</option>
+                  {budgetsForYearA.map(b => <option key={b.id} value={b.id}>{b.version}{b.isActive ? ' (vigente)' : ''}</option>)}
+                </select>
+              </div>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Presupuesto A</label>
-            <select value={budgetAId} onChange={e => setBudgetAId(e.target.value)} className="w-full px-3 py-2 border rounded-lg">
-              <option value="">Seleccionar...</option>
-              {yearBudgets.map(b => <option key={b.id} value={b.id}>{b.version}</option>)}
-            </select>
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-gray-600 uppercase">Presupuesto B</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Año</label>
+                <select value={yearB} onChange={e => { setYearB(Number(e.target.value)); setBudgetBId(''); }}
+                  className="w-full px-3 py-2 border rounded-lg">
+                  {years.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Versión</label>
+                <select value={budgetBId} onChange={e => setBudgetBId(e.target.value)} className="w-full px-3 py-2 border rounded-lg">
+                  <option value="">Seleccionar...</option>
+                  {budgetsForYearB.filter(b => b.id !== budgetAId).map(b => <option key={b.id} value={b.id}>{b.version}{b.isActive ? ' (vigente)' : ''}</option>)}
+                </select>
+              </div>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Presupuesto B</label>
-            <select value={budgetBId} onChange={e => setBudgetBId(e.target.value)} className="w-full px-3 py-2 border rounded-lg">
-              <option value="">Seleccionar...</option>
-              {yearBudgets.filter(b => b.id !== budgetAId).map(b => <option key={b.id} value={b.id}>{b.version}</option>)}
-            </select>
-          </div>
+        </div>
+        <div className="mt-4">
           <button onClick={compare} disabled={!budgetAId || !budgetBId || loading}
-            className="btn-primary disabled:opacity-50">
+            className="btn-primary disabled:opacity-50 w-full">
             {loading ? 'Comparando...' : 'Comparar'}
           </button>
         </div>

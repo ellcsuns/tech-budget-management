@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { transactionApi, budgetApi, budgetLineApi } from '../services/api';
-import type { BudgetLine } from '../types';
-import { HiOutlinePencilSquare, HiOutlineTrash, HiOutlinePlusCircle } from 'react-icons/hi2';
+import type { Budget, BudgetLine } from '../types';
+import { HiOutlinePencilSquare, HiOutlineTrash, HiOutlinePlusCircle, HiOutlineChevronUpDown } from 'react-icons/hi2';
 import { showToast } from '../components/Toast';
 import ConfirmationDialog from '../components/ConfirmationDialog';
 
@@ -21,8 +21,13 @@ interface Transaction {
   isCompensated: boolean;
 }
 
+type SortField = 'budgetLine' | 'serviceDate' | 'postingDate' | 'refDoc' | 'currency' | 'value' | 'month' | 'compensated';
+type SortDir = 'asc' | 'desc';
+
 export default function CommittedTransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [allBudgets, setAllBudgets] = useState<Budget[]>([]);
+  const [selectedBudgetId, setSelectedBudgetId] = useState<string>('');
   const [budgetLines, setBudgetLines] = useState<BudgetLine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -33,26 +38,85 @@ export default function CommittedTransactionsPage() {
   });
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [sortField, setSortField] = useState<SortField>('serviceDate');
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [filterText, setFilterText] = useState('');
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { loadInitial(); }, []);
 
-  const loadData = async () => {
+  const loadInitial = async () => {
     try {
       const budgetsRes = await budgetApi.getAll();
-      if (budgetsRes.data.length > 0) {
-        const active = budgetsRes.data.find((b: any) => b.isActive);
-        const latest = active || budgetsRes.data[0];
-        const linesRes = await budgetLineApi.getByBudget(latest.id);
+      setAllBudgets(budgetsRes.data);
+      const active = budgetsRes.data.find((b: Budget) => b.isActive);
+      const target = active || budgetsRes.data[0];
+      if (target) {
+        setSelectedBudgetId(target.id);
+        const linesRes = await budgetLineApi.getByBudget(target.id);
         setBudgetLines(linesRes.data);
       }
       const transactionsRes = await transactionApi.getByType('COMMITTED');
       setTransactions((transactionsRes.data || []) as Transaction[]);
-    } catch (error) {
-      console.error('Error loading data:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    } catch (error) { console.error('Error loading data:', error); }
+    finally { setIsLoading(false); }
   };
+
+  const handleBudgetChange = async (budgetId: string) => {
+    setSelectedBudgetId(budgetId);
+    try {
+      const linesRes = await budgetLineApi.getByBudget(budgetId);
+      setBudgetLines(linesRes.data);
+    } catch (error) { console.error('Error:', error); }
+  };
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+    else { setSortField(field); setSortDir('asc'); }
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <HiOutlineChevronUpDown className="w-3 h-3 inline opacity-30" />;
+    return <HiOutlineChevronUpDown className="w-3 h-3 inline text-accent" />;
+  };
+
+  const getBudgetLineLabel = (blId: string) => {
+    const bl = budgetLines.find(b => b.id === blId);
+    if (!bl) return '-';
+    return `${bl.expense?.code || ''} - ${bl.financialCompany?.name || ''}`;
+  };
+
+  const getMonthFromDate = (dateStr: string) => {
+    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    return months[new Date(dateStr).getMonth()] || '-';
+  };
+
+  const filteredAndSorted = useMemo(() => {
+    let result = [...transactions];
+    if (filterText) {
+      const terms = filterText.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+      result = result.filter(t => {
+        const label = getBudgetLineLabel(t.budgetLineId).toLowerCase();
+        const ref = t.referenceDocumentNumber.toLowerCase();
+        const curr = t.transactionCurrency.toLowerCase();
+        return terms.some(term => label.includes(term) || ref.includes(term) || curr.includes(term));
+      });
+    }
+    result.sort((a, b) => {
+      let cmp = 0;
+      switch (sortField) {
+        case 'serviceDate': cmp = new Date(a.serviceDate).getTime() - new Date(b.serviceDate).getTime(); break;
+        case 'postingDate': cmp = new Date(a.postingDate).getTime() - new Date(b.postingDate).getTime(); break;
+        case 'value': cmp = a.transactionValue - b.transactionValue; break;
+        case 'currency': cmp = a.transactionCurrency.localeCompare(b.transactionCurrency); break;
+        case 'refDoc': cmp = a.referenceDocumentNumber.localeCompare(b.referenceDocumentNumber); break;
+        case 'month': cmp = a.month - b.month; break;
+        case 'budgetLine': cmp = getBudgetLineLabel(a.budgetLineId).localeCompare(getBudgetLineLabel(b.budgetLineId)); break;
+        default: cmp = 0;
+      }
+      return sortDir === 'desc' ? -cmp : cmp;
+    });
+    return result;
+  }, [transactions, filterText, sortField, sortDir, budgetLines]);
 
   const handleCreate = () => {
     setSelectedTransaction(null);
@@ -63,14 +127,10 @@ export default function CommittedTransactionsPage() {
   const handleEdit = (transaction: Transaction) => {
     setSelectedTransaction(transaction);
     setFormData({
-      budgetLineId: transaction.budgetLineId,
-      financialCompanyId: transaction.financialCompanyId,
-      serviceDate: transaction.serviceDate.split('T')[0],
-      postingDate: transaction.postingDate.split('T')[0],
-      referenceDocumentNumber: transaction.referenceDocumentNumber,
-      externalPlatformLink: transaction.externalPlatformLink,
-      transactionCurrency: transaction.transactionCurrency,
-      transactionValue: transaction.transactionValue.toString()
+      budgetLineId: transaction.budgetLineId, financialCompanyId: transaction.financialCompanyId,
+      serviceDate: transaction.serviceDate.split('T')[0], postingDate: transaction.postingDate.split('T')[0],
+      referenceDocumentNumber: transaction.referenceDocumentNumber, externalPlatformLink: transaction.externalPlatformLink,
+      transactionCurrency: transaction.transactionCurrency, transactionValue: transaction.transactionValue.toString()
     });
     setIsModalOpen(true);
   };
@@ -82,42 +142,41 @@ export default function CommittedTransactionsPage() {
       if (selectedTransaction) await transactionApi.update(selectedTransaction.id, data);
       else await transactionApi.create(data);
       setIsModalOpen(false);
-      loadData();
+      loadInitial();
     } catch (error: any) {
       showToast(error.response?.data?.error || error.response?.data?.message || 'Error al guardar transacción', 'error');
     }
   };
 
-  const handleDelete = async (transaction: Transaction) => {
-    setDeleteTargetId(transaction.id);
-    setShowDeleteDialog(true);
-  };
-
+  const handleDelete = async (transaction: Transaction) => { setDeleteTargetId(transaction.id); setShowDeleteDialog(true); };
   const confirmDelete = async () => {
     if (!deleteTargetId) return;
-    try { await transactionApi.delete(deleteTargetId); loadData(); }
+    try { await transactionApi.delete(deleteTargetId); loadInitial(); }
     catch (error) { showToast('Error al eliminar transacción', 'error'); }
-    setShowDeleteDialog(false);
-    setDeleteTargetId(null);
+    setShowDeleteDialog(false); setDeleteTargetId(null);
   };
 
-  const getMonthFromDate = (dateStr: string) => {
-    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    return months[new Date(dateStr).getMonth()] || '-';
-  };
-
-  const getBudgetLineLabel = (blId: string) => {
-    const bl = budgetLines.find(b => b.id === blId);
-    if (!bl) return '-';
-    return `${bl.expense?.code || ''} - ${bl.financialCompany?.name || ''}`;
-  };
+  const activeBudget = allBudgets.find(b => b.isActive);
 
   if (isLoading) return <div className="text-center py-8">Cargando...</div>;
 
+  const thSortable = "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none";
+
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <div />
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-3">
+          <select value={selectedBudgetId} onChange={e => handleBudgetChange(e.target.value)} className="border rounded px-3 py-1.5 text-sm min-w-[220px]">
+            {allBudgets.map(b => (
+              <option key={b.id} value={b.id}>{b.year} - {b.version}{b.isActive ? ' ★ Vigente' : ''}</option>
+            ))}
+          </select>
+          {activeBudget && selectedBudgetId === activeBudget.id && (
+            <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">★ Vigente</span>
+          )}
+          <input type="text" value={filterText} onChange={e => setFilterText(e.target.value)}
+            placeholder="Filtrar (separar por comas)..." className="border rounded px-3 py-1.5 text-sm w-64" />
+        </div>
         <button onClick={handleCreate} className="btn-primary flex items-center gap-2">
           <HiOutlinePlusCircle className="w-5 h-5" /> Nueva Transacción
         </button>
@@ -127,19 +186,19 @@ export default function CommittedTransactionsPage() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Línea Presupuesto</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha Servicio</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha Imputación</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ref. Documento</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Moneda</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Valor</th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Mes</th>
+              <th className={thSortable} onClick={() => handleSort('budgetLine')}>Línea Presupuesto <SortIcon field="budgetLine" /></th>
+              <th className={thSortable} onClick={() => handleSort('serviceDate')}>Fecha Servicio <SortIcon field="serviceDate" /></th>
+              <th className={thSortable} onClick={() => handleSort('postingDate')}>Fecha Imputación <SortIcon field="postingDate" /></th>
+              <th className={thSortable} onClick={() => handleSort('refDoc')}>Ref. Documento <SortIcon field="refDoc" /></th>
+              <th className={thSortable} onClick={() => handleSort('currency')}>Moneda <SortIcon field="currency" /></th>
+              <th className={thSortable + " text-right"} onClick={() => handleSort('value')}>Valor <SortIcon field="value" /></th>
+              <th className={thSortable + " text-center"} onClick={() => handleSort('month')}>Mes <SortIcon field="month" /></th>
               <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Compensada</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {transactions.map((transaction) => (
+            {filteredAndSorted.map((transaction) => (
               <tr key={transaction.id} className={transaction.isCompensated ? 'opacity-50' : ''}>
                 <td className="px-6 py-4 text-sm text-gray-900">{getBudgetLineLabel(transaction.budgetLineId)}</td>
                 <td className="px-6 py-4 text-sm text-gray-500">{new Date(transaction.serviceDate).toLocaleDateString()}</td>
@@ -186,7 +245,6 @@ export default function CommittedTransactionsPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Servicio</label>
                   <input type="date" value={formData.serviceDate} onChange={(e) => setFormData({ ...formData, serviceDate: e.target.value })} className="w-full px-3 py-2 border rounded-md" required />
-                  {formData.serviceDate && <p className="text-xs text-gray-500 mt-1">Mes auto-derivado: {getMonthFromDate(formData.serviceDate)}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Imputación</label>

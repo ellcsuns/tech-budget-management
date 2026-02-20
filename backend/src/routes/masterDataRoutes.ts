@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { MasterDataService } from '../services/MasterDataService';
 
-export function masterDataRouter(prisma: PrismaClient, type: 'TECH_DIRECTION' | 'USER_AREA' | 'FINANCIAL_COMPANY') {
+export function masterDataRouter(prisma: PrismaClient, type: 'TECH_DIRECTION' | 'USER_AREA' | 'FINANCIAL_COMPANY' | 'EXPENSE_CATEGORY') {
   const router = Router();
   const masterDataService = new MasterDataService(prisma);
 
@@ -27,6 +27,13 @@ export function masterDataRouter(prisma: PrismaClient, type: 'TECH_DIRECTION' | 
       getOne: masterDataService.getFinancialCompany.bind(masterDataService),
       update: masterDataService.updateFinancialCompany.bind(masterDataService),
       delete: masterDataService.deleteFinancialCompany.bind(masterDataService)
+    },
+    EXPENSE_CATEGORY: {
+      create: masterDataService.createExpenseCategory.bind(masterDataService),
+      getAll: masterDataService.getExpenseCategories.bind(masterDataService),
+      getOne: masterDataService.getExpenseCategory.bind(masterDataService),
+      update: masterDataService.updateExpenseCategory.bind(masterDataService),
+      delete: masterDataService.deleteExpenseCategory.bind(masterDataService)
     }
   };
 
