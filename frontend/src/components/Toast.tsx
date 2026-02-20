@@ -21,7 +21,7 @@ export default function ToastContainer() {
   const addToast = useCallback((text: string, type: ToastType) => {
     const id = ++toastId;
     setToasts(prev => [...prev, { id, text, type }]);
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 8000);
   }, []);
 
   useEffect(() => {
@@ -38,9 +38,9 @@ export default function ToastContainer() {
   };
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-2 items-center">
+    <div className="fixed bottom-0 left-0 right-0 z-[9999] flex flex-col gap-0">
       {toasts.map(t => (
-        <div key={t.id} className={`${colors[t.type]} text-white px-6 py-3 rounded-lg shadow-lg text-sm max-w-md text-center animate-fade-in`}
+        <div key={t.id} className={`${colors[t.type]} text-white px-6 py-3 text-sm text-center cursor-pointer animate-fade-in`}
           onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))}>
           {t.text}
         </div>

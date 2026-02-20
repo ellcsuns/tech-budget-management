@@ -14,7 +14,6 @@ import UserManagementPage from './pages/UserManagementPage';
 import RoleManagementPage from './pages/RoleManagementPage';
 import CommittedTransactionsPage from './pages/CommittedTransactionsPage';
 import RealTransactionsPage from './pages/RealTransactionsPage';
-import PlanValuesPage from './pages/PlanValuesPage';
 import ExpensesPage from './pages/ExpensesPage';
 import BudgetsPage from './pages/BudgetsPage';
 import SavingsPage from './pages/SavingsPage';
@@ -50,7 +49,6 @@ function App() {
               <Route path="/exchange-rates" element={<ProtectedRoute menuCode="conversion-rates" permissionType="VIEW"><Layout><ExchangeRatePage /></Layout></ProtectedRoute>} />
               <Route path="/users" element={<ProtectedRoute menuCode="users" permissionType="VIEW"><Layout><UserManagementPage /></Layout></ProtectedRoute>} />
               <Route path="/roles" element={<ProtectedRoute menuCode="roles" permissionType="VIEW"><Layout><RoleManagementPage /></Layout></ProtectedRoute>} />
-              <Route path="/plan-values" element={<ProtectedRoute menuCode="plan-values" permissionType="VIEW"><Layout><PlanValuesPage /></Layout></ProtectedRoute>} />
               <Route path="/expenses" element={<ProtectedRoute menuCode="expenses" permissionType="VIEW"><Layout><ExpensesPage /></Layout></ProtectedRoute>} />
               <Route path="/committed-transactions" element={<ProtectedRoute menuCode="committed-transactions" permissionType="VIEW"><Layout><CommittedTransactionsPage /></Layout></ProtectedRoute>} />
               <Route path="/real-transactions" element={<ProtectedRoute menuCode="real-transactions" permissionType="VIEW"><Layout><RealTransactionsPage /></Layout></ProtectedRoute>} />

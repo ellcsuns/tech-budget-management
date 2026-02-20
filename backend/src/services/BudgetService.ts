@@ -172,7 +172,6 @@ export class BudgetService {
       })
     ]);
     if (!budgetA || !budgetB) throw new Error('Budget not found');
-    if (budgetA.year !== budgetB.year) throw new Error('Budgets must be from the same year');
     return { budgetA, budgetB };
   }
 

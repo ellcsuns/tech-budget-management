@@ -94,7 +94,7 @@ export default function BudgetComparePage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Versión</label>
                 <select value={budgetBId} onChange={e => setBudgetBId(e.target.value)} className="w-full px-3 py-2 border rounded-lg">
                   <option value="">Seleccionar...</option>
-                  {budgetsForYearB.filter(b => b.id !== budgetAId).map(b => <option key={b.id} value={b.id}>{b.version}{b.isActive ? ' (vigente)' : ''}</option>)}
+                  {budgetsForYearB.map(b => <option key={b.id} value={b.id}>{b.version}{b.isActive ? ' (vigente)' : ''}</option>)}
                 </select>
               </div>
             </div>
