@@ -66,7 +66,6 @@ export default function TranslationsPage() {
     setShowDeleteDialog(false);
     setDeleteTargetId(null);
   };
-  };
 
   return (
     <div className="space-y-6">
