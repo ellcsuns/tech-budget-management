@@ -612,7 +612,7 @@ async function main() {
         status: s.status,
         monthlyDistribution: monthlyDist,
         createdBy: s.status === SavingStatus.ACTIVE ? user1.id : user2.id,
-        approvedAt: s.status === SavingStatus.ACTIVE ? new Date() : null,
+        activatedAt: s.status === SavingStatus.ACTIVE ? new Date() : null,
       }
     });
   }

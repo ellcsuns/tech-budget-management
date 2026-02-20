@@ -28,7 +28,7 @@ async function main() {
   console.log('🗑️  Permisos antiguos eliminados');
 
   // Create all permissions for all menu codes
-  const allPermissions = MENU_CODE_LIST.flatMap(menuCode => [
+  const allPermissions: { roleId: string; menuCode: string; permissionType: PermissionType }[] = MENU_CODE_LIST.flatMap(menuCode => [
     { roleId: adminRole.id, menuCode, permissionType: PermissionType.VIEW },
     { roleId: adminRole.id, menuCode, permissionType: PermissionType.MODIFY }
   ]);
