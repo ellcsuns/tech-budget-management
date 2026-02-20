@@ -72,19 +72,19 @@ export default function SavingsPage() {
       setFormData({ budgetLineId: '', description: '' });
       setMonthlyValues(Array(12).fill(0));
       loadSavings();
-      showToast('Ahorro creado exitosamente', 'success');
+      showToast(t('saving.created'), 'success');
     } catch (error: any) { showToast(error.response?.data?.error || 'Error al crear ahorro', 'error'); }
   };
 
   const handleDeleteSaving = async () => {
     if (!deleteTarget) return;
-    try { await savingsApi.delete(deleteTarget); setDeleteTarget(null); loadSavings(); showToast('Ahorro eliminado', 'success'); }
+    try { await savingsApi.delete(deleteTarget); setDeleteTarget(null); loadSavings(); showToast(t('saving.deleted'), 'success'); }
     catch (error: any) { showToast(error.response?.data?.error || 'Error al eliminar ahorro', 'error'); setDeleteTarget(null); }
   };
 
   const handleActivateSaving = async () => {
     if (!activateTarget) return;
-    try { await savingsApi.activate(activateTarget); setActivateTarget(null); loadSavings(); showToast('Ahorro activado exitosamente', 'success'); }
+    try { await savingsApi.activate(activateTarget); setActivateTarget(null); loadSavings(); showToast(t('saving.activated'), 'success'); }
     catch (error: any) { showToast(error.response?.data?.error || 'Error al activar ahorro', 'error'); setActivateTarget(null); }
   };
 
@@ -135,39 +135,44 @@ export default function SavingsPage() {
 
       {/* Form */}
       {showForm && (
-        <div className="bg-white p-6 rounded shadow mb-6">
-          <h2 className="text-xl font-bold mb-4">{t('saving.new')}</h2>
-          <form onSubmit={handleCreateSaving}>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="col-span-2">
-                <label className="block text-sm font-medium mb-1">{t('table.budgetLine')} *</label>
-                <select value={formData.budgetLineId} onChange={(e) => setFormData({ ...formData, budgetLineId: e.target.value })} className="w-full border rounded px-3 py-2" required>
-                  <option value="">{t('msg.select') || 'Seleccionar'}</option>
-                  {budgetLines.map(bl => (<option key={bl.id} value={bl.id}>{bl.expense?.code} - {bl.expense?.shortDescription} ({bl.financialCompany?.code})</option>))}
-                </select>
-              </div>
-              <div className="col-span-2">
-                <label className="block text-sm font-medium mb-1">{t('label.description')} *</label>
-                <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full border rounded px-3 py-2" rows={2} required />
-              </div>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">{t('saving.new')}</h2>
+              <button onClick={() => setShowForm(false)} className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
             </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">{t('saving.monthlyValues') || 'Valores Mensuales'}</label>
-              <div className="grid grid-cols-6 gap-2">
-                {MONTHS.map((m, i) => (
-                  <div key={i}>
-                    <label className="block text-xs text-gray-500 mb-1">{m}</label>
-                    <input type="number" step="0.01" min="0" value={monthlyValues[i] || ''} onChange={(e) => { const v = [...monthlyValues]; v[i] = parseFloat(e.target.value) || 0; setMonthlyValues(v); }} className="w-full border rounded px-2 py-1 text-sm" />
-                  </div>
-                ))}
+            <form onSubmit={handleCreateSaving}>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium mb-1">{t('table.budgetLine')} *</label>
+                  <select value={formData.budgetLineId} onChange={(e) => setFormData({ ...formData, budgetLineId: e.target.value })} className="w-full border rounded px-3 py-2" required>
+                    <option value="">{t('msg.select') || 'Seleccionar'}</option>
+                    {budgetLines.map(bl => (<option key={bl.id} value={bl.id}>{bl.expense?.code} - {bl.expense?.shortDescription} ({bl.financialCompany?.code})</option>))}
+                  </select>
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium mb-1">{t('label.description')} *</label>
+                  <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full border rounded px-3 py-2" rows={2} required />
+                </div>
               </div>
-              <div className="mt-2 text-right text-sm font-semibold">Total: ${fmt(total)}</div>
-            </div>
-            <div className="flex gap-2">
-              <button type="submit" className="btn-success" disabled={total <= 0}>{t('saving.create') || 'Crear Ahorro'}</button>
-              <button type="button" onClick={() => setShowForm(false)} className="btn-cancel">{t('btn.cancel')}</button>
-            </div>
-          </form>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2">{t('saving.monthlyValues')}</label>
+                <div className="grid grid-cols-6 gap-2">
+                  {MONTHS.map((m, i) => (
+                    <div key={i}>
+                      <label className="block text-xs text-gray-500 mb-1">{m}</label>
+                      <input type="number" step="0.01" min="0" value={monthlyValues[i] || ''} onChange={(e) => { const v = [...monthlyValues]; v[i] = parseFloat(e.target.value) || 0; setMonthlyValues(v); }} className="w-full border rounded px-2 py-1 text-sm" />
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2 text-right text-sm font-semibold">Total: ${fmt(total)}</div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <button type="button" onClick={() => setShowForm(false)} className="btn-cancel">{t('btn.cancel')}</button>
+                <button type="submit" className="btn-success" disabled={total <= 0}>{t('saving.create')}</button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
@@ -206,10 +211,10 @@ export default function SavingsPage() {
                   <td className="p-3 flex gap-1" onClick={(e) => e.stopPropagation()}>
                     {saving.status === 'PENDING' && isActiveBudgetSelected && (
                       <>
-                        <button onClick={() => setActivateTarget(saving.id)} className="icon-btn-success" title="Activar">
+                        <button onClick={() => setActivateTarget(saving.id)} className="icon-btn-success" title={t('saving.activateSaving')}>
                           <HiOutlinePlay className="w-5 h-5" />
                         </button>
-                        <button onClick={() => setDeleteTarget(saving.id)} className="icon-btn-danger" title="Eliminar">
+                        <button onClick={() => setDeleteTarget(saving.id)} className="icon-btn-danger" title={t('saving.deleteSaving')}>
                           <HiOutlineTrash className="w-5 h-5" />
                         </button>
                       </>

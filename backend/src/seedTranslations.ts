@@ -346,6 +346,88 @@ const translations: TranslationSeed[] = [
   { key: 'budget.addBudgetLine', es: 'Agregar Línea de Presupuesto', en: 'Add Budget Line', category: 'budget' },
   { key: 'msg.sending', es: 'Enviando...', en: 'Sending...', category: 'message' },
   { key: 'msg.creating', es: 'Creando...', en: 'Creating...', category: 'message' },
+
+  // ============================================
+  // New translation keys for UI internationalization
+  // ============================================
+
+  // Table category - shared table headers (missing keys)
+  { key: 'table.filter', es: 'Filtrar...', en: 'Filter...', category: 'table' },
+  { key: 'table.all', es: 'Todas', en: 'All', category: 'table' },
+
+  // Budget category - budget page labels, popups, messages
+  { key: 'budget.noLines', es: 'No hay líneas de presupuesto para mostrar', en: 'No budget lines to display', category: 'budget' },
+  { key: 'budget.showModCols', es: 'Mostrar columnas de modificación', en: 'Show modification columns', category: 'budget' },
+  { key: 'budget.hideModCols', es: 'Ocultar columnas de modificación', en: 'Hide modification columns', category: 'budget' },
+  { key: 'budget.deleteLineConfirm', es: '¿Estás seguro de eliminar esta línea del presupuesto?', en: 'Are you sure you want to delete this budget line?', category: 'budget' },
+  { key: 'budget.deleteBudgetConfirm', es: '¿Estás seguro de eliminar el presupuesto {year} {version}? Esta acción no se puede deshacer.', en: 'Are you sure you want to delete budget {year} {version}? This action cannot be undone.', category: 'budget' },
+  { key: 'budget.lineDeleted', es: 'Línea eliminada correctamente', en: 'Line deleted successfully', category: 'budget' },
+  { key: 'budget.lineAdded', es: 'Línea agregada correctamente', en: 'Line added successfully', category: 'budget' },
+  { key: 'budget.expense', es: 'Gasto', en: 'Expense', category: 'budget' },
+  { key: 'budget.financialCompany', es: 'Empresa Financiera', en: 'Financial Company', category: 'budget' },
+  { key: 'budget.techDirection', es: 'Dirección Tecnológica (opcional)', en: 'Technology Direction (optional)', category: 'budget' },
+  { key: 'budget.selectExpense', es: 'Seleccionar gasto...', en: 'Select expense...', category: 'budget' },
+  { key: 'budget.selectCompany', es: 'Seleccionar empresa...', en: 'Select company...', category: 'budget' },
+  { key: 'budget.noTechDirection', es: 'Sin dirección tecnológica', en: 'No technology direction', category: 'budget' },
+  { key: 'budget.copyFrom', es: 'Copiar desde presupuesto (opcional)', en: 'Copy from budget (optional)', category: 'budget' },
+  { key: 'budget.emptyBudget', es: 'Sin copia - presupuesto vacío', en: 'No copy - empty budget', category: 'budget' },
+  { key: 'budget.copyNote', es: 'Se copiarán las líneas de presupuesto y tasas de conversión', en: 'Budget lines and conversion rates will be copied', category: 'budget' },
+  { key: 'budget.changeRequestDetail', es: 'Detalle de Solicitud de Cambio', en: 'Change Request Detail', category: 'budget' },
+  { key: 'budget.month', es: 'Mes', en: 'Month', category: 'budget' },
+  { key: 'budget.current', es: 'Actual', en: 'Current', category: 'budget' },
+  { key: 'budget.proposed', es: 'Propuesto', en: 'Proposed', category: 'budget' },
+  { key: 'budget.previous', es: 'Anterior', en: 'Previous', category: 'budget' },
+  { key: 'budget.difference', es: 'Diferencia', en: 'Difference', category: 'budget' },
+  { key: 'budget.commentOptional', es: 'Comentario (opcional)', en: 'Comment (optional)', category: 'budget' },
+  { key: 'budget.justification', es: 'Justificación del cambio...', en: 'Change justification...', category: 'budget' },
+  { key: 'budget.modifyValue', es: 'Modifica al menos un valor para enviar la solicitud', en: 'Modify at least one value to submit the request', category: 'budget' },
+  { key: 'budget.inReview', es: 'En Revisión', en: 'In Review', category: 'budget' },
+  { key: 'budget.budgetCreated', es: 'Presupuesto creado correctamente', en: 'Budget created successfully', category: 'budget' },
+  { key: 'budget.markedActive', es: 'Presupuesto marcado como vigente', en: 'Budget marked as active', category: 'budget' },
+  { key: 'budget.sentToReview', es: 'Presupuesto enviado a revisión', en: 'Budget sent for review', category: 'budget' },
+  { key: 'budget.changeRequestSent', es: 'Solicitud de cambio enviada a aprobación exitosamente', en: 'Change request sent for approval successfully', category: 'budget' },
+  { key: 'budget.budgetDeleted', es: 'Presupuesto eliminado', en: 'Budget deleted', category: 'budget' },
+
+  // Expense category - expense table headers
+  { key: 'expense.code', es: 'Código', en: 'Code', category: 'expense' },
+  { key: 'expense.description', es: 'Descripción', en: 'Description', category: 'expense' },
+  { key: 'expense.budget', es: 'Ppto', en: 'Budget', category: 'expense' },
+  { key: 'expense.committed', es: 'Comp', en: 'Committed', category: 'expense' },
+  { key: 'expense.real', es: 'Real', en: 'Real', category: 'expense' },
+  { key: 'expense.diff', es: 'Dif', en: 'Diff', category: 'expense' },
+
+  // Saving category - saving messages
+  { key: 'saving.created', es: 'Ahorro creado exitosamente', en: 'Saving created successfully', category: 'saving' },
+  { key: 'saving.deleted', es: 'Ahorro eliminado', en: 'Saving deleted', category: 'saving' },
+  { key: 'saving.activated', es: 'Ahorro activado exitosamente', en: 'Saving activated successfully', category: 'saving' },
+
+  // Deferral category - deferral messages
+  { key: 'deferral.startBeforeEnd', es: 'El mes de inicio debe ser menor al mes de fin', en: 'Start month must be before end month', category: 'deferral' },
+  { key: 'deferral.deleteConfirm', es: '¿Estás seguro de eliminar este diferido?', en: 'Are you sure you want to delete this deferral?', category: 'deferral' },
+
+  // Common category - shared UI labels
+  { key: 'common.confirm', es: 'Confirmar Acción', en: 'Confirm Action', category: 'common' },
+  { key: 'common.continue', es: 'Continuar', en: 'Continue', category: 'common' },
+  { key: 'common.cancel', es: 'Cancelar', en: 'Cancel', category: 'common' },
+  { key: 'common.pending', es: 'Pendiente', en: 'Pending', category: 'common' },
+  { key: 'common.approved', es: 'Aprobada', en: 'Approved', category: 'common' },
+  { key: 'common.rejected', es: 'Rechazada', en: 'Rejected', category: 'common' },
+
+  // Translations category - translations page UI
+  { key: 'translations.count', es: 'traducciones', en: 'translations', category: 'translations' },
+  { key: 'translations.sections', es: 'secciones', en: 'sections', category: 'translations' },
+  { key: 'translations.new', es: 'Nueva Traducción', en: 'New Translation', category: 'translations' },
+  { key: 'translations.searchPlaceholder', es: 'Buscar por clave o texto...', en: 'Search by key or text...', category: 'translations' },
+  { key: 'translations.allCategories', es: 'Todas las categorías', en: 'All categories', category: 'translations' },
+  { key: 'translations.key', es: 'Clave', en: 'Key', category: 'translations' },
+  { key: 'translations.spanish', es: 'Español', en: 'Spanish', category: 'translations' },
+  { key: 'translations.english', es: 'English', en: 'English', category: 'translations' },
+  { key: 'translations.cat', es: 'Cat.', en: 'Cat.', category: 'translations' },
+  { key: 'translations.save', es: 'Guardar', en: 'Save', category: 'translations' },
+  { key: 'translations.edit', es: 'Editar', en: 'Edit', category: 'translations' },
+  { key: 'translations.delete', es: 'Eliminar', en: 'Delete', category: 'translations' },
+  { key: 'translations.deleteConfirm', es: '¿Eliminar esta traducción?', en: 'Delete this translation?', category: 'translations' },
+  { key: 'translations.loading', es: 'Cargando...', en: 'Loading...', category: 'translations' },
 ];
 
 export async function seedTranslations(prisma: PrismaClient) {

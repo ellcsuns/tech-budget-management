@@ -73,7 +73,7 @@ export default function DeferralsPage() {
     if (!selectedBudgetLine) return;
 
     if (parseInt(form.startMonth) >= parseInt(form.endMonth)) {
-      showToast('El mes de inicio debe ser menor al mes de fin', 'error');
+      showToast(t('deferral.startBeforeEnd'), 'error');
       return;
     }
 
@@ -134,46 +134,57 @@ export default function DeferralsPage() {
         </div>
 
         {showForm && (
-          <form onSubmit={handleSubmit} className="bg-gray-50 p-4 rounded-lg mb-6 space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">{t('table.budgetLine')} *</label>
-              <input type="text" value={searchText} onChange={(e) => { setSearchText(e.target.value); setSelectedBudgetLine(null); }}
-                placeholder={t('deferral.searchLine')} className="w-full border rounded px-3 py-2" />
-              {searchText && !selectedBudgetLine && filteredLines.length > 0 && (
-                <div className="border rounded mt-1 max-h-40 overflow-y-auto bg-white">
-                  {filteredLines.slice(0, 10).map(bl => (
-                    <div key={bl.id} onClick={() => handleSelectBudgetLine(bl)} className="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm">
-                      {bl.expense?.code} - {bl.expense?.shortDescription} ({bl.financialCompany?.name})
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-bold">{t('deferral.new')}</h2>
+                <button onClick={() => { setShowForm(false); setSelectedBudgetLine(null); setSearchText(''); }} className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+              </div>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t('table.budgetLine')} *</label>
+                  <input type="text" value={searchText} onChange={(e) => { setSearchText(e.target.value); setSelectedBudgetLine(null); }}
+                    placeholder={t('deferral.searchLine')} className="w-full border rounded px-3 py-2" />
+                  {searchText && !selectedBudgetLine && filteredLines.length > 0 && (
+                    <div className="border rounded mt-1 max-h-40 overflow-y-auto bg-white">
+                      {filteredLines.slice(0, 10).map(bl => (
+                        <div key={bl.id} onClick={() => handleSelectBudgetLine(bl)} className="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm">
+                          {bl.expense?.code} - {bl.expense?.shortDescription} ({bl.financialCompany?.name})
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
+                  {selectedBudgetLine && <p className="text-sm text-green-600 mt-1">✓ {t('table.budgetLine')}: {selectedBudgetLine.expense?.code}</p>}
                 </div>
-              )}
-              {selectedBudgetLine && <p className="text-sm text-green-600 mt-1">✓ Línea seleccionada: {selectedBudgetLine.expense?.code}</p>}
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t('label.description')} *</label>
+                  <input type="text" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full border rounded px-3 py-2" required />
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">{t('deferral.totalAmount')} *</label>
+                    <input type="number" step="0.01" value={form.totalAmount} onChange={(e) => setForm({ ...form, totalAmount: e.target.value })} className="w-full border rounded px-3 py-2" required />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">{t('deferral.startMonth')} *</label>
+                    <select value={form.startMonth} onChange={(e) => setForm({ ...form, startMonth: e.target.value })} className="w-full border rounded px-3 py-2">
+                      {MONTHS.map((m, i) => (<option key={i} value={i + 1}>{m}</option>))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">{t('deferral.endMonth')} *</label>
+                    <select value={form.endMonth} onChange={(e) => setForm({ ...form, endMonth: e.target.value })} className="w-full border rounded px-3 py-2">
+                      {MONTHS.map((m, i) => (<option key={i} value={i + 1}>{m}</option>))}
+                    </select>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <button type="button" onClick={() => { setShowForm(false); setSelectedBudgetLine(null); setSearchText(''); }} className="btn-cancel">{t('btn.cancel')}</button>
+                  <button type="submit" disabled={!selectedBudgetLine} className="btn-success disabled:opacity-50">{t('deferral.create')}</button>
+                </div>
+              </form>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">{t('label.description')} *</label>
-              <input type="text" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full border rounded px-3 py-2" required />
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">{t('deferral.totalAmount')} *</label>
-                <input type="number" step="0.01" value={form.totalAmount} onChange={(e) => setForm({ ...form, totalAmount: e.target.value })} className="w-full border rounded px-3 py-2" required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">{t('deferral.startMonth')} *</label>
-                <select value={form.startMonth} onChange={(e) => setForm({ ...form, startMonth: e.target.value })} className="w-full border rounded px-3 py-2">
-                  {MONTHS.map((m, i) => (<option key={i} value={i + 1}>{m}</option>))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">{t('deferral.endMonth')} *</label>
-                <select value={form.endMonth} onChange={(e) => setForm({ ...form, endMonth: e.target.value })} className="w-full border rounded px-3 py-2">
-                  {MONTHS.map((m, i) => (<option key={i} value={i + 1}>{m}</option>))}
-                </select>
-              </div>
-            </div>
-            <button type="submit" disabled={!selectedBudgetLine} className="btn-success disabled:opacity-50">{t('deferral.create')}</button>
-          </form>
+          </div>
         )}
 
         {deferrals.length === 0 ? (
@@ -200,7 +211,7 @@ export default function DeferralsPage() {
                     <td className="px-4 py-3 text-sm text-center">{MONTHS[def.startMonth - 1]} - {MONTHS[def.endMonth - 1]}</td>
                     <td className="px-4 py-3 text-sm">{def.user?.fullName || def.createdBy}</td>
                     <td className="px-4 py-3 text-sm text-center">
-                      <button onClick={() => handleDelete(def.id)} className="icon-btn-danger" title="Eliminar">
+                      <button onClick={() => handleDelete(def.id)} className="icon-btn-danger" title={t('btn.delete')}>
                         <HiOutlineTrash className="w-5 h-5" />
                       </button>
                     </td>
@@ -212,7 +223,7 @@ export default function DeferralsPage() {
         )}
       </div>
 
-      <ConfirmationDialog isOpen={showDeleteDialog} message="¿Estás seguro de eliminar este diferido?" onConfirm={confirmDelete} onCancel={() => { setShowDeleteDialog(false); setDeleteTargetId(null); }} />
+      <ConfirmationDialog isOpen={showDeleteDialog} message={t('deferral.deleteConfirm')} onConfirm={confirmDelete} onCancel={() => { setShowDeleteDialog(false); setDeleteTargetId(null); }} />
     </div>
   );
 }

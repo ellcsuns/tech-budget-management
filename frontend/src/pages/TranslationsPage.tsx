@@ -13,7 +13,7 @@ interface Translation {
 }
 
 export default function TranslationsPage() {
-  void useI18n();
+  const { t } = useI18n();
   const [translations, setTranslations] = useState<Translation[]>([]);
   const [search, setSearch] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -95,22 +95,22 @@ export default function TranslationsPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-500">{translations.length} traducciones</span>
+          <span className="text-sm text-gray-500">{translations.length} {t('translations.count')}</span>
           {grouped.length > 0 && (
-            <span className="text-sm text-gray-400">· {grouped.length} secciones</span>
+            <span className="text-sm text-gray-400">· {grouped.length} {t('translations.sections')}</span>
           )}
         </div>
-        <button onClick={() => setShowNew(true)} className="btn-primary">+ Nueva Traducción</button>
+        <button onClick={() => setShowNew(true)} className="btn-primary">+ {t('translations.new')}</button>
       </div>
 
       <div className="bg-white rounded-lg shadow p-4">
         <div className="flex gap-3 mb-4">
-          <input type="text" placeholder="Buscar por clave o texto..." value={search}
+          <input type="text" placeholder={t('translations.searchPlaceholder')} value={search}
             onChange={e => setSearch(e.target.value)}
             className="flex-1 px-4 py-2 border rounded-lg" />
           <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
             className="px-3 py-2 border rounded-lg text-sm">
-            <option value="">Todas las categorías</option>
+            <option value="">{t('translations.allCategories')}</option>
             {categories.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
@@ -124,10 +124,29 @@ export default function TranslationsPage() {
               <div className="flex gap-2">
                 <select value={newData.category} onChange={e => setNewData({...newData, category: e.target.value})} className="px-3 py-2 border rounded flex-1">
                   <option value="general">General</option>
-                  <option value="menu">Menú</option>
-                  <option value="button">Botón</option>
-                  <option value="label">Etiqueta</option>
-                  <option value="message">Mensaje</option>
+                  <option value="menu">Menu</option>
+                  <option value="button">Button</option>
+                  <option value="label">Label</option>
+                  <option value="message">Message</option>
+                  <option value="table">Table</option>
+                  <option value="budget">Budgets</option>
+                  <option value="expense">Expenses</option>
+                  <option value="saving">Savings</option>
+                  <option value="deferral">Deferrals</option>
+                  <option value="common">Common</option>
+                  <option value="translations">Translations</option>
+                  <option value="dashboard">Dashboard</option>
+                  <option value="transaction">Transactions</option>
+                  <option value="approval">Approvals</option>
+                  <option value="report">Reports</option>
+                  <option value="config">Configuration</option>
+                  <option value="page">Pages</option>
+                  <option value="month">Months</option>
+                  <option value="section">Sections</option>
+                  <option value="filter">Filters</option>
+                  <option value="theme">Themes</option>
+                  <option value="app">App</option>
+                  <option value="masterData">Master Data</option>
                 </select>
                 <button onClick={handleCreate} className="px-3 py-2 btn-success text-sm">✓</button>
                 <button onClick={() => setShowNew(false)} className="px-3 py-2 btn-cancel text-sm">✕</button>
@@ -136,7 +155,7 @@ export default function TranslationsPage() {
           </div>
         )}
 
-        {loading ? <p className="text-center py-8 text-gray-500">Cargando...</p> : (
+        {loading ? <p className="text-center py-8 text-gray-500">{t('translations.loading')}</p> : (
           <div className="space-y-2">
             {grouped.map(([section, items]) => {
               const isCollapsed = collapsedGroups.has(section);
@@ -152,11 +171,11 @@ export default function TranslationsPage() {
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b bg-gray-50">
-                          <th className="text-left p-3 w-1/4">Clave</th>
-                          <th className="text-left p-3 w-1/4">Español</th>
-                          <th className="text-left p-3 w-1/4">English</th>
-                          <th className="text-left p-3 w-20">Cat.</th>
-                          <th className="text-center p-3 w-32">Acciones</th>
+                          <th className="text-left p-3 w-1/4">{t('translations.key')}</th>
+                          <th className="text-left p-3 w-1/4">{t('translations.spanish')}</th>
+                          <th className="text-left p-3 w-1/4">{t('translations.english')}</th>
+                          <th className="text-left p-3 w-20">{t('translations.cat')}</th>
+                          <th className="text-center p-3 w-32">{t('label.actions')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -177,13 +196,13 @@ export default function TranslationsPage() {
                             <td className="p-3 text-center space-x-2">
                               {editingId === tr.id ? (
                                 <>
-                                  <button onClick={saveEdit} className="text-green-600 hover:text-green-800">Guardar</button>
-                                  <button onClick={() => setEditingId(null)} className="text-gray-500 hover:text-gray-700">Cancelar</button>
+                                  <button onClick={saveEdit} className="text-green-600 hover:text-green-800">{t('translations.save')}</button>
+                                  <button onClick={() => setEditingId(null)} className="text-gray-500 hover:text-gray-700">{t('common.cancel')}</button>
                                 </>
                               ) : (
                                 <>
-                                  <button onClick={() => startEdit(tr)} className="text-accent hover:opacity-70">Editar</button>
-                                  <button onClick={() => handleDelete(tr.id)} className="text-red-600 hover:text-red-800">Eliminar</button>
+                                  <button onClick={() => startEdit(tr)} className="text-accent hover:opacity-70">{t('translations.edit')}</button>
+                                  <button onClick={() => handleDelete(tr.id)} className="text-red-600 hover:text-red-800">{t('translations.delete')}</button>
                                 </>
                               )}
                             </td>
@@ -199,7 +218,7 @@ export default function TranslationsPage() {
         )}
       </div>
 
-      <ConfirmationDialog isOpen={showDeleteDialog} message="¿Eliminar esta traducción?" onConfirm={confirmDelete} onCancel={() => { setShowDeleteDialog(false); setDeleteTargetId(null); }} />
+      <ConfirmationDialog isOpen={showDeleteDialog} message={t('translations.deleteConfirm')} onConfirm={confirmDelete} onCancel={() => { setShowDeleteDialog(false); setDeleteTargetId(null); }} />
     </div>
   );
 }

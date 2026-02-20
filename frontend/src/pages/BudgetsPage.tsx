@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { budgetApi, expenseApi, financialCompanyApi, userAreaApi, changeRequestApi, technologyDirectionApi } from '../services/api';
+import { budgetApi, expenseApi, financialCompanyApi, userAreaApi, changeRequestApi, technologyDirectionApi, budgetLineApi } from '../services/api';
 import type { Budget, BudgetLine, UserArea, ChangeRequest, TechnologyDirection } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { fmt } from '../utils/formatters';
@@ -24,6 +24,7 @@ export default function BudgetsPage() {
   const [addExpenseId, setAddExpenseId] = useState('');
   const [addCompanyId, setAddCompanyId] = useState('');
   const [addTechDirId, setAddTechDirId] = useState('');
+  const [addMonthlyValues, setAddMonthlyValues] = useState<number[]>(Array(12).fill(0));
   const [allExpenses, setAllExpenses] = useState<any[]>([]);
   const [allCompanies, setAllCompanies] = useState<any[]>([]);
   const [allUserAreas, setAllUserAreas] = useState<UserArea[]>([]);
@@ -118,7 +119,7 @@ export default function BudgetsPage() {
     try {
       await budgetApi.removeBudgetLine(selectedBudget.id, showDeleteDialog);
       setBudgetLines(budgetLines.filter(bl => bl.id !== showDeleteDialog));
-      showToast('Línea eliminada correctamente', 'success');
+      showToast(t('budget.lineDeleted'), 'success');
     } catch (error: any) {
       showToast(error.response?.data?.error || 'Error al eliminar línea', 'error');
     }
@@ -128,10 +129,17 @@ export default function BudgetsPage() {
   const handleAddBudgetLine = async () => {
     if (!selectedBudget || !addExpenseId || !addCompanyId) return;
     try {
-      await budgetApi.addBudgetLine(selectedBudget.id, addExpenseId, addCompanyId, addTechDirId || undefined);
-      setShowAddForm(false); setAddExpenseId(''); setAddCompanyId(''); setAddTechDirId('');
+      const res = await budgetApi.addBudgetLine(selectedBudget.id, addExpenseId, addCompanyId, addTechDirId || undefined);
+      // If monthly values were entered, update them
+      const newLineId = res.data?.id;
+      if (newLineId && addMonthlyValues.some(v => v > 0)) {
+        const planData: Record<string, number> = {};
+        for (let m = 1; m <= 12; m++) planData[`planM${m}`] = addMonthlyValues[m - 1];
+        try { await budgetLineApi.updatePlanValues(newLineId, planData); } catch {}
+      }
+      setShowAddForm(false); setAddExpenseId(''); setAddCompanyId(''); setAddTechDirId(''); setAddMonthlyValues(Array(12).fill(0));
       loadBudgetDetails(selectedBudget.id);
-      showToast('Línea agregada correctamente', 'success');
+      showToast(t('budget.lineAdded'), 'success');
     } catch (error: any) { showToast(error.response?.data?.error || 'Error al agregar línea', 'error'); }
   };
 
@@ -139,7 +147,7 @@ export default function BudgetsPage() {
     setIsCreating(true);
     try {
       await budgetApi.create({ year: newBudgetYear, version: newBudgetVersion, sourceBudgetId: sourceBudgetId || undefined });
-      showToast('Presupuesto creado correctamente', 'success');
+      showToast(t('budget.budgetCreated'), 'success');
       setShowCreateModal(false);
       setSourceBudgetId('');
       loadBudgets();
@@ -152,7 +160,7 @@ export default function BudgetsPage() {
     if (!selectedBudget) return;
     try {
       await budgetApi.setActive(selectedBudget.id);
-      showToast(`Presupuesto ${selectedBudget.year} ${selectedBudget.version} marcado como vigente`, 'success');
+      showToast(t('budget.markedActive'), 'success');
       // Refresh budget list and current budget details
       const res = await budgetApi.getAll();
       setAllBudgets(res.data);
@@ -166,7 +174,7 @@ export default function BudgetsPage() {
     if (!selectedBudget) return;
     try {
       await budgetApi.delete(selectedBudget.id);
-      showToast('Presupuesto eliminado', 'success');
+      showToast(t('budget.budgetDeleted'), 'success');
       setShowDeleteBudgetDialog(false);
       setSelectedBudget(null);
       setBudgetLines([]);
@@ -180,7 +188,7 @@ export default function BudgetsPage() {
     if (!selectedBudget) return;
     try {
       await budgetApi.submitForReview(selectedBudget.id);
-      showToast('Presupuesto enviado a revisión', 'success');
+      showToast(t('budget.sentToReview'), 'success');
       loadBudgetDetails(selectedBudget.id);
       loadBudgets();
     } catch (error: any) {
@@ -203,7 +211,7 @@ export default function BudgetsPage() {
       const proposedValues: Record<string, number> = {};
       for (let m = 1; m <= 12; m++) proposedValues[`planM${m}`] = parseFloat(popupValues[m]) || 0;
       await changeRequestApi.create({ budgetLineId: editPopupLine.id, proposedValues, comment: popupComment || undefined });
-      showToast('Solicitud de cambio enviada a aprobación exitosamente', 'success');
+      showToast(t('budget.changeRequestSent'), 'success');
       setEditPopupLine(null);
     } catch (error: any) {
       showToast(error.response?.data?.error || 'Error al enviar solicitud de cambio', 'error');
@@ -265,9 +273,9 @@ export default function BudgetsPage() {
   }, [filteredLines]);
 
   const statusLabel = (s: string) => {
-    if (s === 'PENDING') return { text: 'Pendiente', cls: 'bg-yellow-100 text-yellow-800' };
-    if (s === 'APPROVED') return { text: 'Aprobada', cls: 'bg-green-100 text-green-800' };
-    return { text: 'Rechazada', cls: 'bg-red-100 text-red-800' };
+    if (s === 'PENDING') return { text: t('common.pending'), cls: 'bg-yellow-100 text-yellow-800' };
+    if (s === 'APPROVED') return { text: t('common.approved'), cls: 'bg-green-100 text-green-800' };
+    return { text: t('common.rejected'), cls: 'bg-red-100 text-red-800' };
   };
 
   if (isLoading && !selectedBudget) return <div className="text-center py-8">{t('msg.loading')}</div>;
@@ -286,14 +294,14 @@ export default function BudgetsPage() {
             >
               {allBudgets.map(b => (
                 <option key={b.id} value={b.id}>
-                  {b.year} - {b.version}{b.isActive ? ' ★ Vigente' : ''}
+                  {b.year} - {b.version}{b.isActive ? ` ★ ${t('budget.active')}` : ''}
                 </option>
               ))}
             </select>
           </div>
 
           {selectedBudget?.isActive && (
-            <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">★ Vigente</span>
+            <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">★ {t('budget.active')}</span>
           )}
 
           <div className="ml-auto flex items-center gap-2">
@@ -309,7 +317,7 @@ export default function BudgetsPage() {
             )}
             {selectedBudget?.reviewStatus && (
               <span className="px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs font-medium">
-                En Revisión {selectedBudget.reviewSubmittedBy ? `(${selectedBudget.reviewSubmittedBy.fullName})` : ''}
+                {t('budget.inReview')} {selectedBudget.reviewSubmittedBy ? `(${selectedBudget.reviewSubmittedBy.fullName})` : ''}
               </span>
             )}
             {isAdmin && (
@@ -426,18 +434,18 @@ export default function BudgetsPage() {
               <button onClick={() => setEditPopupLine(null)} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
             </div>
             <div className="space-y-1 mb-4 text-sm">
-              <div><span className="text-gray-500">Código:</span> {editPopupLine.expense?.code}</div>
-              <div><span className="text-gray-500">Descripción:</span> {editPopupLine.expense?.shortDescription}</div>
-              <div><span className="text-gray-500">Empresa:</span> {editPopupLine.financialCompany?.name}</div>
-              <div><span className="text-gray-500">Moneda:</span> {editPopupLine.currency}</div>
-              {editPopupLine.technologyDirection && <div><span className="text-gray-500">Dir. Tecnología:</span> {editPopupLine.technologyDirection.name}</div>}
-              <div><span className="text-gray-500">Área Responsable:</span> {getAreaNames(editPopupLine)}</div>
+              <div><span className="text-gray-500">{t('table.code')}:</span> {editPopupLine.expense?.code}</div>
+              <div><span className="text-gray-500">{t('table.description')}:</span> {editPopupLine.expense?.shortDescription}</div>
+              <div><span className="text-gray-500">{t('table.company')}:</span> {editPopupLine.financialCompany?.name}</div>
+              <div><span className="text-gray-500">{t('table.currency')}:</span> {editPopupLine.currency}</div>
+              {editPopupLine.technologyDirection && <div><span className="text-gray-500">{t('budget.techDirection')}:</span> {editPopupLine.technologyDirection.name}</div>}
+              <div><span className="text-gray-500">{t('table.area')}:</span> {getAreaNames(editPopupLine)}</div>
             </div>
             <div className="border rounded divide-y mb-4">
               <div className="flex items-center px-4 py-2 bg-gray-50 text-xs font-medium text-gray-500">
-                <span className="w-16">Mes</span>
-                <span className="w-28 text-right">Actual</span>
-                <span className="flex-1 text-right">Propuesto</span>
+                <span className="w-16">{t('budget.month')}</span>
+                <span className="w-28 text-right">{t('budget.current')}</span>
+                <span className="flex-1 text-right">{t('budget.proposed')}</span>
               </div>
               {MONTHS.map((m, i) => {
                 const currentVal = getPlanValue(editPopupLine, i + 1);
@@ -457,9 +465,9 @@ export default function BudgetsPage() {
               })}
             </div>
             <div className="mb-4">
-              <label className="block text-xs font-medium text-gray-500 mb-1">Comentario (opcional)</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{t('budget.commentOptional')}</label>
               <textarea value={popupComment} onChange={(e) => setPopupComment(e.target.value)}
-                className="w-full border rounded px-3 py-2 text-sm" rows={2} placeholder="Justificación del cambio..." />
+                className="w-full border rounded px-3 py-2 text-sm" rows={2} placeholder={t('budget.justification')} />
             </div>
             <div className="flex justify-between items-center">
               <div className="text-sm font-semibold">Total: {fmt(popupTotal)} {editPopupLine.currency}</div>
@@ -471,7 +479,7 @@ export default function BudgetsPage() {
                 </button>
               </div>
             </div>
-            {!popupHasChanges && <p className="text-xs text-gray-400 mt-2 text-center">Modifica al menos un valor para enviar la solicitud</p>}
+            {!popupHasChanges && <p className="text-xs text-gray-400 mt-2 text-center">{t('budget.modifyValue')}</p>}
           </div>
         </div>
       )}
@@ -498,16 +506,16 @@ export default function BudgetsPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   <HiOutlineDocumentDuplicate className="w-4 h-4 inline mr-1" />
-                  Copiar desde presupuesto (opcional)
+                  {t('budget.copyFrom')}
                 </label>
                 <select value={sourceBudgetId} onChange={e => setSourceBudgetId(e.target.value)}
                   className="w-full border rounded px-3 py-2 text-sm">
-                  <option value="">Sin copia - presupuesto vacío</option>
+                  <option value="">{t('budget.emptyBudget')}</option>
                   {allBudgets.map(b => (
-                    <option key={b.id} value={b.id}>{b.year} - {b.version}{b.isActive ? ' (Vigente)' : ''}</option>
+                    <option key={b.id} value={b.id}>{b.year} - {b.version}{b.isActive ? ` (${t('budget.active')})` : ''}</option>
                   ))}
                 </select>
-                <p className="text-xs text-gray-400 mt-1">Se copiarán las líneas de presupuesto y tasas de conversión</p>
+                <p className="text-xs text-gray-400 mt-1">{t('budget.copyNote')}</p>
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">
@@ -524,68 +532,84 @@ export default function BudgetsPage() {
       {/* Add Budget Line Popup */}
       {showAddForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold">{t('budget.addBudgetLine') || 'Agregar Línea de Presupuesto'}</h2>
-              <button onClick={() => { setShowAddForm(false); setAddExpenseId(''); setAddCompanyId(''); setAddTechDirId(''); }} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+              <h2 className="text-lg font-bold">{t('budget.addBudgetLine')}</h2>
+              <button onClick={() => { setShowAddForm(false); setAddExpenseId(''); setAddCompanyId(''); setAddTechDirId(''); setAddMonthlyValues(Array(12).fill(0)); }} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Gasto *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('budget.expense')} *</label>
                 <select value={addExpenseId} onChange={e => setAddExpenseId(e.target.value)} className="w-full border rounded px-3 py-2 text-sm">
-                  <option value="">Seleccionar gasto...</option>
+                  <option value="">{t('budget.selectExpense')}</option>
                   {allExpenses.map(e => <option key={e.id} value={e.id}>{e.code} - {e.shortDescription}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Empresa Financiera *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('budget.financialCompany')} *</label>
                 <select value={addCompanyId} onChange={e => setAddCompanyId(e.target.value)} className="w-full border rounded px-3 py-2 text-sm">
-                  <option value="">Seleccionar empresa...</option>
+                  <option value="">{t('budget.selectCompany')}</option>
                   {allCompanies.map(c => <option key={c.id} value={c.id}>{c.code} - {c.name}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Dirección Tecnológica (opcional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('budget.techDirection')}</label>
                 <select value={addTechDirId} onChange={e => setAddTechDirId(e.target.value)} className="w-full border rounded px-3 py-2 text-sm">
-                  <option value="">Sin dirección tecnológica</option>
+                  <option value="">{t('budget.noTechDirection')}</option>
                   {allTechDirections.map(td => <option key={td.id} value={td.id}>{td.code} - {td.name}</option>)}
                 </select>
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('saving.monthlyValues')}</label>
+                <div className="grid grid-cols-6 gap-2">
+                  {MONTHS.map((m, i) => (
+                    <div key={i}>
+                      <label className="block text-xs text-gray-500 mb-1">{m}</label>
+                      <input type="number" step="0.01" min="0" value={addMonthlyValues[i] || ''}
+                        onChange={(e) => { const v = [...addMonthlyValues]; v[i] = parseFloat(e.target.value) || 0; setAddMonthlyValues(v); }}
+                        className="w-full border rounded px-2 py-1 text-sm text-right" />
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2 text-right text-sm font-semibold">
+                  {t('table.total')}: ${fmt(addMonthlyValues.reduce((a, b) => a + b, 0))}
+                </div>
+              </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">
-              <button onClick={() => { setShowAddForm(false); setAddExpenseId(''); setAddCompanyId(''); setAddTechDirId(''); }} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">Cancelar</button>
+              <button onClick={() => { setShowAddForm(false); setAddExpenseId(''); setAddCompanyId(''); setAddTechDirId(''); setAddMonthlyValues(Array(12).fill(0)); }} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">{t('common.cancel')}</button>
               <button onClick={handleAddBudgetLine} disabled={!addExpenseId || !addCompanyId}
-                className="px-4 py-2 bg-accent text-white rounded hover:opacity-90 text-sm disabled:opacity-50">Agregar</button>
+                className="px-4 py-2 bg-accent text-white rounded hover:opacity-90 text-sm disabled:opacity-50">{t('btn.create')}</button>
             </div>
           </div>
         </div>
       )}
 
-      <ConfirmationDialog isOpen={!!showDeleteDialog} message="¿Estás seguro de eliminar esta línea del presupuesto?" onConfirm={confirmRemoveRow} onCancel={() => setShowDeleteDialog(null)} />
-      <ConfirmationDialog isOpen={showDeleteBudgetDialog} message={`¿Estás seguro de eliminar el presupuesto ${selectedBudget?.year} ${selectedBudget?.version}? Esta acción no se puede deshacer.`} onConfirm={handleDeleteBudget} onCancel={() => setShowDeleteBudgetDialog(false)} />
+      <ConfirmationDialog isOpen={!!showDeleteDialog} message={t('budget.deleteLineConfirm')} onConfirm={confirmRemoveRow} onCancel={() => setShowDeleteDialog(null)} />
+      <ConfirmationDialog isOpen={showDeleteBudgetDialog} message={t('budget.deleteBudgetConfirm')} onConfirm={handleDeleteBudget} onCancel={() => setShowDeleteBudgetDialog(false)} />
 
       {/* Change Request Detail Popup */}
       {selectedChangeRequest && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold">Detalle de Solicitud de Cambio</h2>
+              <h2 className="text-lg font-bold">{t('budget.changeRequestDetail')}</h2>
               <button onClick={() => setSelectedChangeRequest(null)} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
             </div>
             <div className="space-y-1 mb-4 text-sm">
-              <div><span className="text-gray-500">Gasto:</span> {selectedChangeRequest.budgetLine?.expense?.code} - {selectedChangeRequest.budgetLine?.expense?.shortDescription}</div>
-              <div><span className="text-gray-500">Empresa:</span> {selectedChangeRequest.budgetLine?.financialCompany?.name}</div>
-              <div><span className="text-gray-500">Estado:</span> <span className={`px-2 py-0.5 rounded text-xs font-medium ${statusLabel(selectedChangeRequest.status).cls}`}>{statusLabel(selectedChangeRequest.status).text}</span></div>
-              <div><span className="text-gray-500">Fecha:</span> {new Date(selectedChangeRequest.createdAt).toLocaleDateString()}</div>
-              {selectedChangeRequest.comment && <div><span className="text-gray-500">Comentario:</span> {selectedChangeRequest.comment}</div>}
-              {selectedChangeRequest.approvedBy && <div><span className="text-gray-500">Procesado por:</span> {selectedChangeRequest.approvedBy.fullName}</div>}
+              <div><span className="text-gray-500">{t('budget.expense')}:</span> {selectedChangeRequest.budgetLine?.expense?.code} - {selectedChangeRequest.budgetLine?.expense?.shortDescription}</div>
+              <div><span className="text-gray-500">{t('table.company')}:</span> {selectedChangeRequest.budgetLine?.financialCompany?.name}</div>
+              <div><span className="text-gray-500">{t('label.status')}:</span> <span className={`px-2 py-0.5 rounded text-xs font-medium ${statusLabel(selectedChangeRequest.status).cls}`}>{statusLabel(selectedChangeRequest.status).text}</span></div>
+              <div><span className="text-gray-500">{t('label.date')}:</span> {new Date(selectedChangeRequest.createdAt).toLocaleDateString()}</div>
+              {selectedChangeRequest.comment && <div><span className="text-gray-500">{t('table.comment')}:</span> {selectedChangeRequest.comment}</div>}
+              {selectedChangeRequest.approvedBy && <div><span className="text-gray-500">{t('table.approvedBy')}:</span> {selectedChangeRequest.approvedBy.fullName}</div>}
             </div>
             <div className="border rounded divide-y mb-4">
               <div className="flex items-center px-4 py-2 bg-gray-50 text-xs font-medium text-gray-500">
-                <span className="w-16">Mes</span>
-                <span className="w-28 text-right">Anterior</span>
-                <span className="w-28 text-right">Propuesto</span>
-                <span className="flex-1 text-right">Diferencia</span>
+                <span className="w-16">{t('budget.month')}</span>
+                <span className="w-28 text-right">{t('budget.previous')}</span>
+                <span className="w-28 text-right">{t('budget.proposed')}</span>
+                <span className="flex-1 text-right">{t('budget.difference')}</span>
               </div>
               {MONTHS.map((m, i) => {
                 const current = (selectedChangeRequest.currentValues as Record<string, number>)?.[`planM${i + 1}`] || 0;

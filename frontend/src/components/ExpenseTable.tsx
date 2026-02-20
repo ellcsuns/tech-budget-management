@@ -3,6 +3,7 @@ import type { BudgetLine, ExpenseWithTags, Saving } from '../types';
 import { expensesEnhancedApi } from '../services/api';
 import { fmt } from '../utils/formatters';
 import ExpenseDetailPopup from './ExpenseDetailPopup';
+import { useI18n } from '../contexts/I18nContext';
 
 interface ExpenseTableProps {
   budgetLines: BudgetLine[];
@@ -17,6 +18,7 @@ type SortField = 'code' | 'description' | 'total' | `month-${number}`;
 type SortDir = 'asc' | 'desc';
 
 export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly = false, onTotalsChange, activeSavings = [] }: ExpenseTableProps) {
+  const { t } = useI18n();
   const [selectedExpense, setSelectedExpense] = useState<ExpenseWithTags | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [descWidth, setDescWidth] = useState(180);
@@ -176,9 +178,9 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer select-none" onClick={() => toggleSort('code')}>Código{sortIcon('code')}</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer select-none" onClick={() => toggleSort('code')}>{t('table.code')}{sortIcon('code')}</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer select-none relative" style={{ width: descWidth, minWidth: 100 }} onClick={() => toggleSort('description')}>
-                  Descripción{sortIcon('description')}
+                  {t('table.description')}{sortIcon('description')}
                   <span className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-accent" onMouseDown={onMouseDown} />
                 </th>
                 {months.map((month, i) => (
@@ -186,7 +188,7 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
                     {month}{sortIcon(`month-${i + 1}`)}
                   </th>
                 ))}
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer select-none" onClick={() => toggleSort('total')}>Total{sortIcon('total')}</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer select-none" onClick={() => toggleSort('total')}>{t('table.total')}{sortIcon('total')}</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -207,7 +209,7 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
             </tbody>
             <tfoot className="bg-gray-100 font-bold">
               <tr>
-                <td className="px-4 py-3 text-sm" colSpan={2}>Total</td>
+                <td className="px-4 py-3 text-sm" colSpan={2}>{t('table.total')}</td>
                 {monthlyGrandTotals.map(t => (
                   <td key={t.month} className="px-4 py-3 text-sm text-right">{fmt(t.budget)}</td>
                 ))}
@@ -232,17 +234,17 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
           <thead className="bg-gray-50">
             <tr>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sticky left-0 bg-gray-50 z-10 cursor-pointer select-none relative" style={{ width: descWidth, minWidth: 100 }} onClick={() => toggleSort('description')}>
-                Descripción{sortIcon('description')}
+                {t('table.description')}{sortIcon('description')}
                 <span className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-accent" onMouseDown={onMouseDown} />
               </th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Moneda</th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Empresa</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('table.currency')}</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('table.company')}</th>
               {months.map((month) => (
                 <th key={month} colSpan={[filters.visibleColumns.budget, filters.visibleColumns.committed, filters.visibleColumns.real, true].filter(Boolean).length} className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border-l">
                   {month}
                 </th>
               ))}
-              <th colSpan={[filters.visibleColumns.budget, filters.visibleColumns.committed, filters.visibleColumns.real, true].filter(Boolean).length} className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border-l">Total</th>
+              <th colSpan={[filters.visibleColumns.budget, filters.visibleColumns.committed, filters.visibleColumns.real, true].filter(Boolean).length} className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border-l">{t('table.total')}</th>
             </tr>
             <tr>
               <th className="sticky left-0 bg-gray-50 z-10"></th>
@@ -250,17 +252,17 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
               <th></th>
               {months.map((month) => (
                 <React.Fragment key={month}>
-                  {filters.visibleColumns.budget && <th className="px-2 py-2 text-xs text-gray-500">Ppto</th>}
-                  {filters.visibleColumns.committed && <th className="px-2 py-2 text-xs text-gray-500">Comp</th>}
-                  {filters.visibleColumns.real && <th className="px-2 py-2 text-xs text-gray-500">Real</th>}
-                  <th className="px-2 py-2 text-xs text-gray-500">Dif</th>
+                  {filters.visibleColumns.budget && <th className="px-2 py-2 text-xs text-gray-500">{t('expense.budget')}</th>}
+                  {filters.visibleColumns.committed && <th className="px-2 py-2 text-xs text-gray-500">{t('expense.committed')}</th>}
+                  {filters.visibleColumns.real && <th className="px-2 py-2 text-xs text-gray-500">{t('expense.real')}</th>}
+                  <th className="px-2 py-2 text-xs text-gray-500">{t('expense.diff')}</th>
                 </React.Fragment>
               ))}
               <React.Fragment>
-                {filters.visibleColumns.budget && <th className="px-2 py-2 text-xs text-gray-500">Ppto</th>}
-                {filters.visibleColumns.committed && <th className="px-2 py-2 text-xs text-gray-500">Comp</th>}
-                {filters.visibleColumns.real && <th className="px-2 py-2 text-xs text-gray-500">Real</th>}
-                <th className="px-2 py-2 text-xs text-gray-500">Dif</th>
+                {filters.visibleColumns.budget && <th className="px-2 py-2 text-xs text-gray-500">{t('expense.budget')}</th>}
+                {filters.visibleColumns.committed && <th className="px-2 py-2 text-xs text-gray-500">{t('expense.committed')}</th>}
+                {filters.visibleColumns.real && <th className="px-2 py-2 text-xs text-gray-500">{t('expense.real')}</th>}
+                <th className="px-2 py-2 text-xs text-gray-500">{t('expense.diff')}</th>
               </React.Fragment>
             </tr>
           </thead>
@@ -295,7 +297,7 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
           </tbody>
           <tfoot className="bg-gray-100 font-bold">
             <tr>
-              <td className="px-4 py-3 text-sm sticky left-0 bg-gray-100 z-10">Total</td>
+              <td className="px-4 py-3 text-sm sticky left-0 bg-gray-100 z-10">{t('table.total')}</td>
               <td></td>
               <td></td>
               {monthlyGrandTotals.map(t => {
