@@ -561,13 +561,15 @@ export default function BudgetsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">{t('saving.monthlyValues')}</label>
-                <div className="grid grid-cols-6 gap-2">
+                <div className="border rounded divide-y">
                   {MONTHS.map((m, i) => (
-                    <div key={i}>
-                      <label className="block text-xs text-gray-500 mb-1">{m}</label>
-                      <input type="number" step="0.01" min="0" value={addMonthlyValues[i] || ''}
-                        onChange={(e) => { const v = [...addMonthlyValues]; v[i] = parseFloat(e.target.value) || 0; setAddMonthlyValues(v); }}
-                        className="w-full border rounded px-2 py-1 text-sm text-right" />
+                    <div key={i} className="flex items-center px-4 py-2">
+                      <label className="text-sm font-medium text-gray-600 w-16">{m}</label>
+                      <div className="flex-1 flex justify-end">
+                        <input type="number" step="0.01" min="0" value={addMonthlyValues[i] || ''}
+                          onChange={(e) => { const v = [...addMonthlyValues]; v[i] = parseFloat(e.target.value) || 0; setAddMonthlyValues(v); }}
+                          className="w-36 border rounded px-3 py-1.5 text-sm text-right focus:ring-2 focus:ring-accent focus:border-accent" />
+                      </div>
                     </div>
                   ))}
                 </div>

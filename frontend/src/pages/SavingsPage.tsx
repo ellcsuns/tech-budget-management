@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { savingsApi, budgetApi, budgetLineApi } from '../services/api';
-import type { Saving, Budget, BudgetLine } from '../types';
-import { HiOutlineTrash, HiOutlinePlusCircle, HiOutlinePlay } from 'react-icons/hi2';
+import { savingsApi, budgetApi, budgetLineApi, financialCompanyApi, expenseCategoryApi, technologyDirectionApi } from '../services/api';
+import type { Saving, Budget, BudgetLine, FinancialCompany, ExpenseCategory, TechnologyDirection } from '../types';
+import { HiOutlineTrash, HiOutlinePlusCircle, HiOutlinePlay, HiOutlineXMark } from 'react-icons/hi2';
 import { showToast } from '../components/Toast';
 import ConfirmationDialog from '../components/ConfirmationDialog';
 import { fmt } from '../utils/formatters';
@@ -26,11 +26,31 @@ export default function SavingsPage() {
   const [monthlyValues, setMonthlyValues] = useState<number[]>(Array(12).fill(0));
   const [formData, setFormData] = useState({ budgetLineId: '', description: '' });
 
-  useEffect(() => { loadBudgets(); loadSavings(); }, []);
+  // Filter state
+  const [filterCurrencies, setFilterCurrencies] = useState<string[]>([]);
+  const [filterCompanyIds, setFilterCompanyIds] = useState<string[]>([]);
+  const [filterCategories, setFilterCategories] = useState<string[]>([]);
+  const [filterTechDirIds, setFilterTechDirIds] = useState<string[]>([]);
+  const [allCompanies, setAllCompanies] = useState<FinancialCompany[]>([]);
+  const [allCategories, setAllCategories] = useState<ExpenseCategory[]>([]);
+  const [allTechDirections, setAllTechDirections] = useState<TechnologyDirection[]>([]);
+
+  useEffect(() => { loadBudgets(); loadSavings(); loadMasterData(); }, []);
   useEffect(() => { if (selectedBudget) loadBudgetLines(selectedBudget); }, [selectedBudget]);
 
   const activeBudgetId = budgets.find(b => b.isActive)?.id || '';
   const isActiveBudgetSelected = selectedBudget === activeBudgetId;
+
+  const loadMasterData = async () => {
+    try {
+      const [compRes, catRes, techRes] = await Promise.all([
+        financialCompanyApi.getAll(), expenseCategoryApi.getAll(), technologyDirectionApi.getAll()
+      ]);
+      setAllCompanies(compRes.data);
+      setAllCategories(catRes.data);
+      setAllTechDirections(techRes.data);
+    } catch (error) { console.error('Error loading master data:', error); }
+  };
 
   const loadBudgets = async () => {
     try {
@@ -90,6 +110,40 @@ export default function SavingsPage() {
 
   const getBudgetLineLabel = (bl?: BudgetLine) => bl ? `${bl.expense?.code || ''} - ${bl.financialCompany?.code || ''}` : '-';
 
+  const availableCurrencies = Array.from(new Set(savings.map(s => s.budgetLine?.currency).filter(Boolean))) as string[];
+
+  const filteredSavings = savings.filter(s => {
+    const bl = s.budgetLine;
+    if (!bl) return true;
+    if (filterCurrencies.length > 0 && !filterCurrencies.includes(bl.currency)) return false;
+    if (filterCompanyIds.length > 0 && !filterCompanyIds.includes(bl.financialCompanyId)) return false;
+    if (filterCategories.length > 0) {
+      const catId = (bl.expense as any)?.categoryId;
+      if (!catId || !filterCategories.includes(catId)) return false;
+    }
+    if (filterTechDirIds.length > 0) {
+      const tdId = bl.technologyDirectionId;
+      if (!tdId || !filterTechDirIds.includes(tdId)) return false;
+    }
+    return true;
+  });
+
+  const toggleFilter = (current: string[], value: string, setter: (v: string[]) => void) => {
+    setter(current.includes(value) ? current.filter(v => v !== value) : [...current, value]);
+  };
+
+  const clearAllFilters = () => {
+    setFilterCurrencies([]);
+    setFilterCompanyIds([]);
+    setFilterCategories([]);
+    setFilterTechDirIds([]);
+  };
+
+  const hasActiveFilters = filterCurrencies.length > 0 || filterCompanyIds.length > 0 || filterCategories.length > 0 || filterTechDirIds.length > 0;
+
+  const accentOn = 'bg-accent text-white';
+  const accentOff = 'bg-gray-200 text-gray-500';
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
@@ -133,6 +187,61 @@ export default function SavingsPage() {
         <button onClick={loadSavings} className="mt-4 btn-secondary">{t('btn.filter')}</button>
       </div>
 
+      {/* Advanced Filters */}
+      <div className="bg-white p-4 rounded shadow mb-6">
+        <div className="flex flex-wrap items-center gap-3">
+          {availableCurrencies.length > 0 && (
+            <>
+              <div className="flex items-center gap-1">
+                {availableCurrencies.map(currency => (
+                  <button key={currency} onClick={() => toggleFilter(filterCurrencies, currency, setFilterCurrencies)}
+                    className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filterCurrencies.includes(currency) ? accentOn : accentOff}`}>{currency}</button>
+                ))}
+              </div>
+              <div className="w-px h-6 bg-gray-300" />
+            </>
+          )}
+          {allCompanies.length > 0 && (
+            <>
+              <div className="flex items-center gap-1">
+                {allCompanies.map(company => (
+                  <button key={company.id} onClick={() => toggleFilter(filterCompanyIds, company.id, setFilterCompanyIds)}
+                    title={company.name} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filterCompanyIds.includes(company.id) ? accentOn : accentOff}`}>{company.code}</button>
+                ))}
+              </div>
+              <div className="w-px h-6 bg-gray-300" />
+            </>
+          )}
+          {allCategories.length > 0 && (
+            <>
+              <div className="flex items-center gap-1 flex-wrap">
+                {allCategories.map(cat => (
+                  <button key={cat.id} onClick={() => toggleFilter(filterCategories, cat.id, setFilterCategories)}
+                    className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filterCategories.includes(cat.id) ? accentOn : accentOff}`}>{cat.name}</button>
+                ))}
+              </div>
+              <div className="w-px h-6 bg-gray-300" />
+            </>
+          )}
+          {allTechDirections.length > 0 && (
+            <>
+              <div className="flex items-center gap-1 flex-wrap">
+                {allTechDirections.map(td => (
+                  <button key={td.id} onClick={() => toggleFilter(filterTechDirIds, td.id, setFilterTechDirIds)}
+                    className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filterTechDirIds.includes(td.id) ? accentOn : accentOff}`}>{td.code}</button>
+                ))}
+              </div>
+              <div className="w-px h-6 bg-gray-300" />
+            </>
+          )}
+          {hasActiveFilters && (
+            <button onClick={clearAllFilters} className="text-accent hover:opacity-70 transition-opacity ml-auto" title={t('filter.clearFilters')}>
+              <HiOutlineXMark className="w-6 h-6" />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Form */}
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -157,11 +266,13 @@ export default function SavingsPage() {
               </div>
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-2">{t('saving.monthlyValues')}</label>
-                <div className="grid grid-cols-6 gap-2">
+                <div className="border rounded divide-y">
                   {MONTHS.map((m, i) => (
-                    <div key={i}>
-                      <label className="block text-xs text-gray-500 mb-1">{m}</label>
-                      <input type="number" step="0.01" min="0" value={monthlyValues[i] || ''} onChange={(e) => { const v = [...monthlyValues]; v[i] = parseFloat(e.target.value) || 0; setMonthlyValues(v); }} className="w-full border rounded px-2 py-1 text-sm" />
+                    <div key={i} className="flex items-center px-4 py-2">
+                      <label className="text-sm font-medium text-gray-600 w-16">{m}</label>
+                      <div className="flex-1 flex justify-end">
+                        <input type="number" step="0.01" min="0" value={monthlyValues[i] || ''} onChange={(e) => { const v = [...monthlyValues]; v[i] = parseFloat(e.target.value) || 0; setMonthlyValues(v); }} className="w-36 border rounded px-3 py-1.5 text-sm text-right focus:ring-2 focus:ring-accent focus:border-accent" />
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -180,7 +291,7 @@ export default function SavingsPage() {
       <div className="bg-white rounded shadow">
         {isLoading ? (
           <div className="p-8 text-center">{t('msg.loading')}</div>
-        ) : savings.length === 0 ? (
+        ) : filteredSavings.length === 0 ? (
           <div className="p-8 text-center text-gray-500">{t('saving.noRecords') || 'No hay ahorros registrados'}</div>
         ) : (
           <table className="w-full">
@@ -196,11 +307,11 @@ export default function SavingsPage() {
               </tr>
             </thead>
             <tbody>
-              {savings.map(saving => (
+              {filteredSavings.map(saving => (
                 <tr key={saving.id} className="border-t hover:bg-gray-50 cursor-pointer" onClick={() => setDetailSaving(saving)}>
                   <td className="p-3">{getBudgetLineLabel(saving.budgetLine)}</td>
                   <td className="p-3">{saving.description}</td>
-                  <td className="p-3 text-right">${fmt(Number(saving.totalAmount))}</td>
+                  <td className="p-3 text-right">${fmt(MONTHS.reduce((sum, _, i) => sum + (Number((saving as any)[`savingM${i + 1}`]) || 0), 0))}</td>
                   <td className="p-3">
                     <span className={`px-2 py-1 rounded text-xs ${saving.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                       {saving.status === 'ACTIVE' ? t('label.active') : t('label.pending')}
@@ -262,7 +373,7 @@ export default function SavingsPage() {
               <tfoot className="bg-gray-50 font-semibold">
                 <tr>
                   <td className="px-3 py-2">Total</td>
-                  <td className="px-3 py-2 text-right">${fmt(Number(detailSaving.totalAmount))}</td>
+                  <td className="px-3 py-2 text-right">${fmt(MONTHS.reduce((sum, _, i) => sum + (Number((detailSaving as any)[`savingM${i + 1}`]) || 0), 0))}</td>
                 </tr>
               </tfoot>
             </table>

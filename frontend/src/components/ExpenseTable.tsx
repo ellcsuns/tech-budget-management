@@ -3,6 +3,7 @@ import type { BudgetLine, ExpenseWithTags, Saving } from '../types';
 import { expensesEnhancedApi } from '../services/api';
 import { fmt } from '../utils/formatters';
 import ExpenseDetailPopup from './ExpenseDetailPopup';
+import BudgetLineDetailPopup from './BudgetLineDetailPopup';
 import { useI18n } from '../contexts/I18nContext';
 
 interface ExpenseTableProps {
@@ -21,6 +22,8 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
   const { t } = useI18n();
   const [selectedExpense, setSelectedExpense] = useState<ExpenseWithTags | null>(null);
   const [showDetail, setShowDetail] = useState(false);
+  const [selectedBudgetLine, setSelectedBudgetLine] = useState<BudgetLine | null>(null);
+  const [showBudgetLineDetail, setShowBudgetLineDetail] = useState(false);
   const [descWidth, setDescWidth] = useState(180);
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
@@ -273,7 +276,7 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
               const totalCommitted = calcTotal(monthlyValues, 'committed');
               const totalReal = calcTotal(monthlyValues, 'real');
               return (
-                <tr key={bl.id} onClick={() => handleExpenseClick(bl.expenseId)} className="hover:bg-gray-50 cursor-pointer">
+                <tr key={bl.id} onClick={() => { setSelectedBudgetLine(bl); setShowBudgetLineDetail(true); }} className="hover:bg-gray-50 cursor-pointer">
                   <td className="px-4 py-3 text-sm text-gray-900 sticky left-0 bg-white z-10" style={{ width: descWidth, maxWidth: descWidth, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bl.expense?.shortDescription}</td>
                   <td className="px-3 py-3 text-sm text-gray-500 whitespace-nowrap">{bl.currency}</td>
                   <td className="px-3 py-3 text-sm text-gray-500 whitespace-nowrap">{bl.financialCompany?.code || '-'}</td>
@@ -321,9 +324,8 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
           </tfoot>
         </table>
       </div>
-      {showDetail && selectedExpense && (
-        <ExpenseDetailPopup expense={selectedExpense} onClose={handleCloseDetail} readOnly={readOnly}
-          onUpdate={() => { if (selectedExpense) handleExpenseClick(selectedExpense.id); }} />
+      {showBudgetLineDetail && selectedBudgetLine && (
+        <BudgetLineDetailPopup budgetLine={selectedBudgetLine} activeSavings={activeSavings} onClose={() => { setShowBudgetLineDetail(false); setSelectedBudgetLine(null); }} />
       )}
     </>
   );
