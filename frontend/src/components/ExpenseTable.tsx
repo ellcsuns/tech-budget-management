@@ -279,9 +279,17 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
               const totalBudget = calcTotal(monthlyValues, 'budget');
               const totalCommitted = calcTotal(monthlyValues, 'committed');
               const totalReal = calcTotal(monthlyValues, 'real');
+              const hasAnySaving = monthlyValues.some(v => v.hasSaving);
+              const hasAnyDeferral = monthlyValues.some(v => v.hasDeferral);
               return (
                 <tr key={bl.id} onClick={() => { setSelectedBudgetLine(bl); setShowBudgetLineDetail(true); }} className="hover:bg-gray-50 cursor-pointer">
-                  <td className="px-4 py-3 text-sm text-gray-900 sticky left-0 bg-white z-10" style={{ width: descWidth, maxWidth: descWidth, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bl.expense?.shortDescription}</td>
+                  <td className="px-4 py-3 text-sm text-gray-900 sticky left-0 bg-white z-10" style={{ width: descWidth, maxWidth: descWidth, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <span className="inline-flex items-center gap-1">
+                      <span className="truncate">{bl.expense?.shortDescription}</span>
+                      {hasAnySaving && <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" title="Tiene ahorro aplicado" />}
+                      {hasAnyDeferral && <span className="w-2 h-2 rounded-full bg-violet-400 flex-shrink-0" title="Tiene diferido" />}
+                    </span>
+                  </td>
                   <td className="px-3 py-3 text-sm text-gray-500 whitespace-nowrap">{bl.currency}</td>
                   <td className="px-3 py-3 text-sm text-gray-500 whitespace-nowrap">{bl.financialCompany?.code || '-'}</td>
                   {monthlyValues.map((value) => (
@@ -344,8 +352,8 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
       </div>
       {/* Legend */}
       <div className="flex items-center gap-4 mt-2 px-2 text-xs text-gray-500">
-        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" /> Ahorro aplicado</span>
-        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-violet-400" /> Diferido</span>
+        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" /> Ahorro aplicado (presupuesto)</span>
+        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-violet-400" /> Diferido (real)</span>
       </div>
       {showBudgetLineDetail && selectedBudgetLine && (
         <BudgetLineDetailPopup budgetLine={selectedBudgetLine} activeSavings={activeSavings} onClose={() => { setShowBudgetLineDetail(false); setSelectedBudgetLine(null); }} />

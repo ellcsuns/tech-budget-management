@@ -354,6 +354,9 @@ async function main() {
   let docCounter = 1;
   const pad = (n: number) => String(n).padStart(5, '0');
 
+  // Store committed transactions for later compensation
+  const allCommittedTxns: { id: string; blIdx: number; month: number; value: number; financialCompanyId: string }[] = [];
+
   for (let blIdx = 0; blIdx < allBudgetLines.length && blIdx < monthlyBudgets.length; blIdx++) {
     const bl = allBudgetLines[blIdx];
     const budgetValues = monthlyBudgets[blIdx];
@@ -363,7 +366,7 @@ async function main() {
       if (planValue <= 0) continue;
 
       const committedValue = Math.round(planValue * (0.9 + Math.random() * 0.2));
-      await prisma.transaction.create({
+      const committed = await prisma.transaction.create({
         data: {
           budgetLineId: bl.id,
           financialCompanyId: bl.financialCompanyId,
@@ -379,27 +382,64 @@ async function main() {
           month,
         }
       });
-
-      if (month <= 4) {
-        const realValue = Math.round(committedValue * (0.85 + Math.random() * 0.15));
-        await prisma.transaction.create({
-          data: {
-            budgetLineId: bl.id,
-            financialCompanyId: bl.financialCompanyId,
-            type: TransactionType.REAL,
-            serviceDate: new Date(2025, month - 1, 25 + Math.floor(Math.random() * 5)),
-            postingDate: new Date(2025, month - 1, 28),
-            referenceDocumentNumber: `REAL-${pad(docCounter++)}`,
-            externalPlatformLink: `https://erp.corp.com/doc/${docCounter}`,
-            transactionCurrency: 'USD',
-            transactionValue: realValue,
-            usdValue: realValue,
-            conversionRate: 1.0,
-            month,
-          }
-        });
-      }
+      allCommittedTxns.push({ id: committed.id, blIdx, month, value: committedValue, financialCompanyId: bl.financialCompanyId });
     }
+  }
+
+  // Create real transactions: ~30% compensate a committed, rest are standalone
+  // Shuffle committed list and pick 30%
+  const shuffled = [...allCommittedTxns].sort(() => Math.random() - 0.5);
+  const compensateCount = Math.floor(shuffled.length * 0.3);
+  const toCompensate = shuffled.slice(0, compensateCount);
+  const notCompensated = shuffled.slice(compensateCount);
+
+  // 30% - Real transactions that compensate a committed (full compensation)
+  for (const ct of toCompensate) {
+    const realValue = Math.round(ct.value * (0.85 + Math.random() * 0.15));
+    await prisma.transaction.create({
+      data: {
+        budgetLineId: allBudgetLines[ct.blIdx].id,
+        financialCompanyId: ct.financialCompanyId,
+        type: TransactionType.REAL,
+        serviceDate: new Date(2025, ct.month - 1, 25 + Math.floor(Math.random() * 5)),
+        postingDate: new Date(2025, ct.month - 1, 28),
+        referenceDocumentNumber: `REAL-${pad(docCounter++)}`,
+        externalPlatformLink: `https://erp.corp.com/doc/${docCounter}`,
+        transactionCurrency: 'USD',
+        transactionValue: realValue,
+        usdValue: realValue,
+        conversionRate: 1.0,
+        month: ct.month,
+        compensatedById: ct.id,
+      }
+    });
+    // Mark committed as compensated
+    await prisma.transaction.update({
+      where: { id: ct.id },
+      data: { isCompensated: true }
+    });
+  }
+
+  // 70% - Standalone real transactions (no compensation link) for months 1-4
+  for (const ct of notCompensated) {
+    if (ct.month > 4) continue; // only create standalone reals for months 1-4
+    const realValue = Math.round(ct.value * (0.85 + Math.random() * 0.15));
+    await prisma.transaction.create({
+      data: {
+        budgetLineId: allBudgetLines[ct.blIdx].id,
+        financialCompanyId: ct.financialCompanyId,
+        type: TransactionType.REAL,
+        serviceDate: new Date(2025, ct.month - 1, 25 + Math.floor(Math.random() * 5)),
+        postingDate: new Date(2025, ct.month - 1, 28),
+        referenceDocumentNumber: `REAL-${pad(docCounter++)}`,
+        externalPlatformLink: `https://erp.corp.com/doc/${docCounter}`,
+        transactionCurrency: 'USD',
+        transactionValue: realValue,
+        usdValue: realValue,
+        conversionRate: 1.0,
+        month: ct.month,
+      }
+    });
   }
 
   // ============================================
