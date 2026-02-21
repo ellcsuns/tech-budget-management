@@ -93,7 +93,7 @@ export default function Sidebar() {
           <div
             className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity flex-1 min-w-0"
             onClick={() => navigate('/dashboard')}
-            title="Ir al Dashboard"
+            title={t('menu.dashboard')}
           >
             <Logo size={collapsed ? 28 : 36} />
             {!collapsed && (
@@ -106,7 +106,7 @@ export default function Sidebar() {
           <button
             onClick={(e) => { e.stopPropagation(); setCollapsed(!collapsed); }}
             className="p-1 rounded hover:bg-gray-700 transition-colors text-gray-400 hover:text-white flex-shrink-0"
-            title={collapsed ? 'Expandir menú' : 'Colapsar menú'}
+            title={collapsed ? t('sidebar.expand') : t('sidebar.collapse')}
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               {collapsed ? (

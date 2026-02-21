@@ -36,16 +36,52 @@ export default function TranslationsPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  const SIDEBAR_SECTION_ORDER = [
+    'common', 'sidebar', 'login', 'dashboard', 'presupuestos', 'ahorros', 'diferidos',
+    'aprobaciones', 'gastos', 'transacciones', 'tasas_cambio', 'reportes',
+    'reportes_detallados', 'configuracion', 'datos_maestros', 'usuarios', 'roles', 'traducciones', 'auditoria'
+  ];
+
+  const SIDEBAR_SECTION_LABELS: Record<string, string> = {
+    common: '🔧 Common',
+    sidebar: '📋 Sidebar',
+    login: '🔐 Login',
+    dashboard: '📊 Dashboard',
+    presupuestos: '💰 Presupuestos',
+    ahorros: '🏦 Ahorros',
+    diferidos: '📅 Diferidos',
+    aprobaciones: '✅ Aprobaciones',
+    gastos: '💸 Gastos',
+    transacciones: '🔄 Transacciones',
+    tasas_cambio: '💱 Tasas de Cambio',
+    reportes: '📈 Reportes',
+    reportes_detallados: '📑 Reportes Detallados',
+    configuracion: '⚙️ Configuración',
+    datos_maestros: '🗂 Datos Maestros',
+    usuarios: '👤 Usuarios',
+    roles: '🛡 Roles',
+    traducciones: '🌐 Traducciones',
+    auditoria: '📝 Auditoría'
+  };
+
   const grouped = useMemo(() => {
     let filtered = translations;
     if (filterCategory) filtered = filtered.filter(t => t.category === filterCategory);
     const groups: Record<string, Translation[]> = {};
     filtered.forEach(t => {
-      const section = t.category || 'general';
+      const section = t.category || 'common';
       if (!groups[section]) groups[section] = [];
       groups[section].push(t);
     });
-    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+    // Sort by sidebar section order
+    return Object.entries(groups).sort(([a], [b]) => {
+      const ia = SIDEBAR_SECTION_ORDER.indexOf(a);
+      const ib = SIDEBAR_SECTION_ORDER.indexOf(b);
+      if (ia === -1 && ib === -1) return a.localeCompare(b);
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      return ia - ib;
+    });
   }, [translations, filterCategory]);
 
   const categories = useMemo(() =>
@@ -111,7 +147,7 @@ export default function TranslationsPage() {
           <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
             className="px-3 py-2 border rounded-lg text-sm">
             <option value="">{t('translations.allCategories')}</option>
-            {categories.map(c => <option key={c} value={c}>{c}</option>)}
+            {categories.map(c => <option key={c} value={c}>{SIDEBAR_SECTION_LABELS[c] || c}</option>)}
           </select>
         </div>
 
@@ -159,7 +195,7 @@ export default function TranslationsPage() {
                   <button onClick={() => toggleGroup(section)}
                     className="w-full flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 text-left">
                     {isCollapsed ? <HiOutlineChevronRight className="w-4 h-4" /> : <HiOutlineChevronDown className="w-4 h-4" />}
-                    <span className="font-medium text-sm text-gray-700">{section}</span>
+                    <span className="font-medium text-sm text-gray-700">{SIDEBAR_SECTION_LABELS[section] || section}</span>
                     <span className="text-xs text-gray-400">({items.length})</span>
                   </button>
                   {!isCollapsed && (

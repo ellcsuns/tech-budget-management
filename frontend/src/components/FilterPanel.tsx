@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { financialCompanyApi, expenseCategoryApi } from '../services/api';
 import type { BudgetLine, FinancialCompany, ExpenseCategory } from '../types';
 import { HiOutlineXMark } from 'react-icons/hi2';
+import { useI18n } from '../contexts/I18nContext';
 
 interface FilterPanelProps {
   budgetLines: BudgetLine[];
@@ -20,6 +21,7 @@ interface FilterPanelProps {
 }
 
 export default function FilterPanel({ budgetLines, filters, onFiltersChange }: FilterPanelProps) {
+  const { t } = useI18n();
   const [financialCompanies, setFinancialCompanies] = useState<FinancialCompany[]>([]);
   const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
 
@@ -89,14 +91,14 @@ export default function FilterPanel({ budgetLines, filters, onFiltersChange }: F
         type="text"
         value={filters.searchText || ''}
         onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearchChange(e.target.value)}
-        placeholder="Buscar gasto (separar por comas para múltiples)..."
+        placeholder={t('filter.searchComma')}
         className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent w-64"
       />
       <div className="w-px h-6 bg-gray-300" />
       <div className="flex items-center gap-1">
-        <button onClick={() => toggleColumn('budget')} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filters.visibleColumns.budget ? accentOn : accentOff}`}>Ppto</button>
-        <button onClick={() => toggleColumn('committed')} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filters.visibleColumns.committed ? accentOn : accentOff}`}>Comp</button>
-        <button onClick={() => toggleColumn('real')} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filters.visibleColumns.real ? accentOn : accentOff}`}>Real</button>
+        <button onClick={() => toggleColumn('budget')} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filters.visibleColumns.budget ? accentOn : accentOff}`}>{t('expense.budget')}</button>
+        <button onClick={() => toggleColumn('committed')} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filters.visibleColumns.committed ? accentOn : accentOff}`}>{t('expense.committed')}</button>
+        <button onClick={() => toggleColumn('real')} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filters.visibleColumns.real ? accentOn : accentOff}`}>{t('expense.real')}</button>
       </div>
       <div className="w-px h-6 bg-gray-300" />
       {currencies.length > 0 && (
@@ -129,7 +131,7 @@ export default function FilterPanel({ budgetLines, filters, onFiltersChange }: F
           <div className="w-px h-6 bg-gray-300" />
         </>
       )}
-      <button onClick={clearFilters} className="text-accent hover:opacity-70 transition-opacity ml-auto" title="Limpiar filtros">
+      <button onClick={clearFilters} className="text-accent hover:opacity-70 transition-opacity ml-auto" title={t('filter.clearFilters')}>
         <HiOutlineXMark className="w-6 h-6" />
       </button>
     </div>

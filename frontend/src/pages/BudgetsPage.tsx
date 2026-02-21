@@ -306,12 +306,12 @@ export default function BudgetsPage() {
 
           <div className="ml-auto flex items-center gap-2">
             {isAdmin && selectedBudget && !selectedBudget.isActive && (
-              <button onClick={handleSetActive} className="flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-700 rounded text-sm hover:bg-green-100" title="Marcar como vigente">
+              <button onClick={handleSetActive} className="flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-700 rounded text-sm hover:bg-green-100" title={t('budget.setActive')}>
                 <HiOutlineStar className="w-4 h-4" /> {t('budget.setActive')}
               </button>
             )}
             {selectedBudget && !selectedBudget.reviewStatus && (
-              <button onClick={() => handleSubmitForReview()} className="flex items-center gap-1 px-3 py-1.5 bg-amber-50 text-amber-700 rounded text-sm hover:bg-amber-100" title="Enviar a revisión">
+              <button onClick={() => handleSubmitForReview()} className="flex items-center gap-1 px-3 py-1.5 bg-amber-50 text-amber-700 rounded text-sm hover:bg-amber-100" title={t('budget.submitReview')}>
                 <HiOutlineLockClosed className="w-4 h-4" /> {t('budget.submitReview')}
               </button>
             )}
@@ -326,7 +326,7 @@ export default function BudgetsPage() {
               </button>
             )}
             {isAdmin && selectedBudget && !selectedBudget.isActive && (
-              <button onClick={() => setShowDeleteBudgetDialog(true)} className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-700 rounded text-sm hover:bg-red-100" title="Eliminar presupuesto">
+              <button onClick={() => setShowDeleteBudgetDialog(true)} className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-700 rounded text-sm hover:bg-red-100" title={t('btn.delete')}>
                 <HiOutlineTrash className="w-4 h-4" />
               </button>
             )}

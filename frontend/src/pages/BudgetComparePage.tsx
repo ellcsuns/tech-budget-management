@@ -158,8 +158,8 @@ export default function BudgetComparePage() {
                   <th className="p-3 text-left">{t('label.status')}</th>
                   <th className="p-3 text-left">{t('label.code')}</th>
                   <th className="p-3 text-left">{t('label.description')}</th>
-                  <th className="p-3 text-right">Total A</th>
-                  <th className="p-3 text-right">Total B</th>
+                  <th className="p-3 text-right">{t('budget.totalBudgetA')}</th>
+                  <th className="p-3 text-right">{t('budget.totalBudgetB')}</th>
                   <th className="p-3 text-right">{t('label.difference')}</th>
                   <th className="p-3 text-right">%</th>
                 </tr>

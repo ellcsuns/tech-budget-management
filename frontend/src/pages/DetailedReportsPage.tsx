@@ -32,7 +32,7 @@ export default function DetailedReportsPage() {
 
   const exportExcel = () => {
     if (!data || !selectedReport) return;
-    const headers = selectedReport.columns.map(c => c.label);
+    const headers = selectedReport.columns.map(c => t(c.labelKey));
     const csvRows = [headers.join(',')];
     for (const row of data.rows) {
       const vals = selectedReport.columns.map(c => {
@@ -54,18 +54,18 @@ export default function DetailedReportsPage() {
 
   const getFilterOptions = (filterKey: string, filterDef: any) => {
     if (filterKey === 'financialCompanyId') {
-      return companies.map(c => ({ value: c.id, label: c.name }));
+      return companies.map(c => ({ value: c.id, labelKey: c.name }));
     }
     return filterDef.options || [];
   };
 
   const formatCell = (value: any, type: string) => {
-      if (value === null || value === undefined) return '-';
-      if (type === 'currency') return typeof value === 'number' ? value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : value;
-      if (type === 'percentage') return typeof value === 'number' ? `${value.toFixed(1)}%` : value;
-      if (type === 'number') return typeof value === 'number' ? value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : value;
-      return String(value);
-    };
+    if (value === null || value === undefined) return '-';
+    if (type === 'currency') return typeof value === 'number' ? value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : value;
+    if (type === 'percentage') return typeof value === 'number' ? `${value.toFixed(1)}%` : value;
+    if (type === 'number') return typeof value === 'number' ? value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : value;
+    return String(value);
+  };
 
   return (
     <div className="space-y-6">
@@ -78,26 +78,26 @@ export default function DetailedReportsPage() {
         {REPORT_DEFINITIONS.map(r => (
           <button key={r.id} onClick={() => { setSelectedReport(r); setData(null); setFilters({}); }}
             className={`p-3 rounded-lg border text-left transition-all ${selectedReport?.id === r.id ? 'border-accent bg-blue-50 ring-2 ring-accent' : 'border-gray-200 hover:border-gray-400 bg-white'}`}>
-            <p className="text-sm font-medium">{r.name}</p>
-            <p className="text-xs text-gray-500 mt-1">{r.description}</p>
+            <p className="text-sm font-medium">{t(r.nameKey)}</p>
+            <p className="text-xs text-gray-500 mt-1">{t(r.descriptionKey)}</p>
           </button>
         ))}
       </div>
 
       {selectedReport && (
         <div className="bg-white rounded-lg shadow p-6 space-y-4">
-          <h2 className="text-xl font-bold">{selectedReport.name}</h2>
+          <h2 className="text-xl font-bold">{t(selectedReport.nameKey)}</h2>
 
           {selectedReport.filters.length > 0 && (
             <div className="flex gap-4 flex-wrap">
               {selectedReport.filters.map(f => (
                 <div key={f.key}>
-                  <label className="block text-sm text-gray-600 mb-1">{f.label}</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t(f.labelKey)}</label>
                   <select value={filters[f.key] || ''} onChange={e => setFilters({...filters, [f.key]: e.target.value})}
                     className="px-3 py-2 border rounded-lg min-w-[150px]">
                     <option value="">{t('detailedReport.allFilter')}</option>
                     {getFilterOptions(f.key, f).map((o: any) => (
-                      <option key={o.value} value={o.value}>{o.label}</option>
+                      <option key={o.value} value={o.value}>{o.labelKey ? t(o.labelKey) : o.label}</option>
                     ))}
                   </select>
                 </div>
@@ -126,7 +126,7 @@ export default function DetailedReportsPage() {
                   <thead>
                     <tr className="bg-gray-50 border-b">
                       {selectedReport.columns.map(c => (
-                        <th key={c.key} className={`p-3 ${c.align === 'right' ? 'text-right' : 'text-left'}`}>{c.label}</th>
+                        <th key={c.key} className={`p-3 ${c.align === 'right' ? 'text-right' : 'text-left'}`}>{t(c.labelKey)}</th>
                       ))}
                     </tr>
                   </thead>

@@ -1,21 +1,21 @@
 export interface ReportFilter {
   key: string;
-  label: string;
+  labelKey: string;
   type: 'select' | 'monthRange';
-  options?: { value: string; label: string }[];
+  options?: { value: string; labelKey: string }[];
 }
 
 export interface ReportColumn {
   key: string;
-  label: string;
+  labelKey: string;
   type: 'text' | 'number' | 'currency' | 'percentage';
   align?: 'left' | 'right' | 'center';
 }
 
 export interface ReportDefinition {
   id: string;
-  name: string;
-  description: string;
+  nameKey: string;
+  descriptionKey: string;
   filters: ReportFilter[];
   columns: ReportColumn[];
 }
@@ -23,161 +23,161 @@ export interface ReportDefinition {
 export const REPORT_DEFINITIONS: ReportDefinition[] = [
   {
     id: 'executive-summary',
-    name: 'Resumen Ejecutivo',
-    description: 'Vista general del presupuesto con indicadores clave de ejecución',
+    nameKey: 'report.executiveSummary',
+    descriptionKey: 'reportDef.executiveSummary.desc',
     filters: [],
     columns: [
-      { key: 'indicator', label: 'Indicador', type: 'text', align: 'left' },
-      { key: 'value', label: 'Valor', type: 'currency', align: 'right' },
+      { key: 'indicator', labelKey: 'reportDef.col.indicator', type: 'text', align: 'left' },
+      { key: 'value', labelKey: 'reportDef.col.value', type: 'currency', align: 'right' },
     ]
   },
   {
     id: 'budget-execution',
-    name: 'Ejecución Presupuestaria',
-    description: 'Detalle de ejecución por cada gasto del presupuesto',
+    nameKey: 'report.budgetExecution',
+    descriptionKey: 'reportDef.budgetExecution.desc',
     filters: [
-      { key: 'financialCompanyId', label: 'Empresa Financiera', type: 'select' }
+      { key: 'financialCompanyId', labelKey: 'reportDef.filter.financialCompany', type: 'select' }
     ],
     columns: [
-      { key: 'code', label: 'Código', type: 'text' },
-      { key: 'description', label: 'Descripción', type: 'text' },
-      { key: 'company', label: 'Empresa', type: 'text' },
-      { key: 'plan', label: 'Plan USD', type: 'currency', align: 'right' },
-      { key: 'committed', label: 'Comprometido', type: 'currency', align: 'right' },
-      { key: 'real', label: 'Real', type: 'currency', align: 'right' },
-      { key: 'balance', label: 'Saldo', type: 'currency', align: 'right' },
-      { key: 'executionPct', label: '% Ejec.', type: 'percentage', align: 'right' },
+      { key: 'code', labelKey: 'reportDef.col.code', type: 'text' },
+      { key: 'description', labelKey: 'reportDef.col.description', type: 'text' },
+      { key: 'company', labelKey: 'reportDef.col.company', type: 'text' },
+      { key: 'plan', labelKey: 'reportDef.col.planUsd', type: 'currency', align: 'right' },
+      { key: 'committed', labelKey: 'reportDef.col.committed', type: 'currency', align: 'right' },
+      { key: 'real', labelKey: 'reportDef.col.real', type: 'currency', align: 'right' },
+      { key: 'balance', labelKey: 'reportDef.col.balance', type: 'currency', align: 'right' },
+      { key: 'executionPct', labelKey: 'reportDef.col.executionPct', type: 'percentage', align: 'right' },
     ]
   },
   {
     id: 'plan-vs-real',
-    name: 'Plan vs Real por Mes',
-    description: 'Comparación mensual entre valores planificados y ejecutados',
+    nameKey: 'report.planVsReal',
+    descriptionKey: 'reportDef.planVsReal.desc',
     filters: [
-      { key: 'monthFrom', label: 'Mes Desde', type: 'select', options: months() },
-      { key: 'monthTo', label: 'Mes Hasta', type: 'select', options: months() },
+      { key: 'monthFrom', labelKey: 'reportDef.filter.monthFrom', type: 'select', options: monthOptions() },
+      { key: 'monthTo', labelKey: 'reportDef.filter.monthTo', type: 'select', options: monthOptions() },
     ],
     columns: [
-      { key: 'month', label: 'Mes', type: 'text' },
-      { key: 'plan', label: 'Plan USD', type: 'currency', align: 'right' },
-      { key: 'committed', label: 'Comprometido', type: 'currency', align: 'right' },
-      { key: 'real', label: 'Real', type: 'currency', align: 'right' },
-      { key: 'difference', label: 'Diferencia', type: 'currency', align: 'right' },
+      { key: 'month', labelKey: 'reportDef.col.month', type: 'text' },
+      { key: 'plan', labelKey: 'reportDef.col.planUsd', type: 'currency', align: 'right' },
+      { key: 'committed', labelKey: 'reportDef.col.committed', type: 'currency', align: 'right' },
+      { key: 'real', labelKey: 'reportDef.col.real', type: 'currency', align: 'right' },
+      { key: 'difference', labelKey: 'reportDef.col.difference', type: 'currency', align: 'right' },
     ]
   },
   {
     id: 'by-financial-company',
-    name: 'Por Empresa Financiera',
-    description: 'Agrupación de gastos y ejecución por empresa financiera',
+    nameKey: 'report.byFinancialCompany',
+    descriptionKey: 'reportDef.byFinancialCompany.desc',
     filters: [],
     columns: [
-      { key: 'name', label: 'Empresa', type: 'text' },
-      { key: 'count', label: 'Gastos', type: 'number', align: 'right' },
-      { key: 'plan', label: 'Plan USD', type: 'currency', align: 'right' },
-      { key: 'committed', label: 'Comprometido', type: 'currency', align: 'right' },
-      { key: 'real', label: 'Real', type: 'currency', align: 'right' },
-      { key: 'pctTotal', label: '% del Total', type: 'percentage', align: 'right' },
+      { key: 'name', labelKey: 'reportDef.col.company', type: 'text' },
+      { key: 'count', labelKey: 'reportDef.col.expenses', type: 'number', align: 'right' },
+      { key: 'plan', labelKey: 'reportDef.col.planUsd', type: 'currency', align: 'right' },
+      { key: 'committed', labelKey: 'reportDef.col.committed', type: 'currency', align: 'right' },
+      { key: 'real', labelKey: 'reportDef.col.real', type: 'currency', align: 'right' },
+      { key: 'pctTotal', labelKey: 'reportDef.col.pctTotal', type: 'percentage', align: 'right' },
     ]
   },
   {
     id: 'by-tech-direction',
-    name: 'Por Dirección Tecnológica',
-    description: 'Distribución de presupuesto por dirección tecnológica',
+    nameKey: 'report.byTechDirection',
+    descriptionKey: 'reportDef.byTechDirection.desc',
     filters: [],
     columns: [
-      { key: 'name', label: 'Dirección', type: 'text' },
-      { key: 'count', label: 'Gastos', type: 'number', align: 'right' },
-      { key: 'plan', label: 'Plan USD', type: 'currency', align: 'right' },
-      { key: 'committed', label: 'Comprometido', type: 'currency', align: 'right' },
-      { key: 'real', label: 'Real', type: 'currency', align: 'right' },
+      { key: 'name', labelKey: 'reportDef.col.direction', type: 'text' },
+      { key: 'count', labelKey: 'reportDef.col.expenses', type: 'number', align: 'right' },
+      { key: 'plan', labelKey: 'reportDef.col.planUsd', type: 'currency', align: 'right' },
+      { key: 'committed', labelKey: 'reportDef.col.committed', type: 'currency', align: 'right' },
+      { key: 'real', labelKey: 'reportDef.col.real', type: 'currency', align: 'right' },
     ]
   },
   {
     id: 'by-user-area',
-    name: 'Por Área Usuaria',
-    description: 'Distribución de presupuesto por área usuaria',
+    nameKey: 'report.byUserArea',
+    descriptionKey: 'reportDef.byUserArea.desc',
     filters: [],
     columns: [
-      { key: 'name', label: 'Área', type: 'text' },
-      { key: 'count', label: 'Gastos', type: 'number', align: 'right' },
-      { key: 'plan', label: 'Plan USD', type: 'currency', align: 'right' },
-      { key: 'committed', label: 'Comprometido', type: 'currency', align: 'right' },
-      { key: 'real', label: 'Real', type: 'currency', align: 'right' },
+      { key: 'name', labelKey: 'reportDef.col.area', type: 'text' },
+      { key: 'count', labelKey: 'reportDef.col.expenses', type: 'number', align: 'right' },
+      { key: 'plan', labelKey: 'reportDef.col.planUsd', type: 'currency', align: 'right' },
+      { key: 'committed', labelKey: 'reportDef.col.committed', type: 'currency', align: 'right' },
+      { key: 'real', labelKey: 'reportDef.col.real', type: 'currency', align: 'right' },
     ]
   },
   {
     id: 'detailed-transactions',
-    name: 'Transacciones Detalladas',
-    description: 'Listado completo de transacciones con filtros por tipo y período',
+    nameKey: 'report.detailedTransactions',
+    descriptionKey: 'reportDef.detailedTransactions.desc',
     filters: [
-      { key: 'type', label: 'Tipo', type: 'select', options: [
-        { value: 'COMMITTED', label: 'Comprometidas' },
-        { value: 'REAL', label: 'Reales' },
+      { key: 'type', labelKey: 'reportDef.filter.type', type: 'select', options: [
+        { value: 'COMMITTED', labelKey: 'reportDef.filter.committed' },
+        { value: 'REAL', labelKey: 'reportDef.filter.real' },
       ]},
-      { key: 'monthFrom', label: 'Mes Desde', type: 'select', options: months() },
-      { key: 'monthTo', label: 'Mes Hasta', type: 'select', options: months() },
+      { key: 'monthFrom', labelKey: 'reportDef.filter.monthFrom', type: 'select', options: monthOptions() },
+      { key: 'monthTo', labelKey: 'reportDef.filter.monthTo', type: 'select', options: monthOptions() },
     ],
     columns: [
-      { key: 'month', label: 'Mes', type: 'text' },
-      { key: 'type', label: 'Tipo', type: 'text' },
-      { key: 'expense', label: 'Gasto', type: 'text' },
-      { key: 'company', label: 'Empresa', type: 'text' },
-      { key: 'reference', label: 'Referencia', type: 'text' },
-      { key: 'currency', label: 'Moneda', type: 'text' },
-      { key: 'originalValue', label: 'Valor Original', type: 'currency', align: 'right' },
-      { key: 'usdValue', label: 'Valor USD', type: 'currency', align: 'right' },
-      { key: 'serviceDate', label: 'Fecha', type: 'text' },
+      { key: 'month', labelKey: 'reportDef.col.month', type: 'text' },
+      { key: 'type', labelKey: 'reportDef.col.type', type: 'text' },
+      { key: 'expense', labelKey: 'reportDef.col.expense', type: 'text' },
+      { key: 'company', labelKey: 'reportDef.col.company', type: 'text' },
+      { key: 'reference', labelKey: 'reportDef.col.reference', type: 'text' },
+      { key: 'currency', labelKey: 'reportDef.col.currency', type: 'text' },
+      { key: 'originalValue', labelKey: 'reportDef.col.originalValue', type: 'currency', align: 'right' },
+      { key: 'usdValue', labelKey: 'reportDef.col.usdValue', type: 'currency', align: 'right' },
+      { key: 'serviceDate', labelKey: 'reportDef.col.date', type: 'text' },
     ]
   },
   {
     id: 'variance-analysis',
-    name: 'Análisis de Variaciones',
-    description: 'Identificación de gastos con mayor desviación respecto al plan',
+    nameKey: 'report.varianceAnalysis',
+    descriptionKey: 'reportDef.varianceAnalysis.desc',
     filters: [],
     columns: [
-      { key: 'code', label: 'Código', type: 'text' },
-      { key: 'description', label: 'Descripción', type: 'text' },
-      { key: 'company', label: 'Empresa', type: 'text' },
-      { key: 'plan', label: 'Plan USD', type: 'currency', align: 'right' },
-      { key: 'actual', label: 'Ejecutado', type: 'currency', align: 'right' },
-      { key: 'variance', label: 'Variación', type: 'currency', align: 'right' },
-      { key: 'variancePct', label: 'Var. %', type: 'percentage', align: 'right' },
-      { key: 'status', label: 'Estado', type: 'text' },
+      { key: 'code', labelKey: 'reportDef.col.code', type: 'text' },
+      { key: 'description', labelKey: 'reportDef.col.description', type: 'text' },
+      { key: 'company', labelKey: 'reportDef.col.company', type: 'text' },
+      { key: 'plan', labelKey: 'reportDef.col.planUsd', type: 'currency', align: 'right' },
+      { key: 'actual', labelKey: 'reportDef.col.executed', type: 'currency', align: 'right' },
+      { key: 'variance', labelKey: 'reportDef.col.variance', type: 'currency', align: 'right' },
+      { key: 'variancePct', labelKey: 'reportDef.col.variancePct', type: 'percentage', align: 'right' },
+      { key: 'status', labelKey: 'reportDef.col.status', type: 'text' },
     ]
   },
   {
     id: 'savings-deferrals',
-    name: 'Ahorros y Diferidos',
-    description: 'Reporte consolidado de ahorros y diferidos del presupuesto',
+    nameKey: 'report.savingsDeferrals',
+    descriptionKey: 'reportDef.savingsDeferrals.desc',
     filters: [],
     columns: [
-      { key: 'type', label: 'Tipo', type: 'text' },
-      { key: 'expense', label: 'Gasto', type: 'text' },
-      { key: 'description', label: 'Descripción', type: 'text' },
-      { key: 'amount', label: 'Monto USD', type: 'currency', align: 'right' },
-      { key: 'status', label: 'Estado', type: 'text' },
-      { key: 'period', label: 'Período', type: 'text' },
-      { key: 'createdBy', label: 'Creado por', type: 'text' },
-      { key: 'date', label: 'Fecha', type: 'text' },
+      { key: 'type', labelKey: 'reportDef.col.type', type: 'text' },
+      { key: 'expense', labelKey: 'reportDef.col.expense', type: 'text' },
+      { key: 'description', labelKey: 'reportDef.col.description', type: 'text' },
+      { key: 'amount', labelKey: 'reportDef.col.amountUsd', type: 'currency', align: 'right' },
+      { key: 'status', labelKey: 'reportDef.col.status', type: 'text' },
+      { key: 'period', labelKey: 'reportDef.col.period', type: 'text' },
+      { key: 'createdBy', labelKey: 'reportDef.col.createdBy', type: 'text' },
+      { key: 'date', labelKey: 'reportDef.col.date', type: 'text' },
     ]
   },
   {
     id: 'annual-projection',
-    name: 'Proyección Anual',
-    description: 'Proyección de cierre anual basada en ejecución actual',
+    nameKey: 'report.annualProjection',
+    descriptionKey: 'reportDef.annualProjection.desc',
     filters: [],
     columns: [
-      { key: 'month', label: 'Mes', type: 'text' },
-      { key: 'plan', label: 'Plan USD', type: 'currency', align: 'right' },
-      { key: 'actual', label: 'Real USD', type: 'currency', align: 'right' },
-      { key: 'projected', label: 'Proyectado', type: 'currency', align: 'right' },
-      { key: 'cumPlan', label: 'Acum. Plan', type: 'currency', align: 'right' },
-      { key: 'cumActual', label: 'Acum. Real/Proy', type: 'currency', align: 'right' },
+      { key: 'month', labelKey: 'reportDef.col.month', type: 'text' },
+      { key: 'plan', labelKey: 'reportDef.col.planUsd', type: 'currency', align: 'right' },
+      { key: 'actual', labelKey: 'reportDef.col.realUsd', type: 'currency', align: 'right' },
+      { key: 'projected', labelKey: 'reportDef.col.projected', type: 'currency', align: 'right' },
+      { key: 'cumPlan', labelKey: 'reportDef.col.cumPlan', type: 'currency', align: 'right' },
+      { key: 'cumActual', labelKey: 'reportDef.col.cumActual', type: 'currency', align: 'right' },
     ]
   },
 ];
 
-function months() {
-  return ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
-    .map((m, i) => ({ value: String(i + 1), label: m }));
+function monthOptions() {
+  return [1,2,3,4,5,6,7,8,9,10,11,12]
+    .map((m) => ({ value: String(m), labelKey: `month.short.${m}` }));
 }
