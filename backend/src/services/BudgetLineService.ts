@@ -64,6 +64,7 @@ export class BudgetLineService {
         financialCompany: true,
         technologyDirection: true,
         transactions: true,
+        deferrals: true,
         lastModifiedBy: { select: { id: true, username: true, fullName: true } }
       },
       orderBy: { expense: { code: 'asc' } }
@@ -79,6 +80,7 @@ export class BudgetLineService {
         technologyDirection: true,
         budget: true,
         transactions: true,
+        deferrals: true,
         lastModifiedBy: { select: { id: true, username: true, fullName: true } }
       }
     });

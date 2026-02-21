@@ -58,6 +58,7 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
 
   const getMonthlyValues = (bl: BudgetLine) => {
     const lineSavings = activeSavings.filter(s => s.budgetLineId === bl.id);
+    const lineDeferrals = bl.deferrals || [];
     const values: any[] = [];
     for (let month = 1; month <= 12; month++) {
       const originalBudget = getPlanValue(bl, month);
@@ -67,6 +68,8 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
       });
       const budget = originalBudget - savingAmount;
       const hasSaving = savingAmount > 0;
+      // Check if any deferral covers this month
+      const hasDeferral = lineDeferrals.some(d => month >= d.startMonth && month <= d.endMonth);
       const committedTxns = bl.transactions?.filter(t => t.month === month && t.type === 'COMMITTED' && !t.isCompensated) || [];
       const realTxns = bl.transactions?.filter(t => t.month === month && t.type === 'REAL') || [];
       values.push({
@@ -75,6 +78,7 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
         originalBudget,
         savingAmount,
         hasSaving,
+        hasDeferral,
         committed: committedTxns.reduce((sum, t) => sum + Number(t.transactionValue), 0),
         real: realTxns.reduce((sum, t) => sum + Number(t.transactionValue), 0)
       });
@@ -282,9 +286,23 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
                   <td className="px-3 py-3 text-sm text-gray-500 whitespace-nowrap">{bl.financialCompany?.code || '-'}</td>
                   {monthlyValues.map((value) => (
                     <React.Fragment key={value.month}>
-                      {filters.visibleColumns.budget && <td className={`px-2 py-3 text-sm text-right ${value.hasSaving ? 'bg-amber-50 text-amber-800' : 'text-gray-900'}`} title={value.hasSaving ? `Original: ${fmt(value.originalBudget)} | Ahorro: ${fmt(value.savingAmount)}` : undefined}>{value.budget > 0 ? fmt(value.budget) : '-'}</td>}
+                      {filters.visibleColumns.budget && (
+                        <td className={`px-2 py-3 text-sm text-right ${value.hasSaving ? 'text-gray-900' : 'text-gray-900'}`} title={value.hasSaving ? `Original: ${fmt(value.originalBudget)} | Ahorro: ${fmt(value.savingAmount)}` : undefined}>
+                          <span className="inline-flex items-center gap-1 justify-end">
+                            {value.hasSaving && <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" title={`Ahorro: ${fmt(value.savingAmount)}`} />}
+                            {value.budget > 0 ? fmt(value.budget) : '-'}
+                          </span>
+                        </td>
+                      )}
                       {filters.visibleColumns.committed && <td className="px-2 py-3 text-sm text-right text-blue-600">{value.committed > 0 ? fmt(value.committed) : '-'}</td>}
-                      {filters.visibleColumns.real && <td className="px-2 py-3 text-sm text-right text-green-600">{value.real > 0 ? fmt(value.real) : '-'}</td>}
+                      {filters.visibleColumns.real && (
+                        <td className="px-2 py-3 text-sm text-right text-green-600">
+                          <span className="inline-flex items-center gap-1 justify-end">
+                            {value.hasDeferral && value.real > 0 && <span className="w-2 h-2 rounded-full bg-violet-400 flex-shrink-0" title="Diferido" />}
+                            {value.real > 0 ? fmt(value.real) : '-'}
+                          </span>
+                        </td>
+                      )}
                       {(() => { const diff = value.budget - (value.committed + value.real); return <td className={`px-2 py-3 text-sm text-right font-medium ${getDiffColor(diff)}`}>{diff !== 0 ? fmt(diff) : '-'}</td>; })()}
                     </React.Fragment>
                   ))}
@@ -323,6 +341,11 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
             </tr>
           </tfoot>
         </table>
+      </div>
+      {/* Legend */}
+      <div className="flex items-center gap-4 mt-2 px-2 text-xs text-gray-500">
+        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" /> Ahorro aplicado</span>
+        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-violet-400" /> Diferido</span>
       </div>
       {showBudgetLineDetail && selectedBudgetLine && (
         <BudgetLineDetailPopup budgetLine={selectedBudgetLine} activeSavings={activeSavings} onClose={() => { setShowBudgetLineDetail(false); setSelectedBudgetLine(null); }} />

@@ -18,6 +18,7 @@ export default function DeferralsPage() {
   const [showForm, setShowForm] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [detailDeferral, setDetailDeferral] = useState<Deferral | null>(null);
   const [searchText, setSearchText] = useState('');
   const [selectedBudgetLine, setSelectedBudgetLine] = useState<BudgetLine | null>(null);
   const [form, setForm] = useState({
@@ -204,13 +205,13 @@ export default function DeferralsPage() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {deferrals.map((def) => (
-                  <tr key={def.id} className="hover:bg-gray-50">
+                  <tr key={def.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => setDetailDeferral(def)}>
                     <td className="px-4 py-3 text-sm">{getBudgetLineLabel(def.budgetLine)}</td>
                     <td className="px-4 py-3 text-sm">{def.description}</td>
                     <td className="px-4 py-3 text-sm text-right">${Number(def.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td className="px-4 py-3 text-sm text-center">{MONTHS[def.startMonth - 1]} - {MONTHS[def.endMonth - 1]}</td>
                     <td className="px-4 py-3 text-sm">{def.user?.fullName || def.createdBy}</td>
-                    <td className="px-4 py-3 text-sm text-center">
+                    <td className="px-4 py-3 text-sm text-center" onClick={(e) => e.stopPropagation()}>
                       <button onClick={() => handleDelete(def.id)} className="icon-btn-danger" title={t('btn.delete')}>
                         <HiOutlineTrash className="w-5 h-5" />
                       </button>
@@ -222,6 +223,58 @@ export default function DeferralsPage() {
           </div>
         )}
       </div>
+
+      {/* Detail Popup */}
+      {detailDeferral && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[80vh] overflow-y-auto p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold">{t('deferral.detail') || 'Detalle del Diferido'}</h2>
+              <button onClick={() => setDetailDeferral(null)} className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+            </div>
+            <div className="space-y-3 text-sm mb-4">
+              <div><span className="text-gray-500">{t('table.budgetLine')}:</span> {getBudgetLineLabel(detailDeferral.budgetLine)}</div>
+              <div><span className="text-gray-500">{t('label.description')}:</span> {detailDeferral.description}</div>
+              <div><span className="text-gray-500">{t('deferral.totalAmount') || 'Monto Total'}:</span> <span className="font-semibold">${Number(detailDeferral.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+              <div><span className="text-gray-500">{t('deferral.period') || 'Período'}:</span> {MONTHS[detailDeferral.startMonth - 1]} - {MONTHS[detailDeferral.endMonth - 1]}</div>
+              <div><span className="text-gray-500">{t('saving.createdBy') || 'Creado por'}:</span> {detailDeferral.user?.fullName || detailDeferral.createdBy}</div>
+              <div><span className="text-gray-500">{t('label.date')}:</span> {new Date(detailDeferral.createdAt).toLocaleDateString()}</div>
+            </div>
+            {/* Monthly distribution */}
+            <table className="w-full text-sm divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-3 py-2 text-left">{t('label.month')}</th>
+                  <th className="px-3 py-2 text-right">{t('label.value') || 'Valor'}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {MONTHS.map((m, i) => {
+                  const monthNum = i + 1;
+                  const inRange = monthNum >= detailDeferral.startMonth && monthNum <= detailDeferral.endMonth;
+                  const monthCount = detailDeferral.endMonth - detailDeferral.startMonth + 1;
+                  const monthlyAmount = inRange ? Number(detailDeferral.totalAmount) / monthCount : 0;
+                  return (
+                    <tr key={i} className={inRange ? 'bg-blue-50' : ''}>
+                      <td className="px-3 py-2">{m}</td>
+                      <td className="px-3 py-2 text-right">{inRange ? `$${monthlyAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot className="bg-gray-50 font-semibold">
+                <tr>
+                  <td className="px-3 py-2">Total</td>
+                  <td className="px-3 py-2 text-right">${Number(detailDeferral.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                </tr>
+              </tfoot>
+            </table>
+            <div className="mt-4 flex justify-end">
+              <button onClick={() => setDetailDeferral(null)} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">{t('btn.close')}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <ConfirmationDialog isOpen={showDeleteDialog} message={t('deferral.deleteConfirm')} onConfirm={confirmDelete} onCancel={() => { setShowDeleteDialog(false); setDeleteTargetId(null); }} />
     </div>

@@ -199,7 +199,7 @@ export default function ExpensesPage() {
             </thead>
             <tbody>
               {expenses.map(expense => (
-                <tr key={expense.id} className={`border-t hover:bg-gray-50 ${!(expense as any).active ? 'opacity-50' : ''}`}>
+                <tr key={expense.id} className={`border-t hover:bg-gray-50 cursor-pointer ${!(expense as any).active ? 'opacity-50' : ''}`} onClick={() => handleViewDetail(expense)}>
                   <td className="p-3">{expense.code}</td>
                   <td className="p-3">{expense.shortDescription}</td>
                   <td className="p-3 text-sm text-gray-500">{(expense as any).category?.name || '-'}</td>
@@ -221,7 +221,7 @@ export default function ExpensesPage() {
                       {(expense as any).active !== false ? t('label.active') : t('label.inactive')}
                     </span>
                   </td>
-                  <td className="p-3 text-center space-x-2">
+                  <td className="p-3 text-center space-x-2" onClick={(e) => e.stopPropagation()}>
                     <button onClick={() => handleViewDetail(expense)} className="icon-btn" title={t('btn.viewDetail') || 'Ver Detalle'}><HiOutlineMagnifyingGlass className="w-5 h-5" /></button>
                     {(expense as any).active !== false && (
                       <button onClick={() => handleEditExpense(expense)} className="icon-btn" title={t('btn.edit') || 'Editar'}><HiOutlinePencilSquare className="w-5 h-5" /></button>

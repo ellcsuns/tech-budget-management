@@ -4,6 +4,7 @@ import { budgetApi } from '../services/api';
 import type { Budget } from '../types';
 import { showToast } from '../components/Toast';
 import ConfirmationDialog from '../components/ConfirmationDialog';
+import { HiOutlinePlusCircle, HiOutlineTrash, HiOutlineStar, HiOutlineDocumentDuplicate } from 'react-icons/hi2';
 
 const THEMES = [
   { id: 'default', nameKey: 'theme.default', primary: '#1E40AF', sidebar: '#111827', accent: '#3B82F6' },
@@ -30,6 +31,14 @@ export default function ConfigurationPage() {
   const [allBudgets, setAllBudgets] = useState<Budget[]>([]);
   const [selectedActiveBudget, setSelectedActiveBudget] = useState<string>('');
   const [showActivateConfirm, setShowActivateConfirm] = useState(false);
+
+  // Budget management
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newBudgetYear, setNewBudgetYear] = useState(new Date().getFullYear());
+  const [newBudgetVersion, setNewBudgetVersion] = useState('v1');
+  const [sourceBudgetId, setSourceBudgetId] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  const [showDeleteBudgetDialog, setShowDeleteBudgetDialog] = useState<string | null>(null);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('app_theme');

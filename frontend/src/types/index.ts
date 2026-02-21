@@ -63,6 +63,7 @@ export interface BudgetLine {
   technologyDirection?: TechnologyDirection;
   transactions?: Transaction[];
   savings?: Saving[];
+  deferrals?: Deferral[];
   lastModifiedAt?: string;
   lastModifiedById?: string;
   lastModifiedBy?: { id: string; username: string; fullName: string };
