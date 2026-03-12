@@ -10,9 +10,11 @@ import { HiOutlineLockClosed, HiOutlinePlusCircle } from 'react-icons/hi2';
 import { showToast } from '../components/Toast';
 import { useI18n } from '../contexts/I18nContext';
 
-const MONTHS = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12'];
+const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
 export default function BudgetsPage() {
+  const currentMonth = new Date().getMonth() + 1;
+  const isMonthDisabled = (monthNumber: number) => monthNumber < currentMonth;
   const { t } = useI18n();
   const [allBudgets, setAllBudgets] = useState<Budget[]>([]);
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
@@ -124,7 +126,7 @@ export default function BudgetsPage() {
       const newLineId = res.data?.id;
       if (newLineId && addMonthlyValues.some(v => v > 0)) {
         const planData: Record<string, number> = {};
-        for (let m = 1; m <= 12; m++) planData[`planM${m}`] = addMonthlyValues[m - 1];
+        for (let m = 1; m <= 12; m++) planData[`planM${m}`] = isMonthDisabled(m) ? 0 : addMonthlyValues[m - 1];
         try { await budgetLineApi.updatePlanValues(newLineId, planData); } catch {}
       }
       setShowAddForm(false); setAddExpenseId(''); setAddCompanyId(''); setAddTechDirId(''); setAddMonthlyValues(Array(12).fill(0));
@@ -366,7 +368,12 @@ export default function BudgetsPage() {
                     <div className="flex-1 flex justify-end">
                       <input type="number" step="0.01" value={popupValues[i + 1] || '0'}
                         onChange={(e) => setPopupValues({ ...popupValues, [i + 1]: e.target.value })}
-                        className="w-36 border rounded px-3 py-1.5 text-sm text-right focus:ring-2 focus:ring-accent focus:border-accent" />
+                        disabled={isMonthDisabled(i + 1)}
+                        className={`w-36 border rounded px-3 py-1.5 text-sm text-right ${
+                          isMonthDisabled(i + 1)
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            : 'focus:ring-2 focus:ring-accent focus:border-accent'
+                        }`} />
                     </div>
                   </div>
                 );
@@ -429,9 +436,15 @@ export default function BudgetsPage() {
                     <div key={i} className="flex items-center px-4 py-2">
                       <label className="text-sm font-medium text-gray-600 w-16">{m}</label>
                       <div className="flex-1 flex justify-end">
-                        <input type="number" step="0.01" min="0" value={addMonthlyValues[i] || ''}
+                        <input type="number" step="0.01" min="0"
+                          value={isMonthDisabled(i + 1) ? 0 : addMonthlyValues[i] || ''}
                           onChange={(e) => { const v = [...addMonthlyValues]; v[i] = parseFloat(e.target.value) || 0; setAddMonthlyValues(v); }}
-                          className="w-36 border rounded px-3 py-1.5 text-sm text-right focus:ring-2 focus:ring-accent focus:border-accent" />
+                          disabled={isMonthDisabled(i + 1)}
+                          className={`w-36 border rounded px-3 py-1.5 text-sm text-right ${
+                            isMonthDisabled(i + 1)
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                              : 'focus:ring-2 focus:ring-accent focus:border-accent'
+                          }`} />
                       </div>
                     </div>
                   ))}

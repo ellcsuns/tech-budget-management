@@ -73,7 +73,12 @@ export class TransactionService {
       const committed = await this.prisma.transaction.findUnique({ where: { id: data.committedTransactionId } });
       if (!committed) throw new Error('Transacción comprometida referenciada no encontrada');
       if (committed.type !== TransactionType.COMMITTED) throw new Error('La transacción referenciada no es comprometida');
-      if (committed.isCompensated) throw new Error('La transacción comprometida ya está compensada');
+      
+      // Validar que aún tiene saldo pendiente
+      const pendingBalance = Number(committed.transactionValue) - Number(committed.compensatedAmount);
+      if (pendingBalance <= 0) {
+        throw new Error('La transacción comprometida ya está completamente compensada');
+      }
     }
 
     // Crear transacción (y compensar si aplica) en una transacción de BD
@@ -98,11 +103,18 @@ export class TransactionService {
         include: { budgetLine: { include: { expense: true } }, financialCompany: true }
       });
 
-      // Marcar la comprometida como compensada
+      // Actualizar compensación parcial de la comprometida
       if (data.type === TransactionType.REAL && data.committedTransactionId) {
+        const committed = await tx.transaction.findUnique({ where: { id: data.committedTransactionId } });
+        const newCompensatedAmount = Number(committed.compensatedAmount) + data.transactionValue;
+        const isFullyCompensated = newCompensatedAmount >= Number(committed.transactionValue);
+        
         await tx.transaction.update({
           where: { id: data.committedTransactionId },
-          data: { isCompensated: true }
+          data: {
+            compensatedAmount: newCompensatedAmount,
+            isCompensated: isFullyCompensated
+          }
         });
       }
 
@@ -216,11 +228,18 @@ export class TransactionService {
     if (!transaction) throw new Error('Transacción no encontrada');
 
     await this.prisma.$transaction(async (tx: any) => {
-      // Si es REAL y compensaba una comprometida, revertir compensación
+      // Si es REAL y compensaba una comprometida, revertir compensación parcial
       if (transaction.type === TransactionType.REAL && transaction.compensatedById) {
+        const committed = await tx.transaction.findUnique({ where: { id: transaction.compensatedById } });
+        const newCompensatedAmount = Math.max(0, Number(committed.compensatedAmount) - Number(transaction.transactionValue));
+        const isFullyCompensated = newCompensatedAmount >= Number(committed.transactionValue);
+        
         await tx.transaction.update({
           where: { id: transaction.compensatedById },
-          data: { isCompensated: false }
+          data: {
+            compensatedAmount: newCompensatedAmount,
+            isCompensated: isFullyCompensated
+          }
         });
       }
       await tx.transaction.delete({ where: { id } });
@@ -229,21 +248,30 @@ export class TransactionService {
 
   async getMonthlyCommitted(budgetLineId: string, month: number) {
     const transactions = await this.prisma.transaction.findMany({
-      where: { budgetLineId, month, type: TransactionType.COMMITTED, isCompensated: false }
+      where: { budgetLineId, month, type: TransactionType.COMMITTED }
     });
 
     if (transactions.length === 0) {
       return { transactionCurrency: '', transactionValue: 0, usdValue: 0, conversionRate: 0, month };
     }
 
-    const totalTransactionValue = transactions.reduce((sum: number, t: any) => sum + Number(t.transactionValue), 0);
-    const totalUsdValue = transactions.reduce((sum: number, t: any) => sum + Number(t.usdValue), 0);
+    // Calcular total usando saldo pendiente (transactionValue - compensatedAmount)
+    const totalPendingValue = transactions.reduce((sum: number, t: any) => {
+      const pending = Number(t.transactionValue) - Number(t.compensatedAmount);
+      return sum + Math.max(0, pending);
+    }, 0);
+    
+    const totalPendingUsd = transactions.reduce((sum: number, t: any) => {
+      const pending = Number(t.transactionValue) - Number(t.compensatedAmount);
+      const pendingRatio = pending / Number(t.transactionValue);
+      return sum + (Number(t.usdValue) * Math.max(0, pendingRatio));
+    }, 0);
 
     return {
       transactionCurrency: transactions[0].transactionCurrency,
-      transactionValue: totalTransactionValue,
-      usdValue: totalUsdValue,
-      conversionRate: totalUsdValue / totalTransactionValue,
+      transactionValue: totalPendingValue,
+      usdValue: totalPendingUsd,
+      conversionRate: totalPendingValue > 0 ? totalPendingUsd / totalPendingValue : 0,
       month
     };
   }

@@ -20,6 +20,7 @@ interface Transaction {
   usdValue: number;
   month: number;
   isCompensated: boolean;
+  compensatedAmount: number;
 }
 
 type SortField = 'budgetLine' | 'serviceDate' | 'postingDate' | 'refDoc' | 'currency' | 'value' | 'month' | 'compensated';
@@ -194,13 +195,22 @@ export default function CommittedTransactionsPage() {
               <th className={thSortable} onClick={() => handleSort('refDoc')}>{t('table.refDocument')} <SortIcon field="refDoc" /></th>
               <th className={thSortable} onClick={() => handleSort('currency')}>{t('table.currency')} <SortIcon field="currency" /></th>
               <th className={thSortable + " text-right"} onClick={() => handleSort('value')}>{t('table.value')} <SortIcon field="value" /></th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">{t('transaction.compensated') || 'Compensado'}</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">{t('transaction.pending') || 'Pendiente'}</th>
               <th className={thSortable + " text-center"} onClick={() => handleSort('month')}>{t('table.month')} <SortIcon field="month" /></th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">{t('table.compensated')}</th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">{t('transaction.status') || 'Estado'}</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('table.actions')}</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {filteredAndSorted.map((transaction) => (
+            {filteredAndSorted.map((transaction) => {
+              const pendingBalance = transaction.transactionValue - (transaction.compensatedAmount || 0);
+              const isPartial = transaction.compensatedAmount > 0 && transaction.compensatedAmount < transaction.transactionValue;
+              const isComplete = transaction.compensatedAmount >= transaction.transactionValue;
+              const badgeClass = isComplete ? 'bg-green-100 text-green-800' : isPartial ? 'bg-orange-100 text-orange-800' : 'bg-yellow-100 text-yellow-800';
+              const badgeText = isComplete ? (t('msg.yes') || 'Sí') : isPartial ? (t('transaction.partial') || 'Parcial') : (t('msg.no') || 'No');
+              
+              return (
               <tr key={transaction.id} className={transaction.isCompensated ? 'opacity-50' : ''}>
                 <td className="px-6 py-4 text-sm text-gray-900">{getBudgetLineLabel(transaction.budgetLineId)}</td>
                 <td className="px-6 py-4 text-sm text-gray-500">{new Date(transaction.serviceDate).toLocaleDateString()}</td>
@@ -208,10 +218,12 @@ export default function CommittedTransactionsPage() {
                 <td className="px-6 py-4 text-sm text-gray-500">{transaction.referenceDocumentNumber}</td>
                 <td className="px-6 py-4 text-sm text-gray-500">{transaction.transactionCurrency}</td>
                 <td className="px-6 py-4 text-sm text-right text-gray-900">{transaction.transactionValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td className="px-6 py-4 text-sm text-right text-gray-600">{(transaction.compensatedAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td className="px-6 py-4 text-sm text-right font-semibold text-gray-900">{pendingBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 <td className="px-6 py-4 text-sm text-center text-gray-500">{getMonthFromDate(transaction.serviceDate)}</td>
                 <td className="px-6 py-4 text-sm text-center">
-                  <span className={`px-2 py-1 rounded text-xs ${transaction.isCompensated ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                    {transaction.isCompensated ? t('msg.yes') : t('msg.no')}
+                  <span className={`px-2 py-1 rounded text-xs font-medium ${badgeClass}`}>
+                    {badgeText}
                   </span>
                 </td>
                 <td className="px-6 py-4 text-sm space-x-2">
@@ -223,7 +235,8 @@ export default function CommittedTransactionsPage() {
                   )}
                 </td>
               </tr>
-            ))}
+            );
+            })}
           </tbody>
         </table>
       </div>

@@ -6,7 +6,7 @@ import { showToast } from '../components/Toast';
 import ConfirmationDialog from '../components/ConfirmationDialog';
 import { useI18n } from '../contexts/I18nContext';
 
-const MONTHS = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12'];
+const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
 export default function DeferralsPage() {
   const { t } = useI18n();

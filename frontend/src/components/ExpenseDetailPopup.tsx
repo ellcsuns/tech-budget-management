@@ -14,7 +14,7 @@ interface Props {
   readOnly?: boolean;
 }
 
-const MONTHS = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12'];
+const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
 export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnly = false }: Props) {
   const { t } = useI18n();

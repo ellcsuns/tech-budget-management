@@ -87,6 +87,7 @@ export interface Transaction {
   month: number;
   compensatedById?: string;
   isCompensated: boolean;
+  compensatedAmount: number;
   budgetLine?: BudgetLine;
   financialCompany?: FinancialCompany;
   createdAt: string;

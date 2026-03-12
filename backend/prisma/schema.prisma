@@ -125,10 +125,11 @@ model Transaction {
   usdValue                Decimal           @db.Decimal(15, 2)
   conversionRate          Decimal           @db.Decimal(10, 6)
   month                   Int
-  compensatedById         String?           @unique
+  compensatedById         String?
   compensatedBy           Transaction?      @relation("Compensation", fields: [compensatedById], references: [id])
-  compensates             Transaction?      @relation("Compensation")
+  compensatingTransactions Transaction[]    @relation("Compensation")
   isCompensated           Boolean           @default(false)
+  compensatedAmount       Decimal           @default(0) @db.Decimal(15, 2)
   createdAt               DateTime          @default(now())
   updatedAt               DateTime          @updatedAt
   
