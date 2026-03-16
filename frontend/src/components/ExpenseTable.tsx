@@ -70,7 +70,7 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
       const hasSaving = savingAmount > 0;
       // Check if any deferral covers this month
       const hasDeferral = lineDeferrals.some(d => month >= d.startMonth && month <= d.endMonth);
-      const committedTxns = bl.transactions?.filter(t => t.month === month && t.type === 'COMMITTED' && !t.isCompensated) || [];
+      const committedTxns = bl.transactions?.filter(t => t.month === month && t.type === 'COMMITTED') || [];
       const realTxns = bl.transactions?.filter(t => t.month === month && t.type === 'REAL') || [];
       values.push({
         month,
@@ -79,7 +79,7 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
         savingAmount,
         hasSaving,
         hasDeferral,
-        committed: committedTxns.reduce((sum, t) => sum + Number(t.transactionValue), 0),
+        committed: committedTxns.reduce((sum, t) => sum + (Number(t.transactionValue) - Number(t.compensatedAmount)), 0),
         real: realTxns.reduce((sum, t) => sum + Number(t.transactionValue), 0)
       });
     }

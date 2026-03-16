@@ -21,6 +21,7 @@ interface Transaction {
   month: number;
   isCompensated: boolean;
   compensatedById?: string;
+  compensatedAmount?: number;
 }
 
 type SortField = 'budgetLine' | 'serviceDate' | 'postingDate' | 'refDoc' | 'currency' | 'value' | 'month';
@@ -37,6 +38,7 @@ export default function RealTransactionsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [selectedCommittedId, setSelectedCommittedId] = useState('');
+  const [selectedCommittedTransaction, setSelectedCommittedTransaction] = useState<Transaction | null>(null);
   const [showCommittedPicker, setShowCommittedPicker] = useState(false);
   const [formData, setFormData] = useState({
     budgetLineId: '', financialCompanyId: '', serviceDate: '', postingDate: '',
@@ -131,6 +133,7 @@ export default function RealTransactionsPage() {
   const handleCreate = () => {
     setSelectedTransaction(null);
     setSelectedCommittedId('');
+    setSelectedCommittedTransaction(null);
     setFormData({ budgetLineId: '', financialCompanyId: '', serviceDate: '', postingDate: '', referenceDocumentNumber: '', externalPlatformLink: '', transactionCurrency: 'USD', transactionValue: '' });
     setShowCommittedPicker(false);
     setIsModalOpen(true);
@@ -139,7 +142,9 @@ export default function RealTransactionsPage() {
   const handleCreateFromCommitted = (committed: Transaction) => {
     setSelectedTransaction(null);
     setSelectedCommittedId(committed.id);
+    setSelectedCommittedTransaction(committed);
     const bl = budgetLines.find(b => b.id === committed.budgetLineId);
+    const pendingBalance = committed.transactionValue - (committed.compensatedAmount || 0);
     setFormData({
       budgetLineId: committed.budgetLineId,
       financialCompanyId: committed.financialCompanyId || bl?.financialCompanyId || '',
@@ -148,7 +153,7 @@ export default function RealTransactionsPage() {
       referenceDocumentNumber: committed.referenceDocumentNumber + '-REAL',
       externalPlatformLink: committed.externalPlatformLink,
       transactionCurrency: committed.transactionCurrency,
-      transactionValue: committed.transactionValue.toString()
+      transactionValue: pendingBalance.toString()
     });
     setShowCommittedPicker(false);
     setIsModalOpen(true);
@@ -230,22 +235,27 @@ export default function RealTransactionsPage() {
                   <th className="px-3 py-2 text-left">{t('table.budgetLine')}</th>
                   <th className="px-3 py-2 text-left">{t('table.refDocument')}</th>
                   <th className="px-3 py-2 text-right">{t('table.value')}</th>
+                  <th className="px-3 py-2 text-right">{t('transaction.pendingBalance') || 'Saldo Pendiente'}</th>
                   <th className="px-3 py-2 text-left">{t('table.currency')}</th>
                   <th className="px-3 py-2 text-center">{t('label.actions')}</th>
                 </tr>
               </thead>
               <tbody>
-                {committedTransactions.map(ct => (
-                  <tr key={ct.id} className="border-t hover:bg-yellow-100">
-                    <td className="px-3 py-2">{getBudgetLineLabel(ct.budgetLineId)}</td>
-                    <td className="px-3 py-2">{ct.referenceDocumentNumber}</td>
-                    <td className="px-3 py-2 text-right">{ct.transactionValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                    <td className="px-3 py-2">{ct.transactionCurrency}</td>
-                    <td className="px-3 py-2 text-center">
-                      <button onClick={() => handleCreateFromCommitted(ct)} className="text-accent hover:opacity-70 text-xs font-medium">{t('transaction.use')}</button>
-                    </td>
-                  </tr>
-                ))}
+                {committedTransactions.map(ct => {
+                  const pendingBalance = ct.transactionValue - (ct.compensatedAmount || 0);
+                  return (
+                    <tr key={ct.id} className="border-t hover:bg-yellow-100">
+                      <td className="px-3 py-2">{getBudgetLineLabel(ct.budgetLineId)}</td>
+                      <td className="px-3 py-2">{ct.referenceDocumentNumber}</td>
+                      <td className="px-3 py-2 text-right">{ct.transactionValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                      <td className="px-3 py-2 text-right font-semibold text-yellow-800">{pendingBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                      <td className="px-3 py-2">{ct.transactionCurrency}</td>
+                      <td className="px-3 py-2 text-center">
+                        <button onClick={() => handleCreateFromCommitted(ct)} className="text-accent hover:opacity-70 text-xs font-medium">{t('transaction.use')}</button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -329,6 +339,11 @@ export default function RealTransactionsPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('table.value')}</label>
                   <input type="number" step="0.01" value={formData.transactionValue} onChange={(e) => setFormData({ ...formData, transactionValue: e.target.value })} className="w-full px-3 py-2 border rounded-md" required />
+                  {selectedCommittedTransaction && formData.transactionValue && parseFloat(formData.transactionValue) > (selectedCommittedTransaction.transactionValue - (selectedCommittedTransaction.compensatedAmount || 0)) && (
+                    <p className="text-xs text-orange-600 mt-1 font-medium">
+                      ⚠️ {t('transaction.exceedsPendingBalance') || 'El monto excede el saldo pendiente'} ({(selectedCommittedTransaction.transactionValue - (selectedCommittedTransaction.compensatedAmount || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex justify-end space-x-3 mt-6">

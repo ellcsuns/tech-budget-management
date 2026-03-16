@@ -6,7 +6,7 @@ Implementación en dos partes: (1) restricción de meses pasados en popups de pr
 
 ## Tareas
 
-- [ ] 1. Restricción de edición de meses en BudgetsPage
+- [x] 1. Restricción de edición de meses en BudgetsPage
   - [x] 1.1 Agregar lógica de mes actual y función `isMonthDisabled` en `BudgetsPage.tsx`
     - Crear constante `currentMonth = new Date().getMonth() + 1`
     - Crear función `isMonthDisabled(monthNumber: number) => monthNumber < currentMonth`
@@ -78,15 +78,15 @@ Implementación en dos partes: (1) restricción de meses pasados en popups de pr
     - **Property 8: Badge triestado de compensación**
     - **Validates: Requirements 7.3, 7.4, 7.5**
 
-- [-] 7. Actualizar página de transacciones reales (picker de comprometidas)
+- [x] 7. Actualizar página de transacciones reales (picker de comprometidas)
   - [x] 7.1 Modificar picker de comprometidas en `RealTransactionsPage.tsx`
     - Mostrar saldo pendiente junto al valor original en cada opción del picker
     - Pre-llenar campo de valor con saldo pendiente al seleccionar comprometida
     - Mostrar advertencia si el monto ingresado excede el saldo pendiente
     - _Requirements: 10.1, 10.2, 10.3_
 
-- [ ] 8. Actualizar Dashboard y ExpenseTable
-  - [ ] 8.1 Modificar cálculo de comprometido en `ExpenseTable.tsx`
+- [x] 8. Actualizar Dashboard y ExpenseTable
+  - [x] 8.1 Modificar cálculo de comprometido en `ExpenseTable.tsx`
     - Cambiar filtro de committed: en lugar de `!t.isCompensated`, incluir todas las comprometidas
     - Calcular total como suma de `(transactionValue - compensatedAmount)` por transacción
     - Aplicar misma lógica en totales por empresa financiera
@@ -95,13 +95,13 @@ Implementación en dos partes: (1) restricción de meses pasados en popups de pr
     - **Property 9: Cálculo de totales de comprometido usando saldo pendiente**
     - **Validates: Requirements 8.1, 8.2, 9.2**
 
-- [ ] 9. Actualizar popup de detalle de línea presupuestaria
-  - [ ] 9.1 Modificar `BudgetLineDetailPopup.tsx` para mostrar compensación
+- [x] 9. Actualizar popup de detalle de línea presupuestaria
+  - [x] 9.1 Modificar `BudgetLineDetailPopup.tsx` para mostrar compensación
     - Agregar columnas Compensado y Pendiente en tabla de comprometidas
     - Calcular total mensual de comprometido usando saldo pendiente
     - _Requirements: 9.1, 9.2_
 
-- [ ] 10. Checkpoint final
+- [x] 10. Checkpoint final
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notas

@@ -28,9 +28,13 @@ export function calcMonthlyBreakdown(budgetLine: BudgetLine, activeSavings: Savi
     let savingAmount = 0;
     lineSavings.forEach(s => { savingAmount += Number((s as any)[`savingM${m}`]) || 0; });
     const budget = planVal - savingAmount;
-    const committedTxns = budgetLine.transactions?.filter(t => t.month === m && t.type === 'COMMITTED' && !t.isCompensated) || [];
+    const committedTxns = budgetLine.transactions?.filter(t => t.month === m && t.type === 'COMMITTED') || [];
     const realTxns = budgetLine.transactions?.filter(t => t.month === m && t.type === 'REAL') || [];
-    const committed = committedTxns.reduce((sum, t) => sum + Number(t.transactionValue), 0);
+    // Calculate committed using pending balance (transactionValue - compensatedAmount)
+    const committed = committedTxns.reduce((sum, t) => {
+      const pending = Number(t.transactionValue) - Number(t.compensatedAmount || 0);
+      return sum + pending;
+    }, 0);
     const real = realTxns.reduce((sum, t) => sum + Number(t.transactionValue), 0);
     result.push({ month: MONTHS[m - 1], budget, committed, real, diff: budget - committed - real });
   }
@@ -94,31 +98,41 @@ export default function BudgetLineDetailPopup({ budgetLine, activeSavings, onClo
               <th className="px-2 py-1 text-left text-gray-500">{t('expense.detail.refDoc')}</th>
               <th className="px-2 py-1 text-left text-gray-500">{t('expense.detail.serviceDate')}</th>
               <th className="px-2 py-1 text-right text-gray-500">{t('label.value')}</th>
+              {type === 'committed' && <th className="px-2 py-1 text-right text-gray-500">Compensado</th>}
+              {type === 'committed' && <th className="px-2 py-1 text-right text-gray-500">Pendiente</th>}
               <th className="px-2 py-1 text-center text-gray-500">{t('label.month')}</th>
               {type === 'committed' && <th className="px-2 py-1 text-center text-gray-500">{t('expense.detail.compensated')}</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {txns.map(txn => (
-              <tr key={txn.id} className={txn.isCompensated ? 'opacity-50' : ''}>
-                <td className="px-2 py-1">{txn.referenceDocumentNumber}</td>
-                <td className="px-2 py-1">{new Date(txn.serviceDate).toLocaleDateString()}</td>
-                <td className="px-2 py-1 text-right">{fmt(Number(txn.transactionValue))}</td>
-                <td className="px-2 py-1 text-center">{MONTHS[txn.month - 1]}</td>
-                {type === 'committed' && (
-                  <td className="px-2 py-1 text-center">
-                    <span className={`px-1.5 py-0.5 rounded text-xs ${txn.isCompensated ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                      {txn.isCompensated ? t('msg.yes') : t('msg.no')}
-                    </span>
-                  </td>
-                )}
-              </tr>
-            ))}
+            {txns.map(txn => {
+              const compensated = Number(txn.compensatedAmount || 0);
+              const pending = Number(txn.transactionValue) - compensated;
+              return (
+                <tr key={txn.id} className={txn.isCompensated ? 'opacity-50' : ''}>
+                  <td className="px-2 py-1">{txn.referenceDocumentNumber}</td>
+                  <td className="px-2 py-1">{new Date(txn.serviceDate).toLocaleDateString()}</td>
+                  <td className="px-2 py-1 text-right">{fmt(Number(txn.transactionValue))}</td>
+                  {type === 'committed' && <td className="px-2 py-1 text-right">{fmt(compensated)}</td>}
+                  {type === 'committed' && <td className="px-2 py-1 text-right">{fmt(pending)}</td>}
+                  <td className="px-2 py-1 text-center">{MONTHS[txn.month - 1]}</td>
+                  {type === 'committed' && (
+                    <td className="px-2 py-1 text-center">
+                      <span className={`px-1.5 py-0.5 rounded text-xs ${txn.isCompensated ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                        {txn.isCompensated ? t('msg.yes') : t('msg.no')}
+                      </span>
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
           <tfoot className="bg-gray-50 font-semibold">
             <tr>
               <td colSpan={2} className="px-2 py-1">{t('label.total')}</td>
               <td className="px-2 py-1 text-right">{fmt(txns.reduce((s, txn) => s + Number(txn.transactionValue), 0))}</td>
+              {type === 'committed' && <td className="px-2 py-1 text-right">{fmt(txns.reduce((s, txn) => s + Number(txn.compensatedAmount || 0), 0))}</td>}
+              {type === 'committed' && <td className="px-2 py-1 text-right">{fmt(txns.reduce((s, txn) => s + (Number(txn.transactionValue) - Number(txn.compensatedAmount || 0)), 0))}</td>}
               <td colSpan={type === 'committed' ? 2 : 1}></td>
             </tr>
           </tfoot>
