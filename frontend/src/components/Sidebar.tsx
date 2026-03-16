@@ -95,7 +95,7 @@ export default function Sidebar() {
             onClick={() => navigate('/dashboard')}
             title={t('menu.dashboard')}
           >
-            <Logo size={collapsed ? 28 : 36} />
+            <Logo size={collapsed ? 32 : 48} />
             {!collapsed && (
               <div className="min-w-0">
                 <h1 className="text-lg font-bold">InvestIQ</h1>

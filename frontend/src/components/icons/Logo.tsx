@@ -1,6 +1,6 @@
 export default function Logo({ size = 40 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width={size} height={size} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#3B82F6" />
@@ -8,39 +8,45 @@ export default function Logo({ size = 40 }: { size?: number }) {
           <stop offset="100%" stopColor="#8B5CF6" />
         </linearGradient>
         <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="#A78BFA" stopOpacity="0.3" />
+          <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.2" />
+          <stop offset="100%" stopColor="#A78BFA" stopOpacity="0.2" />
+        </linearGradient>
+        <linearGradient id="bulbGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#FCD34D" />
+          <stop offset="100%" stopColor="#F59E0B" />
         </linearGradient>
       </defs>
       
-      {/* Outer circle with glow */}
-      <circle cx="24" cy="24" r="20" fill="url(#glowGrad)" />
-      <circle cx="24" cy="24" r="18" stroke="url(#logoGrad)" strokeWidth="2" fill="none" />
+      {/* Background glow circle */}
+      <circle cx="32" cy="32" r="28" fill="url(#glowGrad)" />
       
-      {/* Brain/Intelligence symbol - left hemisphere */}
-      <path d="M16 20C16 20 14 22 14 24C14 26 16 28 16 28" 
-        stroke="url(#logoGrad)" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-      <path d="M18 18C18 18 16 20 16 22C16 24 18 26 18 26" 
-        stroke="url(#logoGrad)" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+      {/* Light bulb body - representing intelligence */}
+      <path d="M32 12C26 12 21 17 21 23C21 26 22 28 24 30L24 36C24 37.5 25.5 39 27 39L37 39C38.5 39 40 37.5 40 36L40 30C42 28 43 26 43 23C43 17 38 12 32 12Z" 
+        fill="url(#bulbGrad)" stroke="url(#logoGrad)" strokeWidth="1.5" />
       
-      {/* Brain/Intelligence symbol - right hemisphere */}
-      <path d="M32 20C32 20 34 22 34 24C34 26 32 28 32 28" 
-        stroke="url(#logoGrad)" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-      <path d="M30 18C30 18 32 20 32 22C32 24 30 26 30 26" 
-        stroke="url(#logoGrad)" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+      {/* Bulb filament */}
+      <path d="M32 16L32 24M28 20L36 20" 
+        stroke="url(#logoGrad)" strokeWidth="2" strokeLinecap="round" />
       
-      {/* Central growth arrow/chart */}
-      <path d="M20 30L24 20L28 26L32 18" 
-        stroke="url(#logoGrad)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      {/* Light rays - intelligence radiating */}
+      <path d="M32 6L32 10M18 18L21 21M46 18L43 21M12 32L16 32M52 32L48 32" 
+        stroke="url(#logoGrad)" strokeWidth="2.5" strokeLinecap="round" />
+      
+      {/* Bulb base */}
+      <rect x="27" y="39" width="10" height="3" rx="1" fill="url(#logoGrad)" />
+      <rect x="28" y="42" width="8" height="2" rx="1" fill="url(#logoGrad)" />
+      
+      {/* Growth arrow - investment growth */}
+      <path d="M16 52L24 44L32 48L40 38L48 42" 
+        stroke="url(#logoGrad)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
       
       {/* Arrow head */}
-      <path d="M32 18L29 19L30 22" 
-        stroke="url(#logoGrad)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <path d="M48 42L44 41L45 37" 
+        stroke="url(#logoGrad)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
       
-      {/* IQ spark/star at top */}
-      <circle cx="24" cy="12" r="2" fill="url(#logoGrad)" />
-      <path d="M24 10V14M22 12H26M22.5 10.5L25.5 13.5M25.5 10.5L22.5 13.5" 
-        stroke="url(#logoGrad)" strokeWidth="0.8" strokeLinecap="round" />
+      {/* Dollar sign in bulb - investment */}
+      <path d="M32 20L32 28M30 22C30 21 31 20 32 20C33 20 34 21 34 22C34 23 33 23.5 32 23.5C31 23.5 30 24 30 25C30 26 31 27 32 27C33 27 34 26 34 25" 
+        stroke="#1E40AF" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }
