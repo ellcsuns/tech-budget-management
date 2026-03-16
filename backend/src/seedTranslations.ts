@@ -11,8 +11,8 @@ const translations: TranslationSeed[] = [
   // =============================================
   // COMMON - Textos compartidos en toda la app
   // =============================================
-  { key: 'app.name', es: 'Tech Budget', en: 'Tech Budget', category: 'common' },
-  { key: 'app.subtitle', es: 'Gestión de Presupuesto', en: 'Budget Management', category: 'common' },
+  { key: 'app.name', es: 'InvestIQ', en: 'InvestIQ', category: 'common' },
+  { key: 'app.subtitle', es: 'Inversiones más inteligentes. Mayor impacto', en: 'Smarter investments. Greater impact', category: 'common' },
   { key: 'btn.save', es: 'Guardar', en: 'Save', category: 'common' },
   { key: 'btn.cancel', es: 'Cancelar', en: 'Cancel', category: 'common' },
   { key: 'btn.edit', es: 'Editar', en: 'Edit', category: 'common' },
@@ -171,8 +171,8 @@ const translations: TranslationSeed[] = [
   // =============================================
   // LOGIN
   // =============================================
-  { key: 'login.title', es: 'Tech Budget', en: 'Tech Budget', category: 'login' },
-  { key: 'login.subtitle', es: 'Sistema de Gestión de Presupuesto', en: 'Budget Management System', category: 'login' },
+  { key: 'login.title', es: 'InvestIQ', en: 'InvestIQ', category: 'login' },
+  { key: 'login.subtitle', es: 'Inversiones más inteligentes. Mayor impacto', en: 'Smarter investments. Greater impact', category: 'login' },
   { key: 'login.username', es: 'Usuario', en: 'Username', category: 'login' },
   { key: 'login.password', es: 'Contraseña', en: 'Password', category: 'login' },
   { key: 'login.submit', es: 'Iniciar Sesión', en: 'Login', category: 'login' },

@@ -349,7 +349,7 @@ export default function ConfigurationPage() {
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-xl font-bold mb-4">{t('config.system_info') || 'Información del Sistema'}</h2>
         <div className="grid grid-cols-2 gap-4 text-sm">
-          <div><span className="text-gray-500">{t('config.sysApp')}</span> <span className="font-medium">Tech Budget Management</span></div>
+          <div><span className="text-gray-500">{t('config.sysApp')}</span> <span className="font-medium">InvestIQ</span></div>
           <div><span className="text-gray-500">{t('config.sysVersion')}</span> <span className="font-medium">2.0.0</span></div>
           <div><span className="text-gray-500">{t('config.sysBackend')}</span> <span className="font-medium">Node.js + Express + Prisma</span></div>
           <div><span className="text-gray-500">{t('config.sysFrontend')}</span> <span className="font-medium">React + TypeScript + Tailwind</span></div>
