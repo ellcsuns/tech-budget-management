@@ -24,15 +24,15 @@ interface Slide {
 const slides: Slide[] = [
   {
     icon: HiOutlineChartBarSquare,
-    title: 'Dashboard Interactivo',
-    description: 'Visualiza el estado completo de tus presupuestos tecnológicos en tiempo real.',
+    title: 'InvestIQ',
+    description: 'Smarter investments. Greater impact.',
     features: [
-      'Resumen de presupuesto vs ejecutado',
-      'Filtros por moneda, sociedad y categoría',
-      'Detalle de líneas con un click',
+      'Visualiza el estado completo de tus presupuestos en tiempo real',
+      'Toma decisiones inteligentes basadas en datos',
+      'Maximiza el impacto de cada inversión',
     ],
-    gradient: 'from-blue-500 to-blue-700',
-    iconBg: 'bg-blue-100 text-blue-600',
+    gradient: 'from-blue-500 via-indigo-600 to-purple-600',
+    iconBg: 'bg-gradient-to-br from-blue-100 to-purple-100 text-indigo-600',
   },
   {
     icon: HiOutlineBanknotes,
