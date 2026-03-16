@@ -98,8 +98,8 @@ export default function Sidebar() {
             <Logo size={collapsed ? 28 : 36} />
             {!collapsed && (
               <div className="min-w-0">
-                <h1 className="text-lg font-bold">Tech Budget</h1>
-                <p className="text-xs text-gray-400">{t('app.subtitle') || 'Gestión de Presupuesto'}</p>
+                <h1 className="text-lg font-bold">InvestIQ</h1>
+                <p className="text-xs text-gray-400">Smarter investments. Greater impact.</p>
               </div>
             )}
           </div>

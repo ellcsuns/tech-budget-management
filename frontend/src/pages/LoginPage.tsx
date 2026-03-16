@@ -2,6 +2,7 @@ import { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useI18n } from '../contexts/I18nContext';
+import Logo from '../components/icons/Logo';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -28,11 +29,15 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-96">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
+      <div className="bg-white p-8 rounded-lg shadow-2xl w-96">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">{t('login.title')}</h1>
-          <p className="text-gray-600 mt-2">{t('login.subtitle')}</p>
+          {/* Logo */}
+          <div className="flex justify-center mb-4">
+            <Logo size={64} />
+          </div>
+          <h1 className="text-3xl font-bold text-gray-800">InvestIQ</h1>
+          <p className="text-gray-600 mt-2">Smarter investments. Greater impact.</p>
         </div>
 
         <form onSubmit={handleSubmit}>
