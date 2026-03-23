@@ -19,10 +19,15 @@ const LANGUAGES = [
 ];
 
 const THEMES = [
-  { id: 'default', label: 'Predeterminado', colors: ['#1e293b', '#3b82f6', '#6366f1'] },
-  { id: 'ocean', label: 'Océano', colors: ['#0c4a6e', '#0ea5e9', '#06b6d4'] },
-  { id: 'forest', label: 'Bosque', colors: ['#14532d', '#22c55e', '#10b981'] },
-  { id: 'sunset', label: 'Atardecer', colors: ['#7c2d12', '#f97316', '#ef4444'] },
+  { id: 'default', label: 'Predeterminado', colors: ['#1e293b', '#3b82f6', '#6366f1'], primary: '#1E40AF', sidebar: '#111827', accent: '#3B82F6' },
+  { id: 'ocean', label: 'Océano', colors: ['#0c4a6e', '#0ea5e9', '#06b6d4'], primary: '#0c4a6e', sidebar: '#0c4a6e', accent: '#0ea5e9' },
+  { id: 'forest', label: 'Bosque', colors: ['#14532d', '#22c55e', '#10b981'], primary: '#065F46', sidebar: '#064E3B', accent: '#10B981' },
+  { id: 'sunset', label: 'Atardecer', colors: ['#7c2d12', '#f97316', '#ef4444'], primary: '#9A3412', sidebar: '#1C1917', accent: '#F97316' },
+  { id: 'green', label: 'Verde', colors: ['#065F46', '#10B981', '#064E3B'], primary: '#065F46', sidebar: '#064E3B', accent: '#10B981' },
+  { id: 'purple', label: 'Púrpura', colors: ['#5B21B6', '#8B5CF6', '#1E1B4B'], primary: '#5B21B6', sidebar: '#1E1B4B', accent: '#8B5CF6' },
+  { id: 'red', label: 'Rojo', colors: ['#991B1B', '#EF4444', '#1C1917'], primary: '#991B1B', sidebar: '#1C1917', accent: '#EF4444' },
+  { id: 'teal', label: 'Teal', colors: ['#0F766E', '#14B8A6', '#134E4A'], primary: '#0F766E', sidebar: '#134E4A', accent: '#14B8A6' },
+  { id: 'orange', label: 'Naranja', colors: ['#9A3412', '#F97316', '#1C1917'], primary: '#9A3412', sidebar: '#1C1917', accent: '#F97316' },
 ];
 
 const FONT_SIZES = [
@@ -70,8 +75,14 @@ export default function TopBar() {
     }
   }, [currentFontSize]);
 
-  // Apply theme
+  // Apply theme - set CSS variables
   useEffect(() => {
+    const theme = THEMES.find(t => t.id === currentTheme);
+    if (theme) {
+      document.documentElement.style.setProperty('--color-primary', theme.primary);
+      document.documentElement.style.setProperty('--color-sidebar', theme.sidebar);
+      document.documentElement.style.setProperty('--color-accent', theme.accent);
+    }
     document.documentElement.setAttribute('data-theme', currentTheme);
     localStorage.setItem('app_theme', currentTheme);
   }, [currentTheme]);

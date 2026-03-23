@@ -119,21 +119,6 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* User info */}
-      {!collapsed && (
-        <div className="px-4 pb-3 border-b border-gray-700">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-accent rounded-full flex items-center justify-center flex-shrink-0">
-              <HiOutlineUserGroup className="w-5 h-5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user?.fullName}</p>
-              <p className="text-xs text-gray-400 truncate">{user?.username}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Navigation */}
       <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
         {mainItems.map((item) => {

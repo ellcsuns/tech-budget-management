@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { changeRequestApi } from '../services/api';
 import type { ChangeRequest } from '../types';
 import { fmt } from '../utils/formatters';
@@ -6,11 +6,13 @@ import { HiOutlineCheckCircle, HiOutlineXMark, HiOutlineChevronDown, HiOutlineCh
 import { showToast } from '../components/Toast';
 import ConfirmationDialog from '../components/ConfirmationDialog';
 import { useI18n } from '../contexts/I18nContext';
+import { useActiveBudget } from '../contexts/ActiveBudgetContext';
 
 const MONTHS = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12'];
 
 export default function ApprovalsPage() {
   const { t } = useI18n();
+  const { activeBudget } = useActiveBudget();
   const [requests, setRequests] = useState<ChangeRequest[]>([]);
   const [resolvedRequests, setResolvedRequests] = useState<ChangeRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,7 +25,19 @@ export default function ApprovalsPage() {
   const [showHistory, setShowHistory] = useState(false);
   const [historyDetailRequest, setHistoryDetailRequest] = useState<ChangeRequest | null>(null);
 
+  // History filters
+  const [filterBudgetId, setFilterBudgetId] = useState<string>('');
+  const [filterRequestedBy, setFilterRequestedBy] = useState<string>('');
+  const [filterExpense, setFilterExpense] = useState<string>('');
+
   useEffect(() => { loadPending(); }, []);
+
+  // Set default budget filter to active budget once loaded
+  useEffect(() => {
+    if (activeBudget && !filterBudgetId) {
+      setFilterBudgetId(activeBudget.id);
+    }
+  }, [activeBudget]);
 
   const loadPending = async () => {
     try {
@@ -55,6 +69,43 @@ export default function ApprovalsPage() {
     setShowHistory(next);
     if (next && resolvedRequests.length === 0) loadHistory();
   };
+
+  // Extract unique values for filter dropdowns
+  const historyBudgets = useMemo(() => {
+    const map = new Map<string, string>();
+    resolvedRequests.forEach(r => {
+      const b = r.budgetLine?.budget;
+      if (b) map.set(b.id || '', `${b.year} ${b.version}`);
+    });
+    return Array.from(map.entries());
+  }, [resolvedRequests]);
+
+  const historyRequesters = useMemo(() => {
+    const map = new Map<string, string>();
+    resolvedRequests.forEach(r => {
+      if (r.requestedBy) map.set(r.requestedBy.fullName, r.requestedBy.fullName);
+    });
+    return Array.from(map.values()).sort();
+  }, [resolvedRequests]);
+
+  const historyExpenses = useMemo(() => {
+    const map = new Map<string, string>();
+    resolvedRequests.forEach(r => {
+      const exp = r.budgetLine?.expense;
+      if (exp) map.set(exp.code, `${exp.code} - ${exp.shortDescription}`);
+    });
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [resolvedRequests]);
+
+  // Filtered history
+  const filteredHistory = useMemo(() => {
+    return resolvedRequests.filter(r => {
+      if (filterBudgetId && r.budgetLine?.budget?.id !== filterBudgetId) return false;
+      if (filterRequestedBy && r.requestedBy?.fullName !== filterRequestedBy) return false;
+      if (filterExpense && r.budgetLine?.expense?.code !== filterExpense) return false;
+      return true;
+    });
+  }, [resolvedRequests, filterBudgetId, filterRequestedBy, filterExpense]);
 
   const toggleSelect = (id: string) => {
     const next = new Set(selectedIds);
@@ -214,17 +265,48 @@ export default function ApprovalsPage() {
           <div className="flex items-center gap-2">
             {showHistory ? <HiOutlineChevronDown className="w-5 h-5 text-gray-500" /> : <HiOutlineChevronRight className="w-5 h-5 text-gray-500" />}
             <h2 className="text-lg font-semibold text-gray-800">{t('approval.history') || 'Historial de Aprobaciones'}</h2>
-            {resolvedRequests.length > 0 && (
-              <span className="bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded-full">{resolvedRequests.length}</span>
+            {filteredHistory.length > 0 && (
+              <span className="bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded-full">{filteredHistory.length}</span>
             )}
           </div>
         </button>
 
         {showHistory && (
           <div className="border-t">
+            {/* Filters */}
+            <div className="px-6 py-3 bg-gray-50 border-b flex flex-wrap gap-3 items-center">
+              <select value={filterBudgetId} onChange={e => setFilterBudgetId(e.target.value)}
+                className="border rounded px-2 py-1.5 text-sm min-w-[180px]">
+                <option value="">{t('approval.allBudgets') || 'Todos los presupuestos'}</option>
+                {historyBudgets.map(([id, label]) => (
+                  <option key={id} value={id}>{label}</option>
+                ))}
+              </select>
+              <select value={filterRequestedBy} onChange={e => setFilterRequestedBy(e.target.value)}
+                className="border rounded px-2 py-1.5 text-sm min-w-[160px]">
+                <option value="">{t('approval.allRequesters') || 'Todos los solicitantes'}</option>
+                {historyRequesters.map(name => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+              <select value={filterExpense} onChange={e => setFilterExpense(e.target.value)}
+                className="border rounded px-2 py-1.5 text-sm min-w-[200px]">
+                <option value="">{t('approval.allExpenses') || 'Todos los gastos'}</option>
+                {historyExpenses.map(([code, label]) => (
+                  <option key={code} value={code}>{label}</option>
+                ))}
+              </select>
+              {(filterBudgetId || filterRequestedBy || filterExpense) && (
+                <button onClick={() => { setFilterBudgetId(''); setFilterRequestedBy(''); setFilterExpense(''); }}
+                  className="text-xs text-gray-500 hover:text-gray-700 underline">
+                  {t('filter.clearFilters') || 'Limpiar filtros'}
+                </button>
+              )}
+            </div>
+
             {loadingHistory ? (
               <div className="p-8 text-center text-gray-500">{t('msg.loading')}</div>
-            ) : resolvedRequests.length === 0 ? (
+            ) : filteredHistory.length === 0 ? (
               <div className="p-8 text-center text-gray-500">{t('approval.noHistory') || 'No hay aprobaciones pasadas'}</div>
             ) : (
               <table className="min-w-full divide-y divide-gray-200">
@@ -240,7 +322,7 @@ export default function ApprovalsPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {resolvedRequests.map(req => (
+                  {filteredHistory.map(req => (
                     <tr key={req.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => setHistoryDetailRequest(req)}>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded text-xs font-medium ${
