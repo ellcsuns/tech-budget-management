@@ -765,6 +765,214 @@ const translations: TranslationSeed[] = [
   { key: 'dashboard.difference', es: 'Diferencia', en: 'Difference', category: 'dashboard' },
   { key: 'dashboard.noBudget', es: 'No hay presupuesto vigente configurado. Configure uno en la sección de Configuración.', en: 'No active budget configured. Set one in the Configuration section.', category: 'dashboard' },
   { key: 'dashboard.companyTotals', es: 'Totales por Compañía', en: 'Company Totals', category: 'dashboard' },
+
+  // =============================================
+  // HELP CENTER — Menu
+  // =============================================
+  { key: 'menu.help', es: 'Ayuda', en: 'Help', category: 'menu' },
+
+  // =============================================
+  // HELP CENTER — General
+  // =============================================
+  { key: 'help.title', es: 'Centro de Ayuda', en: 'Help Center', category: 'help' },
+  { key: 'help.searchPlaceholder', es: 'Buscar en la ayuda...', en: 'Search help...', category: 'help' },
+  { key: 'help.searchAriaLabel', es: 'Buscar contenido de ayuda', en: 'Search help content', category: 'help' },
+  { key: 'help.noResults', es: 'No se encontraron resultados para', en: 'No results found for', category: 'help' },
+  { key: 'help.tocTitle', es: 'Contenido', en: 'Contents', category: 'help' },
+
+  // =============================================
+  // HELP CENTER — Budget Calculation Section
+  // =============================================
+  { key: 'help.section.budgetCalc.title', es: '¿Qué es un Presupuesto?', en: 'What is a Budget?', category: 'help' },
+  { key: 'help.section.budgetCalc.description1', es: 'En InvestIQ, un presupuesto es el plan financiero anual de tu organización. Contiene líneas presupuestarias, cada una con valores planificados para los 12 meses del año (M1 a M12). Cada línea está asociada a un gasto (Expense), una compañía financiera y una moneda.', en: 'In InvestIQ, a budget is your organization\'s annual financial plan. It contains budget lines, each with planned values for the 12 months of the year (M1 to M12). Each line is associated with an expense, a financial company, and a currency.', category: 'help' },
+  { key: 'help.section.budgetCalc.description2', es: 'El valor computado de cada línea se calcula con la fórmula: Valor Computado = Valor Base (Plan) − Ahorros + Correcciones (Diferidos). Esto permite que el presupuesto refleje ajustes sin perder los valores originales.', en: 'The computed value of each line is calculated with the formula: Computed Value = Base Value (Plan) − Savings + Corrections (Deferrals). This allows the budget to reflect adjustments without losing the original values.', category: 'help' },
+  { key: 'help.section.budgetCalc.description3', es: 'Las transacciones comprometidas (COMMITTED) representan compromisos de gasto — contratos firmados, órdenes de compra emitidas. Las transacciones reales (REAL) representan gastos efectivamente ejecutados y pagados.', en: 'Committed transactions represent spending commitments — signed contracts, issued purchase orders. Real transactions represent expenses that have been actually executed and paid.', category: 'help' },
+  { key: 'help.section.budgetCalc.description4', es: 'La varianza mide la diferencia entre lo presupuestado y lo ejecutado. Una varianza positiva indica que se gastó menos de lo planificado; una negativa indica sobregasto. Monitorear la varianza es clave para el control financiero.', en: 'Variance measures the difference between budgeted and executed amounts. A positive variance indicates underspending; a negative one indicates overspending. Monitoring variance is key for financial control.', category: 'help' },
+  { key: 'help.section.budgetCalc.description5', es: 'Los tipos de cambio permiten convertir valores de moneda local a USD. Cada presupuesto tiene tasas configuradas por moneda y por mes, asegurando que los reportes consolidados reflejen valores comparables.', en: 'Exchange rates allow converting local currency values to USD. Each budget has rates configured by currency and month, ensuring consolidated reports reflect comparable values.', category: 'help' },
+  { key: 'help.section.budgetCalc.description6', es: 'El flujo completo es: se define un Plan (valores base) → se aplican Ahorros (reducciones) y Diferidos (correcciones) → se obtiene el Valor Computado → se registran transacciones Comprometidas → finalmente se registran transacciones Reales.', en: 'The complete flow is: a Plan is defined (base values) → Savings (reductions) and Deferrals (corrections) are applied → the Computed Value is obtained → Committed transactions are recorded → finally Real transactions are recorded.', category: 'help' },
+  { key: 'help.section.budgetCalc.description7', es: 'InvestIQ soporta múltiples versiones de presupuesto por año. Solo una versión puede estar marcada como "vigente" (activa) en cualquier momento. Las versiones anteriores se conservan para comparación histórica.', en: 'InvestIQ supports multiple budget versions per year. Only one version can be marked as "active" at any time. Previous versions are preserved for historical comparison.', category: 'help' },
+
+  // =============================================
+  // HELP CENTER — Dashboard Section
+  // =============================================
+  { key: 'help.section.dashboard.title', es: 'Dashboard', en: 'Dashboard', category: 'help' },
+  { key: 'help.section.dashboard.description1', es: 'El Dashboard es la vista principal de InvestIQ. Muestra un resumen ejecutivo del presupuesto vigente con KPIs clave: presupuesto total, comprometido total, real total y la diferencia entre presupuesto y real.', en: 'The Dashboard is InvestIQ\'s main view. It shows an executive summary of the active budget with key KPIs: total budget, total committed, total real, and the difference between budget and real.', category: 'help' },
+  { key: 'help.section.dashboard.description2', es: 'Los gráficos del Dashboard incluyen: distribución del presupuesto por categoría de gasto, tendencias mensuales de ejecución, y una comparación visual entre presupuesto, comprometido y real.', en: 'Dashboard charts include: budget distribution by expense category, monthly execution trends, and a visual comparison between budget, committed, and real.', category: 'help' },
+  { key: 'help.section.dashboard.description3', es: 'También puedes ver los totales desglosados por compañía financiera, lo que permite identificar rápidamente qué entidades tienen mayor ejecución presupuestaria.', en: 'You can also view totals broken down by financial company, allowing you to quickly identify which entities have the highest budget execution.', category: 'help' },
+
+  // =============================================
+  // HELP CENTER — Budgets Section
+  // =============================================
+  { key: 'help.section.budgets.title', es: 'Presupuestos', en: 'Budgets', category: 'help' },
+  { key: 'help.section.budgets.description1', es: 'La página de Presupuestos muestra una tabla con todas las líneas presupuestarias del presupuesto seleccionado. Cada línea tiene un gasto asociado, una compañía financiera, una moneda y valores para cada mes (M1-M12).', en: 'The Budgets page shows a table with all budget lines for the selected budget. Each line has an associated expense, financial company, currency, and values for each month (M1-M12).', category: 'help' },
+  { key: 'help.section.budgets.description2', es: 'Puedes editar los valores de las celdas directamente en la tabla. Los cambios se guardan automáticamente. Los valores de ahorros y correcciones se superponen sobre los valores base para calcular el valor computado.', en: 'You can edit cell values directly in the table. Changes are saved automatically. Savings and correction values are overlaid on base values to calculate the computed value.', category: 'help' },
+  { key: 'help.section.budgets.description3', es: 'El flujo de confirmación permite al administrador solicitar que los usuarios confirmen sus líneas presupuestarias. Cada usuario revisa y confirma las líneas que le corresponden.', en: 'The confirmation flow allows the administrator to request that users confirm their budget lines. Each user reviews and confirms the lines assigned to them.', category: 'help' },
+  { key: 'help.section.budgets.description4', es: 'Si necesitas modificar una línea después de la confirmación, puedes enviar una Solicitud de Cambio que será revisada por un aprobador antes de aplicarse.', en: 'If you need to modify a line after confirmation, you can submit a Change Request that will be reviewed by an approver before being applied.', category: 'help' },
+
+  // =============================================
+  // HELP CENTER — Budget Compare Section
+  // =============================================
+  { key: 'help.section.budgetCompare.title', es: 'Comparar Presupuestos', en: 'Compare Budgets', category: 'help' },
+  { key: 'help.section.budgetCompare.description1', es: 'Esta herramienta permite seleccionar dos versiones de presupuesto del mismo año y compararlas lado a lado. Puedes ver qué gastos se agregaron, eliminaron o modificaron entre versiones.', en: 'This tool allows you to select two budget versions from the same year and compare them side by side. You can see which expenses were added, removed, or modified between versions.', category: 'help' },
+  { key: 'help.section.budgetCompare.description2', es: 'Las diferencias se resaltan visualmente con colores: verde para valores que disminuyeron, rojo para valores que aumentaron. También se muestran los porcentajes de cambio para facilitar el análisis.', en: 'Differences are visually highlighted with colors: green for decreased values, red for increased values. Change percentages are also shown to facilitate analysis.', category: 'help' },
+
+  // =============================================
+  // HELP CENTER — Savings Section
+  // =============================================
+  { key: 'help.section.savings.title', es: 'Ahorros', en: 'Savings', category: 'help' },
+  { key: 'help.section.savings.description1', es: 'Un ahorro es una reducción planificada sobre una línea presupuestaria. Se crea asociado a una línea específica y se distribuye en valores mensuales (M1-M12). Los ahorros permiten reflejar reducciones sin modificar los valores base del plan.', en: 'A saving is a planned reduction on a budget line. It is created associated with a specific line and distributed in monthly values (M1-M12). Savings allow reflecting reductions without modifying the plan\'s base values.', category: 'help' },
+  { key: 'help.section.savings.description2', es: 'Los ahorros tienen dos estados: PENDING (pendiente de activación) y ACTIVE (activo, afectando el presupuesto). Solo los ahorros ACTIVE reducen el valor computado del presupuesto. Un administrador puede activar un ahorro pendiente.', en: 'Savings have two states: PENDING (awaiting activation) and ACTIVE (active, affecting the budget). Only ACTIVE savings reduce the budget\'s computed value. An administrator can activate a pending saving.', category: 'help' },
+  { key: 'help.section.savings.description3', es: 'El efecto de un ahorro se visualiza en la tabla de presupuestos: el valor computado de cada mes se reduce por el monto del ahorro correspondiente. Esto permite ver el impacto real de las reducciones planificadas.', en: 'The effect of a saving is visualized in the budget table: each month\'s computed value is reduced by the corresponding saving amount. This allows seeing the real impact of planned reductions.', category: 'help' },
+
+  // =============================================
+  // HELP CENTER — Deferrals Section
+  // =============================================
+  { key: 'help.section.deferrals.title', es: 'Diferidos', en: 'Deferrals', category: 'help' },
+  { key: 'help.section.deferrals.description1', es: 'Un diferido es una corrección presupuestaria que redistribuye un monto total entre un rango de meses (mes inicio a mes fin). El monto se divide equitativamente entre los meses del rango seleccionado.', en: 'A deferral is a budget correction that redistributes a total amount across a range of months (start month to end month). The amount is divided equally among the months in the selected range.', category: 'help' },
+  { key: 'help.section.deferrals.description2', es: 'Los diferidos actúan como correcciones positivas que se suman al valor computado del presupuesto. Son útiles para reflejar gastos que se redistribuyen temporalmente o ajustes que no estaban en el plan original.', en: 'Deferrals act as positive corrections that are added to the budget\'s computed value. They are useful for reflecting expenses that are temporarily redistributed or adjustments not in the original plan.', category: 'help' },
+
+  // =============================================
+  // HELP CENTER — Approvals Section
+  // =============================================
+  { key: 'help.section.approvals.title', es: 'Aprobaciones', en: 'Approvals', category: 'help' },
+  { key: 'help.section.approvals.description1', es: 'El módulo de Aprobaciones gestiona las Solicitudes de Cambio (Change Requests) sobre líneas presupuestarias. Cuando un usuario necesita modificar valores ya confirmados, envía una solicitud que debe ser aprobada.', en: 'The Approvals module manages Change Requests on budget lines. When a user needs to modify already confirmed values, they submit a request that must be approved.', category: 'help' },
+  { key: 'help.section.approvals.description2', es: 'Cada solicitud contiene: los valores actuales vs los propuestos para cada mes, un comentario de justificación, y el usuario solicitante. Los aprobadores pueden ver el detalle completo antes de decidir.', en: 'Each request contains: current vs proposed values for each month, a justification comment, and the requesting user. Approvers can see the full detail before deciding.', category: 'help' },
+  { key: 'help.section.approvals.description3', es: 'Los estados de una solicitud son: PENDING (pendiente de revisión), APPROVED (aprobada y aplicada al presupuesto) o REJECTED (rechazada, sin cambios). El historial de aprobaciones queda registrado para auditoría.', en: 'Request states are: PENDING (awaiting review), APPROVED (approved and applied to the budget), or REJECTED (rejected, no changes). The approval history is recorded for audit purposes.', category: 'help' },
+
+  // =============================================
+  // HELP CENTER — Expenses Section
+  // =============================================
+  { key: 'help.section.expenses.title', es: 'Gastos', en: 'Expenses', category: 'help' },
+  { key: 'help.section.expenses.description1', es: 'El catálogo de Gastos define los conceptos de gasto disponibles para las líneas presupuestarias. Cada gasto tiene: código único, descripción corta, descripción larga, direcciones tecnológicas, áreas de usuario, categoría y tags.', en: 'The Expenses catalog defines the spending concepts available for budget lines. Each expense has: unique code, short description, long description, technology directions, user areas, category, and tags.', category: 'help' },
+  { key: 'help.section.expenses.description2', es: 'Los gastos se vinculan a las líneas presupuestarias al crear o editar una línea. Las categorías permiten agrupar gastos para reportes y análisis. Los tags facilitan la búsqueda y filtrado rápido.', en: 'Expenses are linked to budget lines when creating or editing a line. Categories allow grouping expenses for reports and analysis. Tags facilitate quick search and filtering.', category: 'help' },
+
+  // =============================================
+  // HELP CENTER — Transactions Section
+  // =============================================
+  { key: 'help.section.transactions.title', es: 'Transacciones', en: 'Transactions', category: 'help' },
+  { key: 'help.section.transactions.description1', es: 'InvestIQ maneja dos tipos de transacciones: Comprometidas (COMMITTED) y Reales (REAL). Las comprometidas representan compromisos de gasto como contratos u órdenes de compra. Las reales representan pagos efectivos.', en: 'InvestIQ handles two types of transactions: Committed and Real. Committed transactions represent spending commitments like contracts or purchase orders. Real transactions represent actual payments.', category: 'help' },
+  { key: 'help.section.transactions.description2', es: 'Cada transacción incluye: fecha de servicio, fecha de contabilización, documento de referencia, moneda, valor en moneda local y conversión automática a USD usando los tipos de cambio configurados.', en: 'Each transaction includes: service date, posting date, reference document, currency, value in local currency, and automatic conversion to USD using configured exchange rates.', category: 'help' },
+  { key: 'help.section.transactions.description3', es: 'El mecanismo de compensación permite que una transacción REAL compense (total o parcialmente) una transacción COMMITTED. Esto refleja el ciclo natural: primero se compromete el gasto, luego se ejecuta.', en: 'The compensation mechanism allows a REAL transaction to offset (fully or partially) a COMMITTED transaction. This reflects the natural cycle: first the expense is committed, then executed.', category: 'help' },
+  { key: 'help.section.transactions.description4', es: 'La compensación parcial permite que un pago real cubra solo una parte del compromiso original, dejando el saldo restante como comprometido pendiente.', en: 'Partial compensation allows a real payment to cover only part of the original commitment, leaving the remaining balance as pending committed.', category: 'help' },
+
+  // =============================================
+  // HELP CENTER — Exchange Rates Section
+  // =============================================
+  { key: 'help.section.exchangeRates.title', es: 'Tipos de Cambio', en: 'Exchange Rates', category: 'help' },
+  { key: 'help.section.exchangeRates.description1', es: 'Los tipos de cambio definen las tasas de conversión de moneda local a USD. Se configuran por moneda, por mes y por presupuesto, permitiendo reflejar variaciones cambiarias a lo largo del año.', en: 'Exchange rates define conversion rates from local currency to USD. They are configured by currency, month, and budget, allowing currency variations throughout the year to be reflected.', category: 'help' },
+  { key: 'help.section.exchangeRates.description2', es: 'Cuando se registra una transacción en moneda local, InvestIQ aplica automáticamente el tipo de cambio correspondiente para calcular el equivalente en USD. Esto permite consolidar reportes en una moneda única.', en: 'When a transaction is recorded in local currency, InvestIQ automatically applies the corresponding exchange rate to calculate the USD equivalent. This allows consolidating reports in a single currency.', category: 'help' },
+
+  // =============================================
+  // HELP CENTER — Reports Section
+  // =============================================
+  { key: 'help.section.reports.title', es: 'Reportes', en: 'Reports', category: 'help' },
+  { key: 'help.section.reports.description1', es: 'La sección de Reportes ofrece gráficos visuales interactivos: distribución del presupuesto por categoría de gasto, tendencias mensuales de ejecución, y comparación entre presupuesto, comprometido y real.', en: 'The Reports section offers interactive visual charts: budget distribution by expense category, monthly execution trends, and comparison between budget, committed, and real.', category: 'help' },
+  { key: 'help.section.reports.description2', es: 'Los gráficos se actualizan automáticamente al cambiar el presupuesto seleccionado. Puedes filtrar por compañía, categoría o dirección tecnológica para obtener vistas más específicas.', en: 'Charts update automatically when changing the selected budget. You can filter by company, category, or technology direction for more specific views.', category: 'help' },
+
+  // =============================================
+  // HELP CENTER — Detailed Reports Section
+  // =============================================
+  { key: 'help.section.detailedReports.title', es: 'Reportes Detallados', en: 'Detailed Reports', category: 'help' },
+  { key: 'help.section.detailedReports.description1', es: 'Los Reportes Detallados ofrecen análisis profundos exportables a Excel: resumen ejecutivo, ejecución presupuestaria, plan vs real, análisis por compañía, por dirección tecnológica, por área de usuario, análisis de varianza, ahorros/diferidos y proyección anual.', en: 'Detailed Reports offer in-depth exportable analyses to Excel: executive summary, budget execution, plan vs real, analysis by company, by technology direction, by user area, variance analysis, savings/deferrals, and annual projection.', category: 'help' },
+  { key: 'help.section.detailedReports.description2', es: 'Cada reporte puede descargarse en formato Excel para compartir con stakeholders o para análisis adicional fuera de la plataforma.', en: 'Each report can be downloaded in Excel format to share with stakeholders or for additional analysis outside the platform.', category: 'help' },
+
+  // =============================================
+  // HELP CENTER — Configuration Section
+  // =============================================
+  { key: 'help.section.configuration.title', es: 'Configuración', en: 'Configuration', category: 'help' },
+  { key: 'help.section.configuration.description1', es: 'La sección de Configuración permite a los administradores gestionar presupuestos: crear nuevos presupuestos (opcionalmente copiando desde uno existente), eliminar presupuestos, y establecer cuál es el presupuesto vigente (activo).', en: 'The Configuration section allows administrators to manage budgets: create new budgets (optionally copying from an existing one), delete budgets, and set which budget is active.', category: 'help' },
+  { key: 'help.section.configuration.description2', es: 'También permite crear snapshots (consolidaciones) que toman los valores computados actuales y los escriben como nuevos valores base en una nueva versión, consolidando todos los ajustes.', en: 'It also allows creating snapshots (consolidations) that take current computed values and write them as new base values in a new version, consolidating all adjustments.', category: 'help' },
+  { key: 'help.section.configuration.description3', es: 'Desde aquí se configura el tema visual de la aplicación y el idioma por defecto del sistema.', en: 'From here you can configure the application\'s visual theme and the system\'s default language.', category: 'help' },
+
+  // =============================================
+  // HELP CENTER — Master Data Section
+  // =============================================
+  { key: 'help.section.masterData.title', es: 'Datos Maestros', en: 'Master Data', category: 'help' },
+  { key: 'help.section.masterData.description1', es: 'Los Datos Maestros son las entidades base que se usan en toda la plataforma: Direcciones Tecnológicas, Áreas de Usuario, Compañías Financieras y Categorías de Gastos.', en: 'Master Data are the base entities used throughout the platform: Technology Directions, User Areas, Financial Companies, and Expense Categories.', category: 'help' },
+  { key: 'help.section.masterData.description2', es: 'Estas entidades se configuran una vez y se referencian desde presupuestos, gastos y transacciones. Modificar un dato maestro afecta a todos los registros que lo referencian.', en: 'These entities are configured once and referenced from budgets, expenses, and transactions. Modifying a master data entry affects all records that reference it.', category: 'help' },
+
+  // =============================================
+  // HELP CENTER — Users & Roles Section
+  // =============================================
+  { key: 'help.section.usersRoles.title', es: 'Usuarios y Roles', en: 'Users & Roles', category: 'help' },
+  { key: 'help.section.usersRoles.description1', es: 'La gestión de usuarios permite crear cuentas, asignar roles y controlar el acceso a la plataforma. Cada usuario tiene un nombre, email, contraseña y uno o más roles asignados.', en: 'User management allows creating accounts, assigning roles, and controlling platform access. Each user has a name, email, password, and one or more assigned roles.', category: 'help' },
+  { key: 'help.section.usersRoles.description2', es: 'Los roles definen permisos por módulo. Los tipos de permiso son: VIEW (ver datos), VIEW_OWN (ver solo propios), MODIFY (modificar datos), MODIFY_OWN (modificar solo propios) y APPROVE_BUDGET (aprobar solicitudes de cambio).', en: 'Roles define permissions per module. Permission types are: VIEW (view data), VIEW_OWN (view own only), MODIFY (modify data), MODIFY_OWN (modify own only), and APPROVE_BUDGET (approve change requests).', category: 'help' },
+  { key: 'help.section.usersRoles.description3', es: 'Cada módulo tiene un menuCode que controla su visibilidad en el sidebar. Si un usuario no tiene permiso VIEW para un menuCode, ese módulo no aparece en su navegación.', en: 'Each module has a menuCode that controls its visibility in the sidebar. If a user doesn\'t have VIEW permission for a menuCode, that module won\'t appear in their navigation.', category: 'help' },
+
+  // =============================================
+  // HELP CENTER — Translations Section
+  // =============================================
+  { key: 'help.section.translations.title', es: 'Traducciones', en: 'Translations', category: 'help' },
+  { key: 'help.section.translations.description1', es: 'InvestIQ soporta múltiples idiomas (español e inglés). El sistema i18n gestiona claves de traducción organizadas por categoría. Cada clave tiene un valor en español y otro en inglés.', en: 'InvestIQ supports multiple languages (Spanish and English). The i18n system manages translation keys organized by category. Each key has a Spanish and an English value.', category: 'help' },
+  { key: 'help.section.translations.description2', es: 'Los administradores pueden editar las traducciones existentes o agregar nuevas desde la página de Traducciones. El cambio de idioma se aplica inmediatamente sin recargar la página.', en: 'Administrators can edit existing translations or add new ones from the Translations page. Language changes are applied immediately without reloading the page.', category: 'help' },
+
+  // =============================================
+  // HELP CENTER — Audit Section
+  // =============================================
+  { key: 'help.section.audit.title', es: 'Auditoría', en: 'Audit Log', category: 'help' },
+  { key: 'help.section.audit.description1', es: 'El registro de Auditoría captura todas las acciones importantes realizadas en la plataforma: creación, modificación y eliminación de registros. Cada entrada incluye: usuario, acción, entidad afectada, detalles del cambio, dirección IP y fecha/hora.', en: 'The Audit Log captures all important actions performed on the platform: creation, modification, and deletion of records. Each entry includes: user, action, affected entity, change details, IP address, and date/time.', category: 'help' },
+  { key: 'help.section.audit.description2', es: 'Puedes filtrar el historial por usuario, tipo de acción o entidad para encontrar rápidamente los cambios que necesitas revisar. El log de auditoría es de solo lectura y no puede ser modificado.', en: 'You can filter the history by user, action type, or entity to quickly find the changes you need to review. The audit log is read-only and cannot be modified.', category: 'help' },
+
+  // =============================================
+  // HELP CENTER — SVG Infographic Labels
+  // =============================================
+  // Budget Flow
+  { key: 'help.infographic.budgetFlow.plan', es: 'Plan (Base)', en: 'Plan (Base)', category: 'help' },
+  { key: 'help.infographic.budgetFlow.savings', es: 'Ahorros', en: 'Savings', category: 'help' },
+  { key: 'help.infographic.budgetFlow.deferrals', es: 'Diferidos', en: 'Deferrals', category: 'help' },
+  { key: 'help.infographic.budgetFlow.computed', es: 'Valor Computado', en: 'Computed Value', category: 'help' },
+  { key: 'help.infographic.budgetFlow.committed', es: 'Comprometido', en: 'Committed', category: 'help' },
+  { key: 'help.infographic.budgetFlow.real', es: 'Real', en: 'Real', category: 'help' },
+  { key: 'help.infographic.budgetFlow.formula', es: 'Computado = Plan − Ahorros + Diferidos', en: 'Computed = Plan − Savings + Deferrals', category: 'help' },
+  { key: 'help.infographic.budgetFlow.subtract', es: 'Resta', en: 'Subtract', category: 'help' },
+  { key: 'help.infographic.budgetFlow.add', es: 'Suma', en: 'Add', category: 'help' },
+  { key: 'help.infographic.budgetFlow.compare', es: 'Comparar', en: 'Compare', category: 'help' },
+  // Transaction Flow
+  { key: 'help.infographic.transactionFlow.title', es: 'Flujo de Compensación', en: 'Compensation Flow', category: 'help' },
+  { key: 'help.infographic.transactionFlow.committed', es: 'Trans. Comprometida', en: 'Committed Trans.', category: 'help' },
+  { key: 'help.infographic.transactionFlow.real', es: 'Trans. Real', en: 'Real Trans.', category: 'help' },
+  { key: 'help.infographic.transactionFlow.full', es: 'Compensación Total', en: 'Full Compensation', category: 'help' },
+  { key: 'help.infographic.transactionFlow.partial', es: 'Compensación Parcial', en: 'Partial Compensation', category: 'help' },
+  { key: 'help.infographic.transactionFlow.remaining', es: 'Saldo Pendiente', en: 'Remaining Balance', category: 'help' },
+  // Approval Flow
+  { key: 'help.infographic.approvalFlow.request', es: 'Solicitud de Cambio', en: 'Change Request', category: 'help' },
+  { key: 'help.infographic.approvalFlow.pending', es: 'Pendiente', en: 'Pending', category: 'help' },
+  { key: 'help.infographic.approvalFlow.review', es: 'Revisión', en: 'Review', category: 'help' },
+  { key: 'help.infographic.approvalFlow.approved', es: 'Aprobada', en: 'Approved', category: 'help' },
+  { key: 'help.infographic.approvalFlow.rejected', es: 'Rechazada', en: 'Rejected', category: 'help' },
+  { key: 'help.infographic.approvalFlow.applied', es: 'Cambios Aplicados', en: 'Changes Applied', category: 'help' },
+  // Roles & Permissions
+  { key: 'help.infographic.rolesPermissions.users', es: 'Usuarios', en: 'Users', category: 'help' },
+  { key: 'help.infographic.rolesPermissions.roles', es: 'Roles', en: 'Roles', category: 'help' },
+  { key: 'help.infographic.rolesPermissions.permissions', es: 'Permisos', en: 'Permissions', category: 'help' },
+  { key: 'help.infographic.rolesPermissions.modules', es: 'Módulos', en: 'Modules', category: 'help' },
+  { key: 'help.infographic.rolesPermissions.assign', es: 'Asignar', en: 'Assign', category: 'help' },
+  { key: 'help.infographic.rolesPermissions.define', es: 'Definir', en: 'Define', category: 'help' },
+  { key: 'help.infographic.rolesPermissions.access', es: 'Acceso', en: 'Access', category: 'help' },
+  // Dashboard Infographic
+  { key: 'help.infographic.dashboard.title', es: 'Vista del Dashboard', en: 'Dashboard View', category: 'help' },
+  { key: 'help.infographic.dashboard.kpis', es: 'KPIs Principales', en: 'Main KPIs', category: 'help' },
+  { key: 'help.infographic.dashboard.budget', es: 'Presupuesto', en: 'Budget', category: 'help' },
+  { key: 'help.infographic.dashboard.committed', es: 'Comprometido', en: 'Committed', category: 'help' },
+  { key: 'help.infographic.dashboard.real', es: 'Real', en: 'Real', category: 'help' },
+  { key: 'help.infographic.dashboard.difference', es: 'Diferencia', en: 'Difference', category: 'help' },
+  { key: 'help.infographic.dashboard.charts', es: 'Gráficos', en: 'Charts', category: 'help' },
+  { key: 'help.infographic.dashboard.byCategory', es: 'Por Categoría', en: 'By Category', category: 'help' },
+  { key: 'help.infographic.dashboard.trends', es: 'Tendencias', en: 'Trends', category: 'help' },
+  // Budget Line Infographic
+  { key: 'help.infographic.budgetLine.title', es: 'Estructura de Línea Presupuestaria', en: 'Budget Line Structure', category: 'help' },
+  { key: 'help.infographic.budgetLine.expense', es: 'Gasto', en: 'Expense', category: 'help' },
+  { key: 'help.infographic.budgetLine.company', es: 'Compañía', en: 'Company', category: 'help' },
+  { key: 'help.infographic.budgetLine.currency', es: 'Moneda', en: 'Currency', category: 'help' },
+  { key: 'help.infographic.budgetLine.months', es: 'Valores Mensuales', en: 'Monthly Values', category: 'help' },
+  { key: 'help.infographic.budgetLine.total', es: 'Total Anual', en: 'Annual Total', category: 'help' },
+  // Savings Effect Infographic
+  { key: 'help.infographic.savingsEffect.title', es: 'Efecto del Ahorro', en: 'Savings Effect', category: 'help' },
+  { key: 'help.infographic.savingsEffect.before', es: 'Antes del Ahorro', en: 'Before Saving', category: 'help' },
+  { key: 'help.infographic.savingsEffect.after', es: 'Después del Ahorro', en: 'After Saving', category: 'help' },
+  { key: 'help.infographic.savingsEffect.reduction', es: 'Reducción', en: 'Reduction', category: 'help' },
+  { key: 'help.infographic.savingsEffect.base', es: 'Valor Base', en: 'Base Value', category: 'help' },
+  { key: 'help.infographic.savingsEffect.computed', es: 'Valor Computado', en: 'Computed Value', category: 'help' },
 ];
 
 export async function seedTranslations(prisma: PrismaClient) {
