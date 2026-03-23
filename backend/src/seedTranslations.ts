@@ -759,12 +759,6 @@ const translations: TranslationSeed[] = [
   { key: 'config.snapshotWarning', es: 'Esta acción creará una nueva versión del presupuesto vigente con todos los ajustes consolidados como valores base. Los ahorros activos y correcciones aprobadas se reflejarán en los nuevos valores. Esta acción no se puede deshacer.', en: 'This action will create a new version of the active budget with all adjustments consolidated as base values. Active savings and approved corrections will be reflected in the new values. This action cannot be undone.', category: 'config' },
   { key: 'config.confirmSnapshot', es: 'Confirmar y Crear', en: 'Confirm and Create', category: 'config' },
   { key: 'config.snapshotCreated', es: 'Nueva versión creada con valores consolidados', en: 'New version created with consolidated values', category: 'config' },
-  { key: 'dashboard.budget', es: 'Presupuesto', en: 'Budget', category: 'dashboard' },
-  { key: 'dashboard.committed', es: 'Comprometido', en: 'Committed', category: 'dashboard' },
-  { key: 'dashboard.real', es: 'Real', en: 'Real', category: 'dashboard' },
-  { key: 'dashboard.difference', es: 'Diferencia', en: 'Difference', category: 'dashboard' },
-  { key: 'dashboard.noBudget', es: 'No hay presupuesto vigente configurado. Configure uno en la sección de Configuración.', en: 'No active budget configured. Set one in the Configuration section.', category: 'dashboard' },
-  { key: 'dashboard.companyTotals', es: 'Totales por Compañía', en: 'Company Totals', category: 'dashboard' },
 
   // =============================================
   // HELP CENTER — Menu
