@@ -2,12 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useI18n } from '../contexts/I18nContext';
+import { useTheme, COLOR_THEMES, FONT_SIZES } from '../contexts/ThemeContext';
 import { changeRequestApi } from '../services/api';
 import {
   HiOutlineArrowRightOnRectangle,
   HiOutlineLanguage,
   HiOutlineUserGroup,
-  HiOutlineStar,
   HiOutlineMagnifyingGlass,
   HiOutlineClipboardDocumentList,
 } from 'react-icons/hi2';
@@ -18,42 +18,21 @@ const LANGUAGES = [
   { code: 'pt', label: 'Português' },
 ];
 
-const THEMES = [
-  { id: 'default', label: 'Predeterminado', colors: ['#1e293b', '#3b82f6', '#6366f1'], primary: '#1E40AF', sidebar: '#111827', accent: '#3B82F6' },
-  { id: 'ocean', label: 'Océano', colors: ['#0c4a6e', '#0ea5e9', '#06b6d4'], primary: '#0c4a6e', sidebar: '#0c4a6e', accent: '#0ea5e9' },
-  { id: 'forest', label: 'Bosque', colors: ['#14532d', '#22c55e', '#10b981'], primary: '#065F46', sidebar: '#064E3B', accent: '#10B981' },
-  { id: 'sunset', label: 'Atardecer', colors: ['#7c2d12', '#f97316', '#ef4444'], primary: '#9A3412', sidebar: '#1C1917', accent: '#F97316' },
-  { id: 'green', label: 'Verde', colors: ['#065F46', '#10B981', '#064E3B'], primary: '#065F46', sidebar: '#064E3B', accent: '#10B981' },
-  { id: 'purple', label: 'Púrpura', colors: ['#5B21B6', '#8B5CF6', '#1E1B4B'], primary: '#5B21B6', sidebar: '#1E1B4B', accent: '#8B5CF6' },
-  { id: 'red', label: 'Rojo', colors: ['#991B1B', '#EF4444', '#1C1917'], primary: '#991B1B', sidebar: '#1C1917', accent: '#EF4444' },
-  { id: 'teal', label: 'Teal', colors: ['#0F766E', '#14B8A6', '#134E4A'], primary: '#0F766E', sidebar: '#134E4A', accent: '#14B8A6' },
-  { id: 'orange', label: 'Naranja', colors: ['#9A3412', '#F97316', '#1C1917'], primary: '#9A3412', sidebar: '#1C1917', accent: '#F97316' },
-];
-
-const FONT_SIZES = [
-  { id: 'sm', label: 'Pequeño', scale: 0.875 },
-  { id: 'md', label: 'Normal', scale: 1 },
-  { id: 'lg', label: 'Grande', scale: 1.125 },
-  { id: 'xl', label: 'Extra Grande', scale: 1.25 },
-];
-
 export default function TopBar() {
   const { user, logout } = useAuth();
   const { locale, setLocale, t } = useI18n();
+  const { darkMode, setDarkMode, colorTheme, setColorTheme, fontSize, setFontSize } = useTheme();
   const navigate = useNavigate();
 
   const [pendingCount, setPendingCount] = useState(0);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const [showFontMenu, setShowFontMenu] = useState(false);
-  const [currentTheme, setCurrentTheme] = useState(() => localStorage.getItem('app_theme') || 'default');
-  const [currentFontSize, setCurrentFontSize] = useState(() => localStorage.getItem('app_font_size') || 'md');
 
   const langRef = useRef<HTMLDivElement>(null);
   const themeRef = useRef<HTMLDivElement>(null);
   const fontRef = useRef<HTMLDivElement>(null);
 
-  // Load pending approvals count
   useEffect(() => {
     const load = async () => {
       try {
@@ -66,28 +45,6 @@ export default function TopBar() {
     return () => clearInterval(interval);
   }, []);
 
-  // Apply font size
-  useEffect(() => {
-    const size = FONT_SIZES.find(f => f.id === currentFontSize);
-    if (size) {
-      document.documentElement.style.fontSize = `${size.scale * 16}px`;
-      localStorage.setItem('app_font_size', currentFontSize);
-    }
-  }, [currentFontSize]);
-
-  // Apply theme - set CSS variables
-  useEffect(() => {
-    const theme = THEMES.find(t => t.id === currentTheme);
-    if (theme) {
-      document.documentElement.style.setProperty('--color-primary', theme.primary);
-      document.documentElement.style.setProperty('--color-sidebar', theme.sidebar);
-      document.documentElement.style.setProperty('--color-accent', theme.accent);
-    }
-    document.documentElement.setAttribute('data-theme', currentTheme);
-    localStorage.setItem('app_theme', currentTheme);
-  }, [currentTheme]);
-
-  // Close dropdowns on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (langRef.current && !langRef.current.contains(e.target as Node)) setShowLangMenu(false);
@@ -98,36 +55,48 @@ export default function TopBar() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  const closeAll = () => { setShowLangMenu(false); setShowThemeMenu(false); setShowFontMenu(false); };
+
   const handleLangChange = async (code: string) => {
     await setLocale(code);
     setShowLangMenu(false);
   };
 
-  return (
-    <div className="h-12 bg-white border-b border-gray-200 flex items-center justify-between px-4 flex-shrink-0">
-      {/* Left: page context (empty, can be used for breadcrumbs) */}
-      <div />
+  // Sun/Moon icon for dark mode toggle
+  const SunIcon = () => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+    </svg>
+  );
+  const MoonIcon = () => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+    </svg>
+  );
+  // Palette icon for color theme
+  const PaletteIcon = () => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M6.75 21A3.75 3.75 0 013 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 003.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008z" />
+    </svg>
+  );
 
-      {/* Right: actions */}
+  return (
+    <div className="h-12 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 flex-shrink-0">
+      <div />
       <div className="flex items-center gap-1">
-        {/* Language selector */}
+        {/* Language */}
         <div ref={langRef} className="relative">
-          <button
-            onClick={() => { setShowLangMenu(!showLangMenu); setShowThemeMenu(false); setShowFontMenu(false); }}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-            title={t('topbar.language') || 'Idioma'}
-          >
+          <button onClick={() => { closeAll(); setShowLangMenu(!showLangMenu); }}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            title={t('topbar.language') || 'Idioma'}>
             <HiOutlineLanguage className="w-5 h-5" />
             <span className="text-xs font-medium uppercase">{locale}</span>
           </button>
           {showLangMenu && (
-            <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50 min-w-[140px]">
+            <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg py-1 z-50 min-w-[140px]">
               {LANGUAGES.map(lang => (
-                <button
-                  key={lang.code}
-                  onClick={() => handleLangChange(lang.code)}
-                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 transition-colors ${locale === lang.code ? 'text-indigo-600 font-medium bg-indigo-50' : 'text-gray-700'}`}
-                >
+                <button key={lang.code} onClick={() => handleLangChange(lang.code)}
+                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${locale === lang.code ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/30' : 'text-gray-700 dark:text-gray-300'}`}>
                   {lang.label}
                 </button>
               ))}
@@ -137,25 +106,16 @@ export default function TopBar() {
 
         {/* Font size */}
         <div ref={fontRef} className="relative">
-          <button
-            onClick={() => { setShowFontMenu(!showFontMenu); setShowLangMenu(false); setShowThemeMenu(false); }}
-            className="flex items-center gap-1 px-2.5 py-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-            title={t('topbar.fontSize') || 'Tamaño de texto'}
-          >
-            {currentFontSize === 'sm' || currentFontSize === 'md' ? (
-              <HiOutlineMagnifyingGlass className="w-5 h-5" />
-            ) : (
-              <HiOutlineMagnifyingGlass className="w-5 h-5" />
-            )}
+          <button onClick={() => { closeAll(); setShowFontMenu(!showFontMenu); }}
+            className="flex items-center gap-1 px-2.5 py-1.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            title={t('topbar.fontSize') || 'Tamaño de texto'}>
+            <HiOutlineMagnifyingGlass className="w-5 h-5" />
           </button>
           {showFontMenu && (
-            <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50 min-w-[150px]">
+            <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg py-1 z-50 min-w-[150px]">
               {FONT_SIZES.map(fs => (
-                <button
-                  key={fs.id}
-                  onClick={() => { setCurrentFontSize(fs.id); setShowFontMenu(false); }}
-                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 transition-colors ${currentFontSize === fs.id ? 'text-indigo-600 font-medium bg-indigo-50' : 'text-gray-700'}`}
-                >
+                <button key={fs.id} onClick={() => { setFontSize(fs.id); setShowFontMenu(false); }}
+                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${fontSize === fs.id ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/30' : 'text-gray-700 dark:text-gray-300'}`}>
                   {fs.label}
                 </button>
               ))}
@@ -163,23 +123,18 @@ export default function TopBar() {
           )}
         </div>
 
-        {/* Theme/palette */}
+        {/* Color theme */}
         <div ref={themeRef} className="relative">
-          <button
-            onClick={() => { setShowThemeMenu(!showThemeMenu); setShowLangMenu(false); setShowFontMenu(false); }}
-            className="flex items-center px-2.5 py-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-            title={t('topbar.theme') || 'Paleta de colores'}
-          >
-            <HiOutlineStar className="w-5 h-5" />
+          <button onClick={() => { closeAll(); setShowThemeMenu(!showThemeMenu); }}
+            className="flex items-center px-2.5 py-1.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            title={t('topbar.theme') || 'Paleta de colores'}>
+            <PaletteIcon />
           </button>
           {showThemeMenu && (
-            <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50 min-w-[180px]">
-              {THEMES.map(theme => (
-                <button
-                  key={theme.id}
-                  onClick={() => { setCurrentTheme(theme.id); setShowThemeMenu(false); }}
-                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center gap-3 ${currentTheme === theme.id ? 'text-indigo-600 font-medium bg-indigo-50' : 'text-gray-700'}`}
-                >
+            <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg py-2 z-50 min-w-[180px]">
+              {COLOR_THEMES.map(theme => (
+                <button key={theme.id} onClick={() => { setColorTheme(theme.id); setShowThemeMenu(false); }}
+                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-3 ${colorTheme === theme.id ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/30' : 'text-gray-700 dark:text-gray-300'}`}>
                   <div className="flex gap-1">
                     {theme.colors.map((c, i) => (
                       <div key={i} className="w-4 h-4 rounded-full" style={{ backgroundColor: c }} />
@@ -192,15 +147,19 @@ export default function TopBar() {
           )}
         </div>
 
-        {/* Divider */}
-        <div className="w-px h-6 bg-gray-200 mx-1" />
+        {/* Dark mode toggle */}
+        <button onClick={() => setDarkMode(darkMode === 'dark' ? 'light' : 'dark')}
+          className="flex items-center px-2.5 py-1.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+          title={darkMode === 'dark' ? (t('topbar.lightMode') || 'Modo claro') : (t('topbar.darkMode') || 'Modo oscuro')}>
+          {darkMode === 'dark' ? <SunIcon /> : <MoonIcon />}
+        </button>
 
-        {/* Notifications / Approvals bell */}
-        <button
-          onClick={() => navigate('/approvals')}
-          className="relative flex items-center px-2.5 py-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-          title={t('topbar.notifications') || 'Aprobaciones pendientes'}
-        >
+        <div className="w-px h-6 bg-gray-200 dark:bg-gray-600 mx-1" />
+
+        {/* Approvals */}
+        <button onClick={() => navigate('/approvals')}
+          className="relative flex items-center px-2.5 py-1.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+          title={t('topbar.notifications') || 'Aprobaciones pendientes'}>
           <HiOutlineClipboardDocumentList className="w-5 h-5" />
           {pendingCount > 0 && (
             <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
@@ -209,21 +168,18 @@ export default function TopBar() {
           )}
         </button>
 
-        {/* Divider */}
-        <div className="w-px h-6 bg-gray-200 mx-1" />
+        <div className="w-px h-6 bg-gray-200 dark:bg-gray-600 mx-1" />
 
-        {/* User info */}
+        {/* User */}
         <div className="flex items-center gap-2 px-2">
-          <HiOutlineUserGroup className="w-5 h-5 text-gray-500" />
-          <span className="text-sm text-gray-700 font-medium max-w-[120px] truncate">{user?.fullName || user?.username}</span>
+          <HiOutlineUserGroup className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+          <span className="text-sm text-gray-700 dark:text-gray-300 font-medium max-w-[120px] truncate">{user?.fullName || user?.username}</span>
         </div>
 
         {/* Logout */}
-        <button
-          onClick={logout}
-          className="flex items-center px-2.5 py-1.5 text-gray-500 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors"
-          title={t('btn.logout') || 'Cerrar Sesión'}
-        >
+        <button onClick={logout}
+          className="flex items-center px-2.5 py-1.5 text-gray-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-600 rounded-lg transition-colors"
+          title={t('btn.logout') || 'Cerrar Sesión'}>
           <HiOutlineArrowRightOnRectangle className="w-5 h-5" />
         </button>
       </div>

@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { I18nProvider } from './contexts/I18nContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { ActiveBudgetProvider } from './contexts/ActiveBudgetContext';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -35,6 +36,7 @@ function App() {
     <Router>
       <AuthProvider>
         <I18nProvider>
+          <ThemeProvider>
           <ActiveBudgetProvider>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
@@ -63,6 +65,7 @@ function App() {
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </ActiveBudgetProvider>
+          </ThemeProvider>
         </I18nProvider>
       </AuthProvider>
     </Router>

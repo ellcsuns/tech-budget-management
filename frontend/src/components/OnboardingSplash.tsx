@@ -267,14 +267,14 @@ export default function OnboardingSplash({ onComplete }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/80 backdrop-blur-sm">
-      <div className="relative w-full max-w-4xl mx-4 bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-4xl mx-4 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden">
         {/* Top gradient bar */}
         <div className={`h-2 bg-gradient-to-r ${slide.gradient}`} />
 
         {/* Skip button */}
         <button
           onClick={() => onComplete(dontShowAgain)}
-          className="absolute top-5 right-5 text-sm text-gray-400 hover:text-gray-600 transition-colors z-10"
+          className="absolute top-5 right-5 text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors z-10"
         >
           Omitir ✕
         </button>
@@ -290,14 +290,14 @@ export default function OnboardingSplash({ onComplete }: Props) {
 
           {/* Right: text content */}
           <div className="md:w-1/2 px-8 pt-8 pb-4">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">{slide.title}</h2>
-            <p className="text-gray-500 text-sm leading-relaxed mb-5">{slide.description}</p>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">{slide.title}</h2>
+            <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed mb-5">{slide.description}</p>
 
             <div className="space-y-3 mb-6">
               {slide.features.map((f, i) => (
                 <div key={i} className="flex items-start gap-3">
                   <span className={`mt-1.5 w-2 h-2 rounded-full bg-gradient-to-r ${slide.gradient} flex-shrink-0`} />
-                  <span className="text-gray-600 text-sm leading-relaxed">{f}</span>
+                  <span className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">{f}</span>
                 </div>
               ))}
             </div>
@@ -305,7 +305,7 @@ export default function OnboardingSplash({ onComplete }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="px-8 pb-6 flex items-center justify-between border-t border-gray-100 pt-4">
+        <div className="px-8 pb-6 flex items-center justify-between border-t border-gray-100 dark:border-gray-700 pt-4">
           {/* Left: don't show again + dots */}
           <div className="flex flex-col gap-3">
             <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -315,7 +315,7 @@ export default function OnboardingSplash({ onComplete }: Props) {
                 onChange={(e) => setDontShowAgain(e.target.checked)}
                 className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
               />
-              <span className="text-xs text-gray-500">No volver a mostrar</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">No volver a mostrar</span>
             </label>
             <div className="flex gap-2">
               {slides.map((_, i) => (
@@ -337,7 +337,7 @@ export default function OnboardingSplash({ onComplete }: Props) {
             {current > 0 && (
               <button
                 onClick={() => setCurrent(current - 1)}
-                className="flex items-center gap-1 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                className="flex items-center gap-1 px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
               >
                 <ArrowLeft />
                 Anterior

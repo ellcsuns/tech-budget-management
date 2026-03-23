@@ -480,3 +480,19 @@ model SystemConfig {
   
   @@index([key])
 }
+
+// ============================================
+// User Preferences (per-user settings)
+// ============================================
+
+model UserPreference {
+  id        String   @id @default(uuid())
+  userId    String
+  key       String
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, key])
+  @@index([userId])
+}

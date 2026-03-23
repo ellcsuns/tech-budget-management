@@ -704,6 +704,16 @@ const translations: TranslationSeed[] = [
   { key: 'page.users', es: 'Gestión de Usuarios', en: 'User Management', category: 'common' },
   { key: 'page.roles', es: 'Gestión de Roles', en: 'Role Management', category: 'common' },
   { key: 'page.approvals', es: 'Aprobaciones Pendientes', en: 'Pending Approvals', category: 'common' },
+
+  // =============================================
+  // TOPBAR
+  // =============================================
+  { key: 'topbar.language', es: 'Idioma', en: 'Language', category: 'topbar' },
+  { key: 'topbar.fontSize', es: 'Tamaño de texto', en: 'Font size', category: 'topbar' },
+  { key: 'topbar.theme', es: 'Paleta de colores', en: 'Color palette', category: 'topbar' },
+  { key: 'topbar.darkMode', es: 'Modo oscuro', en: 'Dark mode', category: 'topbar' },
+  { key: 'topbar.lightMode', es: 'Modo claro', en: 'Light mode', category: 'topbar' },
+  { key: 'topbar.notifications', es: 'Aprobaciones pendientes', en: 'Pending approvals', category: 'topbar' },
 ];
 
 export async function seedTranslations(prisma: PrismaClient) {

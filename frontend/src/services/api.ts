@@ -256,6 +256,12 @@ export const expenseCategoryApi = {
   delete: (id: string) => api.delete(`/expense-categories/${id}`)
 };
 
+// User Preferences API
+export const userPreferenceApi = {
+  getAll: () => api.get<Record<string, string>>('/user-preferences'),
+  save: (prefs: Record<string, string>) => api.put('/user-preferences', prefs),
+};
+
 // Audit API
 export const auditApi = {
   getLogs: (filters?: { userId?: string; action?: string; entity?: string; dateFrom?: string; dateTo?: string; page?: number; pageSize?: number }) => {

@@ -83,7 +83,7 @@ export default function FilterPanel({ budgetLines, filters, onFiltersChange }: F
   };
 
   const accentOn = 'bg-accent text-white';
-  const accentOff = 'bg-gray-200 text-gray-500';
+  const accentOff = 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-300';
 
   return (
     <div className="flex flex-wrap items-center gap-3 mb-4">
@@ -92,15 +92,15 @@ export default function FilterPanel({ budgetLines, filters, onFiltersChange }: F
         value={filters.searchText || ''}
         onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearchChange(e.target.value)}
         placeholder={t('filter.searchComma')}
-        className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent w-64"
+        className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent w-64 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
       />
-      <div className="w-px h-6 bg-gray-300" />
+      <div className="w-px h-6 bg-gray-300 dark:bg-gray-600" />
       <div className="flex items-center gap-1">
         <button onClick={() => toggleColumn('budget')} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filters.visibleColumns.budget ? accentOn : accentOff}`}>{t('expense.budget')}</button>
         <button onClick={() => toggleColumn('committed')} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filters.visibleColumns.committed ? accentOn : accentOff}`}>{t('expense.committed')}</button>
         <button onClick={() => toggleColumn('real')} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filters.visibleColumns.real ? accentOn : accentOff}`}>{t('expense.real')}</button>
       </div>
-      <div className="w-px h-6 bg-gray-300" />
+      <div className="w-px h-6 bg-gray-300 dark:bg-gray-600" />
       {currencies.length > 0 && (
         <>
           <div className="flex items-center gap-1">
@@ -108,7 +108,7 @@ export default function FilterPanel({ budgetLines, filters, onFiltersChange }: F
               <button key={currency} onClick={() => toggleCurrency(currency)} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${(filters.currencies?.includes(currency) ?? true) ? accentOn : accentOff}`}>{currency}</button>
             ))}
           </div>
-          <div className="w-px h-6 bg-gray-300" />
+          <div className="w-px h-6 bg-gray-300 dark:bg-gray-600" />
         </>
       )}
       {financialCompanies.length > 0 && (
@@ -118,7 +118,7 @@ export default function FilterPanel({ budgetLines, filters, onFiltersChange }: F
               <button key={company.id} onClick={() => toggleFinancialCompany(company.id)} title={company.name} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${(filters.financialCompanyIds?.includes(company.id) ?? true) ? accentOn : accentOff}`}>{company.code}</button>
             ))}
           </div>
-          <div className="w-px h-6 bg-gray-300" />
+          <div className="w-px h-6 bg-gray-300 dark:bg-gray-600" />
         </>
       )}
       {expenseCategories.length > 0 && (
@@ -128,7 +128,7 @@ export default function FilterPanel({ budgetLines, filters, onFiltersChange }: F
               <button key={cat.id} onClick={() => toggleCategory(cat.id)} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${(filters.categories?.includes(cat.id) ?? true) ? accentOn : accentOff}`}>{cat.name}</button>
             ))}
           </div>
-          <div className="w-px h-6 bg-gray-300" />
+          <div className="w-px h-6 bg-gray-300 dark:bg-gray-600" />
         </>
       )}
       <button onClick={clearFilters} className="text-accent hover:opacity-70 transition-opacity ml-auto" title={t('filter.clearFilters')}>

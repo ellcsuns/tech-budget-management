@@ -143,11 +143,11 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnl
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold">{expense.code} — {expense.shortDescription}</h2>
-            <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+            <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-2xl">×</button>
           </div>
 
           {/* Tabs */}
@@ -290,7 +290,7 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnl
           )}
 
           <div className="mt-4 flex justify-end">
-            <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">{t('btn.close')}</button>
+            <button onClick={onClose} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded hover:bg-gray-300 dark:hover:bg-gray-500 text-sm">{t('btn.close')}</button>
           </div>
         </div>
       </div>
