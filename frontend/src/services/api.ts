@@ -262,6 +262,21 @@ export const userPreferenceApi = {
   save: (prefs: Record<string, string>) => api.put('/user-preferences', prefs),
 };
 
+// Budget Confirmation API
+export const budgetConfirmationApi = {
+  create: (data: { budgetId: string; type: 'MASSIVE' | 'INDIVIDUAL'; targetUserId?: string }) =>
+    api.post('/budget-confirmations', data),
+  getAll: (budgetId?: string) => {
+    const params = budgetId ? `?budgetId=${budgetId}` : '';
+    return api.get(`/budget-confirmations${params}`);
+  },
+  getDetail: (id: string) => api.get(`/budget-confirmations/${id}`),
+  confirm: (id: string) => api.post(`/budget-confirmations/${id}/confirm`),
+  getMyPending: () => api.get('/budget-confirmations/my-pending'),
+  getPendingCount: () => api.get<{ count: number }>('/budget-confirmations/pending-count'),
+  getUsers: (budgetId: string) => api.get(`/budget-confirmations/users?budgetId=${budgetId}`),
+};
+
 // Audit API
 export const auditApi = {
   getLogs: (filters?: { userId?: string; action?: string; entity?: string; dateFrom?: string; dateTo?: string; page?: number; pageSize?: number }) => {

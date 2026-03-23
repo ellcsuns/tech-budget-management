@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useI18n } from '../contexts/I18nContext';
 import { useTheme, COLOR_THEMES, FONT_SIZES } from '../contexts/ThemeContext';
-import { changeRequestApi } from '../services/api';
+import { changeRequestApi, budgetConfirmationApi } from '../services/api';
 import {
   HiOutlineArrowRightOnRectangle,
   HiOutlineLanguage,
   HiOutlineUserGroup,
   HiOutlineMagnifyingGlass,
   HiOutlineClipboardDocumentList,
+  HiOutlineCheckCircle,
 } from 'react-icons/hi2';
 
 const LANGUAGES = [
@@ -25,6 +26,7 @@ export default function TopBar() {
   const navigate = useNavigate();
 
   const [pendingCount, setPendingCount] = useState(0);
+  const [confirmationPendingCount, setConfirmationPendingCount] = useState(0);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const [showFontMenu, setShowFontMenu] = useState(false);
@@ -36,9 +38,16 @@ export default function TopBar() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await changeRequestApi.getPendingCount();
-        setPendingCount(res.data.count || 0);
-      } catch { setPendingCount(0); }
+        const [crRes, bcRes] = await Promise.all([
+          changeRequestApi.getPendingCount(),
+          budgetConfirmationApi.getPendingCount()
+        ]);
+        setPendingCount(crRes.data.count || 0);
+        setConfirmationPendingCount(bcRes.data.count || 0);
+      } catch {
+        setPendingCount(0);
+        setConfirmationPendingCount(0);
+      }
     };
     load();
     const interval = setInterval(load, 30000);
@@ -167,6 +176,18 @@ export default function TopBar() {
             </span>
           )}
         </button>
+
+        {/* Budget Confirmation Pending */}
+        {confirmationPendingCount > 0 && (
+          <button onClick={() => navigate('/budgets')}
+            className="relative flex items-center px-2.5 py-1.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            title={t('budgetConfirmation.pendingBanner') || 'Confirmaciones de presupuesto pendientes'}>
+            <HiOutlineCheckCircle className="w-5 h-5" />
+            <span className="absolute -top-0.5 -right-0.5 bg-orange-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+              {confirmationPendingCount}
+            </span>
+          </button>
+        )}
 
         <div className="w-px h-6 bg-gray-200 dark:bg-gray-600 mx-1" />
 

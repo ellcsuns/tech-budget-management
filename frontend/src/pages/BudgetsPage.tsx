@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
-import { budgetApi, expenseApi, financialCompanyApi, userAreaApi, changeRequestApi, technologyDirectionApi, budgetLineApi } from '../services/api';
-import type { Budget, BudgetLine, UserArea, ChangeRequest, TechnologyDirection } from '../types';
+import { budgetApi, expenseApi, financialCompanyApi, userAreaApi, changeRequestApi, technologyDirectionApi, budgetLineApi, budgetConfirmationApi } from '../services/api';
+import type { Budget, BudgetLine, UserArea, ChangeRequest, TechnologyDirection, BudgetConfirmationRequest, BudgetConfirmationResponse } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { fmt } from '../utils/formatters';
 import ConfirmationDialog from '../components/ConfirmationDialog';
 import BudgetTable from '../components/BudgetTable';
 import FilterPanel from '../components/FilterPanel';
-import { HiOutlineLockClosed, HiOutlinePlusCircle } from 'react-icons/hi2';
+import { HiOutlineLockClosed, HiOutlinePlusCircle, HiOutlineCheckCircle, HiOutlineChevronDown, HiOutlineChevronRight } from 'react-icons/hi2';
 import { showToast } from '../components/Toast';
 import { useI18n } from '../contexts/I18nContext';
 
@@ -43,6 +43,16 @@ export default function BudgetsPage() {
   const [loadingRequests, setLoadingRequests] = useState(false);
   const [selectedChangeRequest, setSelectedChangeRequest] = useState<ChangeRequest | null>(null);
 
+  // Budget confirmation state
+  const [confirmationRequests, setConfirmationRequests] = useState<BudgetConfirmationRequest[]>([]);
+  const [confirmationUsers, setConfirmationUsers] = useState<{ id: string; fullName: string; username: string }[]>([]);
+  const [showConfirmationPanel, setShowConfirmationPanel] = useState(false);
+  const [selectedConfirmationDetail, setSelectedConfirmationDetail] = useState<any>(null);
+  const [myPendingConfirmations, setMyPendingConfirmations] = useState<BudgetConfirmationResponse[]>([]);
+  const [showDeclarationPopup, setShowDeclarationPopup] = useState(false);
+  const [showReminderPopup, setShowReminderPopup] = useState(false);
+  const [confirmingBudget, setConfirmingBudget] = useState(false);
+
   const [filters, setFilters] = useState({
     currencies: undefined as string[] | undefined,
     financialCompanyIds: undefined as string[] | undefined,
@@ -53,8 +63,84 @@ export default function BudgetsPage() {
 
   const { hasPermission } = useAuth();
   const canEdit = hasPermission('budgets', 'MODIFY');
+  const canManageConfirmations = hasPermission('budget-confirmation', 'MODIFY');
 
   useEffect(() => { loadBudgets(); loadMasterData(); }, []);
+
+  // Load my pending confirmations on mount
+  useEffect(() => {
+    loadMyPendingConfirmations();
+  }, []);
+
+  const loadMyPendingConfirmations = async () => {
+    try {
+      const res = await budgetConfirmationApi.getMyPending();
+      const pending = Array.isArray(res.data) ? res.data : [];
+      setMyPendingConfirmations(pending);
+      // Show reminder popup if pending and not shown in this session
+      if (pending.length > 0 && !sessionStorage.getItem('budgetConfirmationReminderShown')) {
+        setShowReminderPopup(true);
+        sessionStorage.setItem('budgetConfirmationReminderShown', 'true');
+      }
+    } catch { setMyPendingConfirmations([]); }
+  };
+
+  const loadConfirmationData = async (budgetId: string) => {
+    if (!canManageConfirmations) return;
+    try {
+      const [reqRes, usersRes] = await Promise.all([
+        budgetConfirmationApi.getAll(budgetId),
+        budgetConfirmationApi.getUsers(budgetId)
+      ]);
+      setConfirmationRequests(Array.isArray(reqRes.data) ? reqRes.data : []);
+      setConfirmationUsers(Array.isArray(usersRes.data) ? usersRes.data : []);
+    } catch { setConfirmationRequests([]); setConfirmationUsers([]); }
+  };
+
+  const handleMassiveConfirmation = async () => {
+    if (!selectedBudget) return;
+    try {
+      await budgetConfirmationApi.create({ budgetId: selectedBudget.id, type: 'MASSIVE' });
+      showToast(t('budgetConfirmation.requestCreated') || 'Solicitud de confirmación creada', 'success');
+      loadConfirmationData(selectedBudget.id);
+    } catch (error: any) {
+      showToast(error.response?.data?.error || 'Error al crear solicitud', 'error');
+    }
+  };
+
+  const handleIndividualConfirmation = async (targetUserId: string) => {
+    if (!selectedBudget) return;
+    try {
+      await budgetConfirmationApi.create({ budgetId: selectedBudget.id, type: 'INDIVIDUAL', targetUserId });
+      showToast(t('budgetConfirmation.requestCreated') || 'Solicitud de confirmación creada', 'success');
+      loadConfirmationData(selectedBudget.id);
+    } catch (error: any) {
+      showToast(error.response?.data?.error || 'Error al crear solicitud', 'error');
+    }
+  };
+
+  const handleViewConfirmationDetail = async (requestId: string) => {
+    try {
+      const res = await budgetConfirmationApi.getDetail(requestId);
+      setSelectedConfirmationDetail(res.data);
+    } catch (error: any) {
+      showToast(error.response?.data?.error || 'Error al cargar detalle', 'error');
+    }
+  };
+
+  const handleConfirmBudget = async () => {
+    setConfirmingBudget(true);
+    try {
+      for (const pending of myPendingConfirmations) {
+        await budgetConfirmationApi.confirm(pending.requestId);
+      }
+      showToast(t('budgetConfirmation.success') || 'Confirmación registrada exitosamente', 'success');
+      setShowDeclarationPopup(false);
+      setMyPendingConfirmations([]);
+    } catch (error: any) {
+      showToast(error.response?.data?.error || 'Error al confirmar', 'error');
+    } finally { setConfirmingBudget(false); }
+  };
 
   const loadMasterData = async () => {
     try {
@@ -87,6 +173,7 @@ export default function BudgetsPage() {
       const res = await budgetApi.getBudgetWithDetails(budgetId);
       setSelectedBudget(res.data);
       setBudgetLines(res.data.budgetLines || []);
+      loadConfirmationData(budgetId);
     } catch (error) { console.error('Error loading budget details:', error); }
     finally { setIsLoading(false); }
   };
@@ -458,6 +545,180 @@ export default function BudgetsPage() {
               <button onClick={() => { setShowAddForm(false); setAddExpenseId(''); setAddCompanyId(''); setAddTechDirId(''); setAddMonthlyValues(Array(12).fill(0)); }} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">{t('common.cancel')}</button>
               <button onClick={handleAddBudgetLine} disabled={!addExpenseId || !addCompanyId}
                 className="px-4 py-2 bg-accent text-white rounded hover:opacity-90 text-sm disabled:opacity-50">{t('btn.create')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reminder Popup on mount */}
+      {showReminderPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
+            <h2 className="text-lg font-bold mb-3 text-gray-900 dark:text-gray-100">{t('budgetConfirmation.reminderTitle') || 'Confirmación Pendiente'}</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">{t('budgetConfirmation.reminderText') || 'Tienes una solicitud de confirmación de presupuesto pendiente'}</p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setShowReminderPopup(false)} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded hover:bg-gray-300 dark:hover:bg-gray-500 text-sm text-gray-700 dark:text-gray-200">
+                {t('budgetConfirmation.remindLater') || 'Recordar más tarde'}
+              </button>
+              <button onClick={() => { setShowReminderPopup(false); setShowDeclarationPopup(true); }} className="px-4 py-2 bg-accent text-white rounded hover:opacity-90 text-sm">
+                {t('budgetConfirmation.goConfirm') || 'Ir a Confirmar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pending Confirmation Banner */}
+      {myPendingConfirmations.length > 0 && (
+        <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <HiOutlineCheckCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+            <span className="text-sm text-yellow-800 dark:text-yellow-200">
+              {t('budgetConfirmation.pendingBanner') || 'Tienes confirmaciones de presupuesto pendientes'} ({myPendingConfirmations.length})
+            </span>
+          </div>
+          <button onClick={() => setShowDeclarationPopup(true)} className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-sm font-medium">
+            {t('budgetConfirmation.confirm') || 'Confirmar Presupuesto'}
+          </button>
+        </div>
+      )}
+
+      {/* Declaration Popup */}
+      {showDeclarationPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
+            <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-gray-100">{t('budgetConfirmation.title') || 'Confirmación de Presupuesto'}</h2>
+            <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-4 mb-6">
+              <p className="text-sm text-blue-800 dark:text-blue-200 font-medium">
+                {t('budgetConfirmation.declarationText') || 'Declaro que todas mis líneas de presupuesto están correctas'}
+              </p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setShowDeclarationPopup(false)} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded hover:bg-gray-300 dark:hover:bg-gray-500 text-sm text-gray-700 dark:text-gray-200">
+                {t('budgetConfirmation.cancel') || 'Cancelar'}
+              </button>
+              <button onClick={handleConfirmBudget} disabled={confirmingBudget} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium disabled:opacity-50">
+                {confirmingBudget ? (t('msg.sending') || 'Enviando...') : (t('budgetConfirmation.confirm') || 'Confirmar')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Confirmation Panel */}
+      {canManageConfirmations && selectedBudget && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+          <button onClick={() => setShowConfirmationPanel(!showConfirmationPanel)} className="flex items-center gap-2 w-full text-left">
+            {showConfirmationPanel ? <HiOutlineChevronDown className="w-4 h-4" /> : <HiOutlineChevronRight className="w-4 h-4" />}
+            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{t('budgetConfirmation.title') || 'Confirmación de Presupuesto'}</span>
+          </button>
+          {showConfirmationPanel && (
+            <div className="mt-4 space-y-4">
+              {/* Massive confirmation button */}
+              <div className="flex items-center gap-3">
+                <button onClick={handleMassiveConfirmation} className="px-4 py-2 bg-accent text-white rounded hover:opacity-90 text-sm font-medium">
+                  {t('budgetConfirmation.requestMassive') || 'Solicitar Confirmación Masiva'}
+                </button>
+              </div>
+
+              {/* Users with assigned lines */}
+              {confirmationUsers.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">{t('budgetConfirmation.usersWithLines') || 'Usuarios con líneas asignadas'}</h4>
+                  <div className="border dark:border-gray-600 rounded divide-y divide-gray-200 dark:divide-gray-600">
+                    {confirmationUsers.map(u => (
+                      <div key={u.id} className="flex items-center justify-between px-4 py-2">
+                        <span className="text-sm text-gray-700 dark:text-gray-300">{u.fullName} ({u.username})</span>
+                        <button onClick={() => handleIndividualConfirmation(u.id)} className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-xs hover:bg-blue-100 dark:hover:bg-blue-900/50">
+                          {t('budgetConfirmation.requestIndividual') || 'Solicitar'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Existing requests table */}
+              {confirmationRequests.length > 0 ? (
+                <div>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600 text-sm">
+                      <thead className="bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                          <th className="px-3 py-2 text-left text-xs text-gray-500 dark:text-gray-400">{t('budgetConfirmation.requestDate') || 'Fecha de Solicitud'}</th>
+                          <th className="px-3 py-2 text-left text-xs text-gray-500 dark:text-gray-400">{t('label.type')}</th>
+                          <th className="px-3 py-2 text-left text-xs text-gray-500 dark:text-gray-400">{t('budgetConfirmation.progress') || 'Progreso'}</th>
+                          <th className="px-3 py-2 text-left text-xs text-gray-500 dark:text-gray-400">{t('label.status')}</th>
+                          <th className="px-3 py-2 text-left text-xs text-gray-500 dark:text-gray-400">{t('label.actions')}</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
+                        {confirmationRequests.map(req => (
+                          <tr key={req.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{new Date(req.createdAt).toLocaleDateString()}</td>
+                            <td className="px-3 py-2">
+                              <span className={`px-2 py-0.5 rounded text-xs font-medium ${req.type === 'MASSIVE' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'}`}>
+                                {req.type === 'MASSIVE' ? (t('budgetConfirmation.massive') || 'Masiva') : (t('budgetConfirmation.individual') || 'Individual')}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{req.confirmedCount || 0}/{req.totalCount || 0}</td>
+                            <td className="px-3 py-2">
+                              <span className={`px-2 py-0.5 rounded text-xs font-medium ${req.status === 'OPEN' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'}`}>
+                                {req.status === 'OPEN' ? (t('budgetConfirmation.pending') || 'Pendiente') : (t('budgetConfirmation.confirmed') || 'Confirmado')}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2">
+                              <button onClick={() => handleViewConfirmationDetail(req.id)} className="text-blue-600 dark:text-blue-400 hover:underline text-xs">
+                                {t('btn.viewDetail') || 'Ver Detalle'}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400">{t('budgetConfirmation.noRequests') || 'No hay solicitudes de confirmación'}</p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Confirmation Detail Modal */}
+      {selectedConfirmationDetail && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">{t('budgetConfirmation.detail') || 'Detalle de Solicitud'}</h2>
+              <button onClick={() => setSelectedConfirmationDetail(null)} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl">&times;</button>
+            </div>
+            <div className="space-y-1 mb-4 text-sm">
+              <div><span className="text-gray-500 dark:text-gray-400">{t('label.type')}:</span> <span className="text-gray-900 dark:text-gray-100">{selectedConfirmationDetail.type === 'MASSIVE' ? (t('budgetConfirmation.massive') || 'Masiva') : (t('budgetConfirmation.individual') || 'Individual')}</span></div>
+              <div><span className="text-gray-500 dark:text-gray-400">{t('budgetConfirmation.requestDate') || 'Fecha'}:</span> <span className="text-gray-900 dark:text-gray-100">{new Date(selectedConfirmationDetail.createdAt).toLocaleDateString()}</span></div>
+              <div><span className="text-gray-500 dark:text-gray-400">{t('label.status')}:</span> <span className={`px-2 py-0.5 rounded text-xs font-medium ${selectedConfirmationDetail.status === 'OPEN' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>{selectedConfirmationDetail.status}</span></div>
+            </div>
+            <div className="border dark:border-gray-600 rounded divide-y divide-gray-200 dark:divide-gray-600">
+              <div className="flex items-center px-4 py-2 bg-gray-50 dark:bg-gray-700 text-xs font-medium text-gray-500 dark:text-gray-400">
+                <span className="flex-1">{t('label.user')}</span>
+                <span className="w-28 text-center">{t('label.status')}</span>
+                <span className="w-36 text-right">{t('budgetConfirmation.confirmedAt') || 'Confirmado el'}</span>
+              </div>
+              {(selectedConfirmationDetail.responses || []).map((resp: any) => (
+                <div key={resp.id} className="flex items-center px-4 py-2">
+                  <span className="flex-1 text-sm text-gray-700 dark:text-gray-300">{resp.user?.fullName || resp.userId}</span>
+                  <span className="w-28 text-center">
+                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${resp.status === 'CONFIRMED' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'}`}>
+                      {resp.status === 'CONFIRMED' ? (t('budgetConfirmation.confirmed') || 'Confirmado') : (t('budgetConfirmation.pending') || 'Pendiente')}
+                    </span>
+                  </span>
+                  <span className="w-36 text-right text-xs text-gray-500 dark:text-gray-400">{resp.confirmedAt ? new Date(resp.confirmedAt).toLocaleString() : '-'}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end mt-4">
+              <button onClick={() => setSelectedConfirmationDetail(null)} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded hover:bg-gray-300 dark:hover:bg-gray-500 text-sm text-gray-700 dark:text-gray-200">{t('btn.close') || 'Cerrar'}</button>
             </div>
           </div>
         </div>

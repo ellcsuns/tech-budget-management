@@ -344,3 +344,32 @@ export interface CompanyTotals {
   real: number;
   diff: number;
 }
+
+
+// Budget Confirmation Types
+export interface BudgetConfirmationRequest {
+  id: string;
+  budgetId: string;
+  requestedById: string;
+  requestedBy?: { id: string; fullName: string; username: string };
+  type: 'MASSIVE' | 'INDIVIDUAL';
+  status: 'OPEN' | 'CLOSED';
+  responses?: BudgetConfirmationResponse[];
+  confirmedCount?: number;
+  pendingCount?: number;
+  totalCount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BudgetConfirmationResponse {
+  id: string;
+  requestId: string;
+  userId: string;
+  user?: { id: string; fullName: string; username: string };
+  status: 'PENDING' | 'CONFIRMED';
+  confirmedAt?: string;
+  request?: BudgetConfirmationRequest;
+  createdAt: string;
+  updatedAt?: string;
+}

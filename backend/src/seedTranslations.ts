@@ -714,6 +714,34 @@ const translations: TranslationSeed[] = [
   { key: 'topbar.darkMode', es: 'Modo oscuro', en: 'Dark mode', category: 'topbar' },
   { key: 'topbar.lightMode', es: 'Modo claro', en: 'Light mode', category: 'topbar' },
   { key: 'topbar.notifications', es: 'Aprobaciones pendientes', en: 'Pending approvals', category: 'topbar' },
+
+  // =============================================
+  // BUDGET CONFIRMATION
+  // =============================================
+  { key: 'budgetConfirmation.title', es: 'Confirmación de Presupuesto', en: 'Budget Confirmation', category: 'budgetConfirmation' },
+  { key: 'budgetConfirmation.requestMassive', es: 'Solicitar Confirmación Masiva', en: 'Request Massive Confirmation', category: 'budgetConfirmation' },
+  { key: 'budgetConfirmation.requestIndividual', es: 'Solicitar', en: 'Request', category: 'budgetConfirmation' },
+  { key: 'budgetConfirmation.pendingBanner', es: 'Tienes confirmaciones de presupuesto pendientes', en: 'You have pending budget confirmations', category: 'budgetConfirmation' },
+  { key: 'budgetConfirmation.declarationText', es: 'Declaro que todas mis líneas de presupuesto están correctas', en: 'I declare that all my budget lines are correct', category: 'budgetConfirmation' },
+  { key: 'budgetConfirmation.confirm', es: 'Confirmar', en: 'Confirm', category: 'budgetConfirmation' },
+  { key: 'budgetConfirmation.cancel', es: 'Cancelar', en: 'Cancel', category: 'budgetConfirmation' },
+  { key: 'budgetConfirmation.reminderTitle', es: 'Confirmación Pendiente', en: 'Pending Confirmation', category: 'budgetConfirmation' },
+  { key: 'budgetConfirmation.reminderText', es: 'Tienes una solicitud de confirmación de presupuesto pendiente', en: 'You have a pending budget confirmation request', category: 'budgetConfirmation' },
+  { key: 'budgetConfirmation.goConfirm', es: 'Ir a Confirmar', en: 'Go to Confirm', category: 'budgetConfirmation' },
+  { key: 'budgetConfirmation.remindLater', es: 'Recordar más tarde', en: 'Remind me later', category: 'budgetConfirmation' },
+  { key: 'budgetConfirmation.confirmed', es: 'Confirmado', en: 'Confirmed', category: 'budgetConfirmation' },
+  { key: 'budgetConfirmation.pending', es: 'Pendiente', en: 'Pending', category: 'budgetConfirmation' },
+  { key: 'budgetConfirmation.massive', es: 'Masiva', en: 'Massive', category: 'budgetConfirmation' },
+  { key: 'budgetConfirmation.individual', es: 'Individual', en: 'Individual', category: 'budgetConfirmation' },
+  { key: 'budgetConfirmation.progress', es: 'Progreso', en: 'Progress', category: 'budgetConfirmation' },
+  { key: 'budgetConfirmation.requestDate', es: 'Fecha de Solicitud', en: 'Request Date', category: 'budgetConfirmation' },
+  { key: 'budgetConfirmation.confirmedAt', es: 'Confirmado el', en: 'Confirmed at', category: 'budgetConfirmation' },
+  { key: 'budgetConfirmation.noRequests', es: 'No hay solicitudes de confirmación', en: 'No confirmation requests', category: 'budgetConfirmation' },
+  { key: 'budgetConfirmation.alreadyPending', es: 'Ya existe una solicitud pendiente para este usuario', en: 'A pending request already exists for this user', category: 'budgetConfirmation' },
+  { key: 'budgetConfirmation.success', es: 'Confirmación registrada exitosamente', en: 'Confirmation registered successfully', category: 'budgetConfirmation' },
+  { key: 'budgetConfirmation.requestCreated', es: 'Solicitud de confirmación creada', en: 'Confirmation request created', category: 'budgetConfirmation' },
+  { key: 'budgetConfirmation.usersWithLines', es: 'Usuarios con líneas asignadas', en: 'Users with assigned lines', category: 'budgetConfirmation' },
+  { key: 'budgetConfirmation.detail', es: 'Detalle de Solicitud', en: 'Request Detail', category: 'budgetConfirmation' },
 ];
 
 export async function seedTranslations(prisma: PrismaClient) {

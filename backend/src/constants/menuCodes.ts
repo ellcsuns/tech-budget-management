@@ -19,7 +19,8 @@ export const MENU_CODES = {
   DEFERRALS: 'deferrals',
   CONFIGURATION: 'configuration',
   APPROVALS: 'approvals',
-  AUDIT: 'audit'
+  AUDIT: 'audit',
+  BUDGET_CONFIRMATION: 'budget-confirmation'
 } as const;
 
 export type MenuCode = typeof MENU_CODES[keyof typeof MENU_CODES];

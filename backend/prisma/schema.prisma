@@ -22,6 +22,7 @@ model Budget {
   reviewSubmittedBy   User?             @relation("BudgetReviewer", fields: [reviewSubmittedById], references: [id])
   budgetLines         BudgetLine[]
   conversionRates     ConversionRate[]
+  confirmationRequests BudgetConfirmationRequest[]
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
   
@@ -268,6 +269,8 @@ model User {
   modifiedBudgetLines     BudgetLine[]              @relation("BudgetLineModifier")
   reviewedBudgets         Budget[]                  @relation("BudgetReviewer")
   auditLogs               AuditLog[]
+  confirmationRequests    BudgetConfirmationRequest[]  @relation("ConfirmationRequester")
+  confirmationResponses   BudgetConfirmationResponse[] @relation("ConfirmationResponder")
   
   @@index([username])
   @@index([email])
@@ -495,4 +498,52 @@ model UserPreference {
 
   @@unique([userId, key])
   @@index([userId])
+}
+
+// ============================================
+// Budget Confirmation Module
+// ============================================
+
+enum ConfirmationRequestStatus {
+  OPEN
+  CLOSED
+}
+
+enum ConfirmationResponseStatus {
+  PENDING
+  CONFIRMED
+}
+
+model BudgetConfirmationRequest {
+  id            String                        @id @default(uuid())
+  budgetId      String
+  budget        Budget                        @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  requestedById String
+  requestedBy   User                          @relation("ConfirmationRequester", fields: [requestedById], references: [id])
+  type          String                        // "MASSIVE" or "INDIVIDUAL"
+  status        ConfirmationRequestStatus     @default(OPEN)
+  responses     BudgetConfirmationResponse[]
+  createdAt     DateTime                      @default(now())
+  updatedAt     DateTime                      @updatedAt
+
+  @@index([budgetId])
+  @@index([requestedById])
+  @@index([status])
+}
+
+model BudgetConfirmationResponse {
+  id          String                        @id @default(uuid())
+  requestId   String
+  request     BudgetConfirmationRequest     @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User                          @relation("ConfirmationResponder", fields: [userId], references: [id])
+  status      ConfirmationResponseStatus    @default(PENDING)
+  confirmedAt DateTime?
+  createdAt   DateTime                      @default(now())
+  updatedAt   DateTime                      @updatedAt
+
+  @@unique([requestId, userId])
+  @@index([requestId])
+  @@index([userId])
+  @@index([status])
 }
