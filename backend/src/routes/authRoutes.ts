@@ -115,5 +115,36 @@ export function authRouter(prisma: PrismaClient): Router {
     }
   });
 
+  /**
+   * PUT /api/auth/me
+   * Update current user's profile (fullName only)
+   */
+  router.put('/me', authenticateJWT, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const { fullName } = req.body;
+
+      if (!fullName || typeof fullName !== 'string' || fullName.trim().length === 0) {
+        return res.status(400).json({ error: 'fullName is required' });
+      }
+
+      const user = await userService.updateUser(req.user.userId, {
+        fullName: fullName.trim(),
+      });
+
+      const { passwordHash, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error('Update profile error:', error);
+      res.status(400).json({
+        error: 'Failed to update profile',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   return router;
 }

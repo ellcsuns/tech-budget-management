@@ -13,9 +13,10 @@ interface HelpTableOfContentsProps {
   sections: HelpSectionDef[];
   activeSectionId: string | null;
   onSectionClick: (id: string) => void;
+  variant?: 'desktop' | 'mobile';
 }
 
-export default function HelpTableOfContents({ sections, activeSectionId, onSectionClick }: HelpTableOfContentsProps) {
+export default function HelpTableOfContents({ sections, activeSectionId, onSectionClick, variant = 'desktop' }: HelpTableOfContentsProps) {
   const { t } = useI18n();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -36,8 +37,8 @@ export default function HelpTableOfContents({ sections, activeSectionId, onSecti
               onKeyDown={(e) => { if (e.key === 'Enter') handleClick(section.id); }}
               className={`w-full text-left px-3 py-2 text-sm rounded transition-colors border-l-2 ${
                 isActive
-                  ? 'text-accent font-semibold border-accent bg-blue-50'
-                  : 'text-gray-600 border-transparent hover:text-gray-900 hover:bg-gray-50'
+                  ? 'text-accent font-semibold border-accent bg-blue-50 dark:bg-blue-900/20'
+                  : 'text-gray-600 dark:text-gray-400 border-transparent hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
               }`}
             >
               {t(section.titleKey)}
@@ -48,27 +49,27 @@ export default function HelpTableOfContents({ sections, activeSectionId, onSecti
     </ul>
   );
 
-  return (
-    <>
-      {/* Desktop */}
-      <nav className="hidden lg:block" aria-label={t('help.tocTitle')}>
-        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 mb-3">
-          {t('help.tocTitle')}
-        </h3>
-        {listContent}
-      </nav>
-
-      {/* Mobile */}
+  if (variant === 'mobile') {
+    return (
       <nav className="lg:hidden mb-4" aria-label={t('help.tocTitle')}>
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="w-full flex items-center justify-between px-4 py-3 bg-gray-100 rounded-lg text-sm font-medium text-gray-700"
+          className="w-full flex items-center justify-between px-4 py-3 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300"
         >
           <span>{t('help.tocTitle')}</span>
           {mobileOpen ? <HiOutlineChevronUp className="w-4 h-4" /> : <HiOutlineChevronDown className="w-4 h-4" />}
         </button>
-        {mobileOpen && <div className="mt-2 bg-white border border-gray-200 rounded-lg p-2">{listContent}</div>}
+        {mobileOpen && <div className="mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-2">{listContent}</div>}
       </nav>
-    </>
+    );
+  }
+
+  return (
+    <nav aria-label={t('help.tocTitle')}>
+      <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-3 mb-3">
+        {t('help.tocTitle')}
+      </h3>
+      {listContent}
+    </nav>
   );
 }

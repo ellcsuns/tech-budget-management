@@ -242,25 +242,30 @@ export default function HelpPage() {
     <div className="max-w-7xl mx-auto px-4 py-6">
       {/* Header + Search */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('help.title')}</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{t('help.title')}</h1>
         <HelpSearchBar value={searchQuery} onChange={setSearchQuery} />
       </div>
 
-      {/* Mobile TOC */}
-      <HelpTableOfContents
-        sections={filteredSections}
-        activeSectionId={activeSectionId}
-        onSectionClick={handleSectionClick}
-      />
+      {/* Mobile TOC (only visible on small screens) */}
+      <div className="lg:hidden">
+        <HelpTableOfContents
+          sections={filteredSections}
+          activeSectionId={activeSectionId}
+          onSectionClick={handleSectionClick}
+          variant="mobile"
+        />
+      </div>
 
-      <div className="flex gap-8">
-        {/* Desktop TOC */}
+      {/* Main layout: TOC left + Content right */}
+      <div className="lg:flex lg:gap-8">
+        {/* Desktop TOC (only visible on lg+) */}
         <aside className="hidden lg:block w-64 flex-shrink-0">
-          <div className="sticky top-24">
+          <div className="sticky top-6">
             <HelpTableOfContents
               sections={filteredSections}
               activeSectionId={activeSectionId}
               onSectionClick={handleSectionClick}
+              variant="desktop"
             />
           </div>
         </aside>

@@ -24,6 +24,7 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   hasPermission: (menuCode: string, permissionType: 'VIEW' | 'MODIFY' | 'VIEW_OWN' | 'MODIFY_OWN' | 'APPROVE_BUDGET') => boolean;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -85,8 +86,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
   };
 
+  const refreshUser = async () => {
+    try {
+      const response = await api.get('/auth/me');
+      setUser(response.data);
+      setPermissions(response.data.permissions || []);
+    } catch { /* ignore */ }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, permissions, isAuthenticated: !!user, isLoading, canViewTechnicalErrors: canViewTechErrors, login, logout, hasPermission }}>
+    <AuthContext.Provider value={{ user, permissions, isAuthenticated: !!user, isLoading, canViewTechnicalErrors: canViewTechErrors, login, logout, hasPermission, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

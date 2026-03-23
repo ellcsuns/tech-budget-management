@@ -264,6 +264,11 @@ export const userPreferenceApi = {
   save: (prefs: Record<string, string>) => api.put('/user-preferences', prefs),
 };
 
+// Profile API
+export const profileApi = {
+  updateProfile: (data: { fullName: string }) => api.put('/auth/me', data),
+};
+
 // Budget Confirmation API
 export const budgetConfirmationApi = {
   create: (data: { budgetId: string; type: 'MASSIVE' | 'INDIVIDUAL'; targetUserId?: string }) =>

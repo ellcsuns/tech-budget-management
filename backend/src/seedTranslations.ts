@@ -714,6 +714,10 @@ const translations: TranslationSeed[] = [
   { key: 'topbar.darkMode', es: 'Modo oscuro', en: 'Dark mode', category: 'topbar' },
   { key: 'topbar.lightMode', es: 'Modo claro', en: 'Light mode', category: 'topbar' },
   { key: 'topbar.notifications', es: 'Aprobaciones pendientes', en: 'Pending approvals', category: 'topbar' },
+  { key: 'topbar.editProfile', es: 'Editar perfil', en: 'Edit profile', category: 'topbar' },
+  { key: 'topbar.firstName', es: 'Nombre', en: 'First name', category: 'topbar' },
+  { key: 'topbar.lastName', es: 'Apellido', en: 'Last name', category: 'topbar' },
+  { key: 'topbar.email', es: 'Correo electrónico', en: 'Email', category: 'topbar' },
 
   // =============================================
   // BUDGET CONFIRMATION
