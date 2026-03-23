@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { savingsApi, budgetApi, budgetLineApi, financialCompanyApi, expenseCategoryApi, technologyDirectionApi } from '../services/api';
 import type { Saving, Budget, BudgetLine, FinancialCompany, ExpenseCategory, TechnologyDirection } from '../types';
-import { HiOutlineTrash, HiOutlinePlusCircle, HiOutlinePlay, HiOutlineXMark } from 'react-icons/hi2';
+import { HiOutlineTrash, HiOutlinePlusCircle, HiOutlinePlay, HiOutlineXMark, HiOutlinePause } from 'react-icons/hi2';
 import { showToast } from '../components/Toast';
 import ConfirmationDialog from '../components/ConfirmationDialog';
 import { fmt } from '../utils/formatters';
@@ -22,9 +22,11 @@ export default function SavingsPage() {
   const [detailSaving, setDetailSaving] = useState<Saving | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [activateTarget, setActivateTarget] = useState<string | null>(null);
+  const [deactivateTarget, setDeactivateTarget] = useState<string | null>(null);
 
   const [monthlyValues, setMonthlyValues] = useState<number[]>(Array(12).fill(0));
   const [formData, setFormData] = useState({ budgetLineId: '', description: '' });
+  const [lineSavings, setLineSavings] = useState<Saving[]>([]);
 
   // Filter state
   const [filterCurrencies, setFilterCurrencies] = useState<string[]>([]);
@@ -82,6 +84,25 @@ export default function SavingsPage() {
 
   const total = monthlyValues.reduce((a, b) => a + b, 0);
 
+  // Compute available budget per month for the selected budget line
+  const selectedBL = budgetLines.find(bl => bl.id === formData.budgetLineId);
+  const monthlyAvailable = MONTHS.map((_, i) => {
+    if (!selectedBL) return 0;
+    const planValue = Number((selectedBL as any)[`planM${i + 1}`]) || 0;
+    let existingTotal = 0;
+    lineSavings.forEach(s => { existingTotal += Number((s as any)[`savingM${i + 1}`]) || 0; });
+    return planValue - existingTotal;
+  });
+  const hasExceeded = monthlyValues.some((v, i) => v > 0 && v > monthlyAvailable[i] && selectedBL);
+
+  const loadLineSavings = async (budgetLineId: string) => {
+    if (!budgetLineId) { setLineSavings([]); return; }
+    try {
+      const res = await savingsApi.getAll({ budgetLineId });
+      setLineSavings(res.data);
+    } catch { setLineSavings([]); }
+  };
+
   const handleCreateSaving = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -91,6 +112,7 @@ export default function SavingsPage() {
       setShowForm(false);
       setFormData({ budgetLineId: '', description: '' });
       setMonthlyValues(Array(12).fill(0));
+      setLineSavings([]);
       loadSavings();
       showToast(t('saving.created'), 'success');
     } catch (error: any) { showToast(error.response?.data?.error || 'Error al crear ahorro', 'error'); }
@@ -106,6 +128,12 @@ export default function SavingsPage() {
     if (!activateTarget) return;
     try { await savingsApi.activate(activateTarget); setActivateTarget(null); loadSavings(); showToast(t('saving.activated'), 'success'); }
     catch (error: any) { showToast(error.response?.data?.error || 'Error al activar ahorro', 'error'); setActivateTarget(null); }
+  };
+
+  const handleDeactivateSaving = async () => {
+    if (!deactivateTarget) return;
+    try { await savingsApi.deactivate(deactivateTarget); setDeactivateTarget(null); loadSavings(); showToast(t('saving.deactivated') || 'Ahorro desactivado', 'success'); }
+    catch (error: any) { showToast(error.response?.data?.error || 'Error al desactivar ahorro', 'error'); setDeactivateTarget(null); }
   };
 
   const getBudgetLineLabel = (bl?: BudgetLine) => bl ? `${bl.expense?.code || ''} - ${bl.financialCompany?.code || ''}` : '-';
@@ -163,7 +191,7 @@ export default function SavingsPage() {
         <div className="grid grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">{t('label.budget')}</label>
-            <select value={selectedBudget} onChange={(e) => { setSelectedBudget(e.target.value); setShowForm(false); }} className="w-full border rounded px-3 py-2">
+            <select value={selectedBudget} onChange={(e) => { setSelectedBudget(e.target.value); setShowForm(false); setLineSavings([]); }} className="w-full border rounded px-3 py-2">
               <option value="">{t('label.all')}</option>
               {budgets.map(b => (<option key={b.id} value={b.id}>{b.year} - v{b.version}{b.isActive ? ` (${t('label.active').toLowerCase()})` : ''}</option>))}
             </select>
@@ -248,13 +276,13 @@ export default function SavingsPage() {
           <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">{t('saving.new')}</h2>
-              <button onClick={() => setShowForm(false)} className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+              <button onClick={() => { setShowForm(false); setLineSavings([]); }} className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
             </div>
             <form onSubmit={handleCreateSaving}>
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="col-span-2">
                   <label className="block text-sm font-medium mb-1">{t('table.budgetLine')} *</label>
-                  <select value={formData.budgetLineId} onChange={(e) => setFormData({ ...formData, budgetLineId: e.target.value })} className="w-full border rounded px-3 py-2" required>
+                  <select value={formData.budgetLineId} onChange={(e) => { setFormData({ ...formData, budgetLineId: e.target.value }); loadLineSavings(e.target.value); }} className="w-full border rounded px-3 py-2" required>
                     <option value="">{t('msg.select') || 'Seleccionar'}</option>
                     {budgetLines.map(bl => (<option key={bl.id} value={bl.id}>{bl.expense?.code} - {bl.expense?.shortDescription} ({bl.financialCompany?.code})</option>))}
                   </select>
@@ -267,20 +295,40 @@ export default function SavingsPage() {
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-2">{t('saving.monthlyValues')}</label>
                 <div className="border rounded divide-y">
-                  {MONTHS.map((m, i) => (
-                    <div key={i} className="flex items-center px-4 py-2">
-                      <label className="text-sm font-medium text-gray-600 w-16">{m}</label>
-                      <div className="flex-1 flex justify-end">
-                        <input type="number" step="0.01" min="0" value={monthlyValues[i] || ''} onChange={(e) => { const v = [...monthlyValues]; v[i] = parseFloat(e.target.value) || 0; setMonthlyValues(v); }} className="w-36 border rounded px-3 py-1.5 text-sm text-right focus:ring-2 focus:ring-accent focus:border-accent" />
+                  <div className="flex items-center px-4 py-2 bg-gray-50 text-xs text-gray-500 font-medium">
+                    <span className="w-16">{t('label.month')}</span>
+                    <span className="flex-1 text-right">{t('saving.availableBudget') || 'Disponible'}</span>
+                    <span className="w-36 text-right ml-4">{t('saving.savingValue') || 'Ahorro'}</span>
+                  </div>
+                  {MONTHS.map((m, i) => {
+                    const available = monthlyAvailable[i];
+                    const exceeded = selectedBL && monthlyValues[i] > 0 && monthlyValues[i] > available;
+                    return (
+                      <div key={i} className={`flex items-center px-4 py-2 ${exceeded ? 'bg-red-50' : ''}`}>
+                        <label className="text-sm font-medium text-gray-600 w-16">{m}</label>
+                        <div className="flex-1 text-right text-sm">
+                          {selectedBL ? (
+                            <span className={exceeded ? 'text-red-600 font-medium' : 'text-gray-500'}>{fmt(available)}</span>
+                          ) : (
+                            <span className="text-gray-300">-</span>
+                          )}
+                        </div>
+                        <div className="w-36 ml-4">
+                          <input type="number" step="0.01" min="0" value={monthlyValues[i] || ''} onChange={(e) => { const v = [...monthlyValues]; v[i] = parseFloat(e.target.value) || 0; setMonthlyValues(v); }}
+                            className={`w-full border rounded px-3 py-1.5 text-sm text-right focus:ring-2 focus:ring-accent focus:border-accent ${exceeded ? 'border-red-400 text-red-600' : ''}`} />
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
+                {hasExceeded && (
+                  <p className="mt-1 text-xs text-red-600">{t('saving.exceedsBudget') || 'El ahorro excede el presupuesto disponible en uno o más meses'}</p>
+                )}
                 <div className="mt-2 text-right text-sm font-semibold">Total: ${fmt(total)}</div>
               </div>
               <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => setShowForm(false)} className="btn-cancel">{t('btn.cancel')}</button>
-                <button type="submit" className="btn-success" disabled={total <= 0}>{t('saving.create')}</button>
+                <button type="button" onClick={() => { setShowForm(false); setLineSavings([]); }} className="btn-cancel">{t('btn.cancel')}</button>
+                <button type="submit" className="btn-success" disabled={total <= 0 || hasExceeded}>{t('saving.create')}</button>
               </div>
             </form>
           </div>
@@ -329,6 +377,11 @@ export default function SavingsPage() {
                           <HiOutlineTrash className="w-5 h-5" />
                         </button>
                       </>
+                    )}
+                    {saving.status === 'ACTIVE' && isActiveBudgetSelected && (
+                      <button onClick={() => setDeactivateTarget(saving.id)} className="icon-btn-warning" title={t('saving.deactivateSaving') || 'Desactivar ahorro'}>
+                        <HiOutlinePause className="w-5 h-5" />
+                      </button>
                     )}
                   </td>
                 </tr>
@@ -397,6 +450,13 @@ export default function SavingsPage() {
         message={t('saving.confirmActivate') || '¿Estás seguro de activar este ahorro? Los valores se reflejarán en el Dashboard.'}
         onConfirm={handleActivateSaving}
         onCancel={() => setActivateTarget(null)}
+      />
+      <ConfirmationDialog
+        isOpen={!!deactivateTarget}
+        title={t('saving.deactivateSaving') || 'Desactivar Ahorro'}
+        message={t('saving.confirmDeactivate') || '¿Estás seguro de desactivar este ahorro? Los valores dejarán de reflejarse en el Dashboard.'}
+        onConfirm={handleDeactivateSaving}
+        onCancel={() => setDeactivateTarget(null)}
       />
     </div>
   );

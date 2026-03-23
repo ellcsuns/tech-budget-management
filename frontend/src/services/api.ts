@@ -177,6 +177,7 @@ export const savingsApi = {
   create: (data: any) => api.post<Saving>('/savings', data),
   approve: (savingIds: string[]) => api.post('/savings/approve', { savingIds }),
   activate: (id: string) => api.post(`/savings/${id}/activate`),
+  deactivate: (id: string) => api.post(`/savings/${id}/deactivate`),
   activateMultiple: (savingIds: string[]) => api.post('/savings/activate', { savingIds }),
   delete: (id: string) => api.delete(`/savings/${id}`)
 };

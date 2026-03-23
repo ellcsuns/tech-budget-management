@@ -280,6 +280,11 @@ const translations: TranslationSeed[] = [
   { key: 'saving.created', es: 'Ahorro creado exitosamente', en: 'Saving created successfully', category: 'ahorros' },
   { key: 'saving.deleted', es: 'Ahorro eliminado', en: 'Saving deleted', category: 'ahorros' },
   { key: 'saving.activated', es: 'Ahorro activado exitosamente', en: 'Saving activated successfully', category: 'ahorros' },
+  { key: 'saving.deactivateSaving', es: 'Desactivar Ahorro', en: 'Deactivate Saving', category: 'ahorros' },
+  { key: 'saving.confirmDeactivate', es: '¿Estás seguro de desactivar este ahorro? Los valores dejarán de reflejarse en el Dashboard.', en: 'Are you sure you want to deactivate this saving? Values will no longer be reflected in the Dashboard.', category: 'ahorros' },
+  { key: 'saving.deactivated', es: 'Ahorro desactivado exitosamente', en: 'Saving deactivated successfully', category: 'ahorros' },
+  { key: 'saving.availableBudget', es: 'Disponible', en: 'Available', category: 'ahorros' },
+  { key: 'saving.exceedsBudget', es: 'El ahorro excede el presupuesto disponible en uno o más meses', en: 'Saving exceeds available budget in one or more months', category: 'ahorros' },
 
   // =============================================
   // DIFERIDOS

@@ -95,7 +95,8 @@ export function savingsRouter(prisma: PrismaClient) {
     } catch (error: any) {
       if (error.message.includes('mayor a cero') || 
           error.message.includes('no encontrad') ||
-          error.message.includes('negativos')) {
+          error.message.includes('negativos') ||
+          error.message.includes('excede el presupuesto')) {
         return res.status(400).json({ error: error.message });
       }
       next(error);
@@ -134,6 +135,25 @@ export function savingsRouter(prisma: PrismaClient) {
   router.post('/:id/activate', requirePermission('budgets', 'MODIFY'), async (req, res, next) => {
     try {
       const saving = await savingService.activateSaving(req.params.id);
+      res.json(saving);
+    } catch (error: any) {
+      if (error.message.includes('no encontrado')) {
+        return res.status(404).json({ error: error.message });
+      }
+      if (error.message.includes('ya está')) {
+        return res.status(409).json({ error: error.message });
+      }
+      next(error);
+    }
+  });
+
+  /**
+   * POST /api/savings/:id/deactivate
+   * Deactivate a single saving (ACTIVE → PENDING)
+   */
+  router.post('/:id/deactivate', requirePermission('budgets', 'MODIFY'), async (req, res, next) => {
+    try {
+      const saving = await savingService.deactivateSaving(req.params.id);
       res.json(saving);
     } catch (error: any) {
       if (error.message.includes('no encontrado')) {

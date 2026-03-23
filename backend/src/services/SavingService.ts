@@ -37,7 +37,7 @@ export class SavingService {
   async createSaving(data: SavingInput, userId: string): Promise<any> {
     const budgetLine = await this.prisma.budgetLine.findUnique({
       where: { id: data.budgetLineId },
-      include: { expense: true, budget: true }
+      include: { expense: true, budget: true, savings: true }
     });
     if (!budgetLine) throw new Error('Línea de presupuesto no encontrada');
 
@@ -54,6 +54,26 @@ export class SavingService {
 
     const totalAmount = m.reduce((a, b) => a + b, 0);
     if (totalAmount <= 0) throw new Error('El total del ahorro debe ser mayor a cero');
+
+    // Validate saving doesn't exceed budget for each month
+    const existingSavings = (budgetLine as any).savings || [];
+    const violations: string[] = [];
+    for (let i = 0; i < 12; i++) {
+      if (m[i] <= 0) continue;
+      const monthNum = i + 1;
+      const planValue = Number((budgetLine as any)[`planM${monthNum}`]) || 0;
+      let existingTotal = 0;
+      existingSavings.forEach((s: any) => {
+        existingTotal += Number(s[`savingM${monthNum}`]) || 0;
+      });
+      const available = planValue - existingTotal;
+      if (m[i] > available) {
+        violations.push(`M${monthNum}: ahorro ${m[i].toFixed(2)} excede disponible ${available.toFixed(2)} (presupuesto: ${planValue.toFixed(2)}, ahorros existentes: ${existingTotal.toFixed(2)})`);
+      }
+    }
+    if (violations.length > 0) {
+      throw new Error(`El ahorro excede el presupuesto disponible en: ${violations.join('; ')}`);
+    }
 
     // Build monthlyDistribution for backward compat
     const monthlyDistribution: Record<number, number> = {};
@@ -110,6 +130,18 @@ export class SavingService {
     return await this.prisma.saving.update({
       where: { id },
       data: { status: 'ACTIVE', activatedAt: new Date() },
+      include: savingInclude
+    });
+  }
+
+  async deactivateSaving(id: string): Promise<any> {
+    const saving = await this.prisma.saving.findUnique({ where: { id } });
+    if (!saving) throw new Error('Ahorro no encontrado');
+    if (saving.status === 'PENDING') throw new Error('El ahorro ya está desactivado');
+
+    return await this.prisma.saving.update({
+      where: { id },
+      data: { status: 'PENDING', activatedAt: null },
       include: savingInclude
     });
   }
