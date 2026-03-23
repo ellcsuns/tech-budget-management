@@ -166,10 +166,10 @@ export default function Sidebar() {
       </nav>
 
       {/* Help Center Link */}
-      <div className="p-2">
+      <div className="p-2 border-t border-gray-700">
         <Link to="/help"
           title={collapsed ? (t('menu.help') || 'Ayuda') : undefined}
-          className={`flex items-center ${collapsed ? 'justify-center' : 'space-x-3 px-4'} py-3 rounded-lg transition-colors ${location.pathname === '/help' ? 'bg-accent text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}`}>
+          className={`flex items-center ${collapsed ? 'justify-center' : 'space-x-3 px-4'} py-3 rounded-lg transition-colors ${location.pathname === '/help' ? 'bg-accent text-white' : 'text-blue-300 hover:bg-gray-800 hover:text-white'}`}>
           <HiOutlineQuestionMarkCircle className="w-5 h-5 flex-shrink-0" />
           {!collapsed && <span className="text-sm font-medium">{t('menu.help') || 'Ayuda'}</span>}
         </Link>
