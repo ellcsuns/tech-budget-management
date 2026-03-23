@@ -384,22 +384,20 @@ export default function SavingsPage() {
         </div>
       )}
 
-      {deleteTarget && (
-        <ConfirmationDialog
-          title={t('saving.deleteSaving') || 'Eliminar Ahorro'}
-          message={t('saving.confirmDelete') || '¿Estás seguro de eliminar este ahorro?'}
-          onConfirm={handleDeleteSaving}
-          onCancel={() => setDeleteTarget(null)}
-        />
-      )}
-      {activateTarget && (
-        <ConfirmationDialog
-          title={t('saving.activateSaving') || 'Activar Ahorro'}
-          message={t('saving.confirmActivate') || '¿Estás seguro de activar este ahorro? Los valores se reflejarán en el Dashboard.'}
-          onConfirm={handleActivateSaving}
-          onCancel={() => setActivateTarget(null)}
-        />
-      )}
+      <ConfirmationDialog
+        isOpen={!!deleteTarget}
+        title={t('saving.deleteSaving') || 'Eliminar Ahorro'}
+        message={t('saving.confirmDelete') || '¿Estás seguro de eliminar este ahorro?'}
+        onConfirm={handleDeleteSaving}
+        onCancel={() => setDeleteTarget(null)}
+      />
+      <ConfirmationDialog
+        isOpen={!!activateTarget}
+        title={t('saving.activateSaving') || 'Activar Ahorro'}
+        message={t('saving.confirmActivate') || '¿Estás seguro de activar este ahorro? Los valores se reflejarán en el Dashboard.'}
+        onConfirm={handleActivateSaving}
+        onCancel={() => setActivateTarget(null)}
+      />
     </div>
   );
 }

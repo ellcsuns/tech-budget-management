@@ -294,14 +294,13 @@ export default function ExpenseDetailPopup({ expense, onClose, onUpdate, readOnl
           </div>
         </div>
       </div>
-      {deleteTagKey && (
-        <ConfirmationDialog
-          title={t('expense.detail.deleteTag')}
-          message={`${t('expense.detail.deleteTagConfirm')} "${deleteTagKey}"?`}
-          onConfirm={() => { handleDeleteTag(deleteTagKey); setDeleteTagKey(null); }}
-          onCancel={() => setDeleteTagKey(null)}
-        />
-      )}
+      <ConfirmationDialog
+        isOpen={!!deleteTagKey}
+        title={t('expense.detail.deleteTag')}
+        message={`${t('expense.detail.deleteTagConfirm')} "${deleteTagKey}"?`}
+        onConfirm={() => { if (deleteTagKey) handleDeleteTag(deleteTagKey); setDeleteTagKey(null); }}
+        onCancel={() => setDeleteTagKey(null)}
+      />
     </div>
   );
 }

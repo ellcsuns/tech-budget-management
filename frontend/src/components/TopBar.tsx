@@ -7,7 +7,6 @@ import { changeRequestApi, budgetConfirmationApi } from '../services/api';
 import {
   HiOutlineLanguage,
   HiOutlineUserGroup,
-  HiOutlineMagnifyingGlass,
   HiOutlineClipboardDocumentList,
   HiOutlineCheckCircle,
   HiOutlineArrowRightOnRectangle,
@@ -135,7 +134,10 @@ export default function TopBar() {
           <button onClick={() => { closeAll(); setShowFontMenu(!showFontMenu); }}
             className="flex items-center gap-1 px-2.5 py-1.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             title={t('topbar.fontSize') || 'Tamaño de texto'}>
-            <HiOutlineMagnifyingGlass className="w-5 h-5" />
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+              <text x="3" y="17" fontSize="14" fontWeight="bold" fill="currentColor" stroke="none" fontFamily="sans-serif">A</text>
+              <text x="14" y="17" fontSize="10" fontWeight="bold" fill="currentColor" stroke="none" fontFamily="sans-serif">a</text>
+            </svg>
           </button>
           {showFontMenu && (
             <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg py-1 z-50 min-w-[150px]">
