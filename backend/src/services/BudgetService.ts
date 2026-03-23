@@ -1,4 +1,4 @@
-import { PrismaClient, Budget, SavingStatus } from '@prisma/client';
+import { PrismaClient, Budget, SavingStatus, ChangeRequestStatus } from '@prisma/client';
 import { BudgetInput } from '../types';
 
 export class BudgetService {
@@ -272,6 +272,168 @@ export class BudgetService {
       include: {
         reviewSubmittedBy: { select: { id: true, fullName: true } }
       }
+    });
+  }
+
+  /**
+   * Retorna el presupuesto con valores computados:
+   * computedM* = base(planM*) + correcciones aprobadas - ahorros activos
+   * Incluye breakdown por línea y resumen mensual global.
+   */
+  async getComputedBudget(budgetId: string): Promise<any> {
+    const budget = await this.prisma.budget.findUnique({
+      where: { id: budgetId },
+      include: {
+        budgetLines: {
+          include: {
+            expense: { include: { category: true, tagValues: { include: { tagDefinition: true } } } },
+            financialCompany: true,
+            technologyDirection: true,
+            transactions: true,
+            lastModifiedBy: { select: { id: true, username: true, fullName: true } },
+            savings: { where: { status: SavingStatus.ACTIVE } },
+            changeRequests: { where: { status: ChangeRequestStatus.APPROVED } }
+          }
+        },
+        conversionRates: true,
+        reviewSubmittedBy: { select: { id: true, fullName: true } }
+      }
+    });
+    if (!budget) throw new Error('Presupuesto no encontrado');
+
+    const monthlySummary: Array<{
+      month: number;
+      base: number;
+      savings: number;
+      corrections: number;
+      computed: number;
+    }> = [];
+
+    for (let m = 1; m <= 12; m++) {
+      monthlySummary.push({ month: m, base: 0, savings: 0, corrections: 0, computed: 0 });
+    }
+
+    const computedLines = (budget as any).budgetLines.map((bl: any) => {
+      const lineBreakdown: Array<{
+        month: number;
+        base: number;
+        savings: number;
+        corrections: number;
+        computed: number;
+      }> = [];
+
+      let hasSavings = false;
+      let hasCorrections = false;
+
+      for (let m = 1; m <= 12; m++) {
+        const planKey = `planM${m}`;
+        const base = Number(bl[planKey]) || 0;
+
+        // Sumar ahorros activos para este mes
+        let savingTotal = 0;
+        (bl.savings || []).forEach((s: any) => {
+          const sv = Number(s[`savingM${m}`]) || 0;
+          savingTotal += sv;
+        });
+        if (savingTotal > 0) hasSavings = true;
+
+        // Calcular corrección neta de change requests aprobados
+        // La corrección es la diferencia entre el valor propuesto y el valor actual al momento de la solicitud
+        let correctionDelta = 0;
+        (bl.changeRequests || []).forEach((cr: any) => {
+          const proposed = (cr.proposedValues as Record<string, number>)?.[planKey] ?? 0;
+          const current = (cr.currentValues as Record<string, number>)?.[planKey] ?? 0;
+          correctionDelta += (proposed - current);
+        });
+        if (correctionDelta !== 0) hasCorrections = true;
+
+        const computed = base + correctionDelta - savingTotal;
+
+        lineBreakdown.push({ month: m, base, savings: savingTotal, corrections: correctionDelta, computed });
+
+        // Acumular en resumen global
+        monthlySummary[m - 1].base += base;
+        monthlySummary[m - 1].savings += savingTotal;
+        monthlySummary[m - 1].corrections += correctionDelta;
+        monthlySummary[m - 1].computed += computed;
+      }
+
+      return {
+        ...bl,
+        breakdown: lineBreakdown,
+        hasSavings,
+        hasCorrections,
+        // Agregar campos computedM* para uso directo
+        computedM1: lineBreakdown[0].computed,
+        computedM2: lineBreakdown[1].computed,
+        computedM3: lineBreakdown[2].computed,
+        computedM4: lineBreakdown[3].computed,
+        computedM5: lineBreakdown[4].computed,
+        computedM6: lineBreakdown[5].computed,
+        computedM7: lineBreakdown[6].computed,
+        computedM8: lineBreakdown[7].computed,
+        computedM9: lineBreakdown[8].computed,
+        computedM10: lineBreakdown[9].computed,
+        computedM11: lineBreakdown[10].computed,
+        computedM12: lineBreakdown[11].computed,
+      };
+    });
+
+    return {
+      ...budget,
+      budgetLines: computedLines,
+      monthlySummary
+    };
+  }
+
+  /**
+   * Consolida todas las transacciones (correcciones, ahorros) en una nueva versión.
+   * Los valores computados se escriben como nuevos valores base.
+   */
+  async createVersionSnapshot(budgetId: string): Promise<Budget> {
+    const computed = await this.getComputedBudget(budgetId);
+
+    return await this.prisma.$transaction(async (tx: any) => {
+      const sourceBudget = await tx.budget.findUnique({
+        where: { id: budgetId },
+        include: { conversionRates: true }
+      });
+      if (!sourceBudget) throw new Error('Presupuesto fuente no encontrado');
+
+      const nextVersion = await this.getNextVersion(sourceBudget.year);
+
+      const newBudget = await tx.budget.create({
+        data: { year: sourceBudget.year, version: nextVersion }
+      });
+
+      // Copiar tasas de conversión
+      for (const rate of sourceBudget.conversionRates) {
+        await tx.conversionRate.create({
+          data: { budgetId: newBudget.id, currency: rate.currency, month: rate.month, rate: rate.rate }
+        });
+      }
+
+      // Crear líneas con valores computados como nueva base
+      for (const line of computed.budgetLines) {
+        await tx.budgetLine.create({
+          data: {
+            budgetId: newBudget.id,
+            expenseId: line.expenseId,
+            financialCompanyId: line.financialCompanyId,
+            technologyDirectionId: line.technologyDirectionId,
+            currency: line.currency,
+            planM1: line.computedM1, planM2: line.computedM2, planM3: line.computedM3,
+            planM4: line.computedM4, planM5: line.computedM5, planM6: line.computedM6,
+            planM7: line.computedM7, planM8: line.computedM8, planM9: line.computedM9,
+            planM10: line.computedM10, planM11: line.computedM11, planM12: line.computedM12,
+          }
+        });
+      }
+
+      return await tx.budget.findUnique({
+        where: { id: newBudget.id },
+        include: { budgetLines: { include: { expense: true, financialCompany: true, technologyDirection: true } }, conversionRates: true }
+      }) as Budget;
     });
   }
 }

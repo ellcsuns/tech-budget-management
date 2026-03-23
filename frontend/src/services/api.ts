@@ -72,6 +72,8 @@ export const budgetApi = {
   createNewVersion: (budgetId: string, planValueChanges: any[]) =>
     api.post(`/budgets/${budgetId}/versions`, { planValueChanges }),
   getActive: () => api.get<Budget>('/budgets/active'),
+  getComputed: (budgetId: string) => api.get(`/budgets/${budgetId}/computed`),
+  createSnapshot: (budgetId: string) => api.post(`/budgets/${budgetId}/snapshot`),
   submitForReview: (id: string) => api.post(`/budgets/${id}/submit-review`),
   compare: (budgetAId: string, budgetBId: string) =>
     api.get(`/budgets/compare?budgetA=${budgetAId}&budgetB=${budgetBId}`),

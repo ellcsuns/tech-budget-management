@@ -90,6 +90,24 @@ export function budgetRouter(prisma: PrismaClient, authenticateJWT?: (req: Reque
     } catch (error) { next(error); }
   });
 
+  router.get('/:id/computed', async (req, res, next) => {
+    try {
+      res.json(await budgetService.getComputedBudget(req.params.id));
+    } catch (error: any) {
+      if (error.message?.includes('no encontrado')) return res.status(404).json({ error: error.message });
+      next(error);
+    }
+  });
+
+  router.post('/:id/snapshot', async (req, res, next) => {
+    try {
+      res.status(201).json(await budgetService.createVersionSnapshot(req.params.id));
+    } catch (error: any) {
+      if (error.message?.includes('no encontrado')) return res.status(404).json({ error: error.message });
+      next(error);
+    }
+  });
+
   router.post('/:id/budget-lines', async (req, res, next) => {
     try {
       const { expenseId, financialCompanyId, technologyDirectionId } = req.body;

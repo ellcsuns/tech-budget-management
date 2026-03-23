@@ -4,7 +4,7 @@ import { budgetApi } from '../services/api';
 import type { Budget } from '../types';
 import { showToast } from '../components/Toast';
 import ConfirmationDialog from '../components/ConfirmationDialog';
-import { HiOutlinePlusCircle, HiOutlineTrash, HiOutlineStar, HiOutlineDocumentDuplicate } from 'react-icons/hi2';
+import { HiOutlinePlusCircle, HiOutlineTrash, HiOutlineStar, HiOutlineDocumentDuplicate, HiOutlineCircleStack } from 'react-icons/hi2';
 
 export default function ConfigurationPage() {
   const { t } = useI18n();
@@ -17,6 +17,8 @@ export default function ConfigurationPage() {
   const [sourceBudgetId, setSourceBudgetId] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [showDeleteBudgetDialog, setShowDeleteBudgetDialog] = useState<string | null>(null);
+  const [showSnapshotConfirm, setShowSnapshotConfirm] = useState(false);
+  const [isCreatingSnapshot, setIsCreatingSnapshot] = useState(false);
 
   useEffect(() => { loadBudgets(); }, []);
 
@@ -65,6 +67,20 @@ export default function ConfigurationPage() {
     } catch (error: any) {
       showToast(error.response?.data?.error || 'Error al eliminar presupuesto', 'error');
     }
+  };
+
+  const handleCreateSnapshot = async () => {
+    const activeBudget = allBudgets.find(b => b.isActive);
+    if (!activeBudget) return;
+    setIsCreatingSnapshot(true);
+    try {
+      await budgetApi.createSnapshot(activeBudget.id);
+      showToast(t('config.snapshotCreated') || 'Nueva versión creada con valores consolidados', 'success');
+      setShowSnapshotConfirm(false);
+      loadBudgets();
+    } catch (error: any) {
+      showToast(error.response?.data?.error || 'Error al crear versión', 'error');
+    } finally { setIsCreatingSnapshot(false); }
   };
 
   return (
@@ -208,6 +224,41 @@ export default function ConfigurationPage() {
           onConfirm={handleDeleteBudget}
           onCancel={() => setShowDeleteBudgetDialog(null)}
         />
+      )}
+
+      {/* Version Snapshot */}
+      {allBudgets.some(b => b.isActive) && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{t('config.versionSnapshot') || 'Consolidar Versión'}</h2>
+            <button onClick={() => setShowSnapshotConfirm(true)} className="flex items-center gap-1 px-4 py-2 bg-amber-600 text-white rounded hover:bg-amber-700 text-sm">
+              <HiOutlineCircleStack className="w-4 h-4" /> {t('config.createSnapshot') || 'Crear Nueva Versión'}
+            </button>
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {t('config.snapshotDesc') || 'Consolida todos los ajustes (ahorros, correcciones aprobadas) del presupuesto vigente en una nueva versión. Los valores computados se escriben como nuevos valores base.'}
+          </p>
+        </div>
+      )}
+
+      {showSnapshotConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
+            <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-gray-100">{t('config.snapshotWarningTitle') || 'Confirmar Consolidación'}</h2>
+            <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-lg p-4 mb-4">
+              <p className="text-sm text-amber-800 dark:text-amber-200">
+                {t('config.snapshotWarning') || 'Esta acción creará una nueva versión del presupuesto vigente con todos los ajustes consolidados como valores base. Los ahorros activos y correcciones aprobadas se reflejarán en los nuevos valores planM1-planM12. Esta acción no se puede deshacer.'}
+              </p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setShowSnapshotConfirm(false)} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded hover:bg-gray-300 dark:hover:bg-gray-500 text-sm text-gray-700 dark:text-gray-200">{t('btn.cancel') || 'Cancelar'}</button>
+              <button onClick={handleCreateSnapshot} disabled={isCreatingSnapshot}
+                className="px-4 py-2 bg-amber-600 text-white rounded hover:bg-amber-700 text-sm disabled:opacity-50">
+                {isCreatingSnapshot ? (t('msg.creating') || 'Creando...') : (t('config.confirmSnapshot') || 'Confirmar y Crear')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* App Info */}

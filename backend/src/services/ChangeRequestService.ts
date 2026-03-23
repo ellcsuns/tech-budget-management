@@ -66,24 +66,16 @@ export class ChangeRequestService {
     if (!request) throw new Error('Solicitud no encontrada');
     if (request.status !== ChangeRequestStatus.PENDING) throw new Error('La solicitud ya fue procesada');
 
-    const proposed = request.proposedValues as Record<string, number>;
-    const updateData: any = {};
-    for (let m = 1; m <= 12; m++) {
-      const key = `planM${m}`;
-      if (proposed[key] !== undefined) updateData[key] = proposed[key];
-    }
-
-    return await this.prisma.$transaction(async (tx: any) => {
-      await tx.budgetLine.update({ where: { id: request.budgetLineId }, data: updateData });
-      return await tx.budgetLineChangeRequest.update({
-        where: { id: requestId },
-        data: { status: ChangeRequestStatus.APPROVED, approvedById: approverId, resolvedAt: new Date() },
-        include: {
-          budgetLine: { include: { expense: true, financialCompany: true, technologyDirection: true } },
-          requestedBy: { select: { id: true, username: true, fullName: true } },
-          approvedBy: { select: { id: true, username: true, fullName: true } }
-        }
-      });
+    // No modificamos los valores base de planM* en budgetLine.
+    // El registro aprobado del change request sirve como overlay dinámico.
+    return await this.prisma.budgetLineChangeRequest.update({
+      where: { id: requestId },
+      data: { status: ChangeRequestStatus.APPROVED, approvedById: approverId, resolvedAt: new Date() },
+      include: {
+        budgetLine: { include: { expense: true, financialCompany: true, technologyDirection: true } },
+        requestedBy: { select: { id: true, username: true, fullName: true } },
+        approvedBy: { select: { id: true, username: true, fullName: true } }
+      }
     });
   }
 
@@ -150,15 +142,7 @@ export class ChangeRequestService {
         if (!request) throw new Error(`Solicitud ${requestId} no encontrada`);
         if (request.status !== 'PENDING') throw new Error(`La solicitud ${requestId} ya fue procesada`);
 
-        const proposed = request.proposedValues as Record<string, number>;
-        const updateData: any = {};
-        for (let m = 1; m <= 12; m++) {
-          const key = `planM${m}`;
-          if (proposed[key] !== undefined) updateData[key] = proposed[key];
-        }
-
-        await tx.budgetLine.update({ where: { id: request.budgetLineId }, data: updateData });
-
+        // No modificamos los valores base de planM* en budgetLine.
         const updated = await tx.budgetLineChangeRequest.update({
           where: { id: requestId },
           data: { status: 'APPROVED', approvedById: approverId, resolvedAt: new Date() },

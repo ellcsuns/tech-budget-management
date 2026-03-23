@@ -742,6 +742,29 @@ const translations: TranslationSeed[] = [
   { key: 'budgetConfirmation.requestCreated', es: 'Solicitud de confirmación creada', en: 'Confirmation request created', category: 'budgetConfirmation' },
   { key: 'budgetConfirmation.usersWithLines', es: 'Usuarios con líneas asignadas', en: 'Users with assigned lines', category: 'budgetConfirmation' },
   { key: 'budgetConfirmation.detail', es: 'Detalle de Solicitud', en: 'Request Detail', category: 'budgetConfirmation' },
+
+  // Computed Budget / Transactional Rules
+  { key: 'budget.showBaseValues', es: 'Mostrar valores base (sin ajustes)', en: 'Show base values (no adjustments)', category: 'budget' },
+  { key: 'budget.showSummary', es: 'Ver Resumen Mensual', en: 'View Monthly Summary', category: 'budget' },
+  { key: 'budget.hideSummary', es: 'Ocultar Resumen', en: 'Hide Summary', category: 'budget' },
+  { key: 'budget.concept', es: 'Concepto', en: 'Concept', category: 'budget' },
+  { key: 'budget.baseValues', es: 'Base', en: 'Base', category: 'budget' },
+  { key: 'budget.savings', es: 'Ahorros', en: 'Savings', category: 'budget' },
+  { key: 'budget.corrections', es: 'Correcciones', en: 'Corrections', category: 'budget' },
+  { key: 'budget.computedTotal', es: 'Total Computado', en: 'Computed Total', category: 'budget' },
+  { key: 'config.versionSnapshot', es: 'Consolidar Versión', en: 'Consolidate Version', category: 'config' },
+  { key: 'config.createSnapshot', es: 'Crear Nueva Versión', en: 'Create New Version', category: 'config' },
+  { key: 'config.snapshotDesc', es: 'Consolida todos los ajustes (ahorros, correcciones aprobadas) del presupuesto vigente en una nueva versión. Los valores computados se escriben como nuevos valores base.', en: 'Consolidates all adjustments (savings, approved corrections) from the active budget into a new version. Computed values are written as new base values.', category: 'config' },
+  { key: 'config.snapshotWarningTitle', es: 'Confirmar Consolidación', en: 'Confirm Consolidation', category: 'config' },
+  { key: 'config.snapshotWarning', es: 'Esta acción creará una nueva versión del presupuesto vigente con todos los ajustes consolidados como valores base. Los ahorros activos y correcciones aprobadas se reflejarán en los nuevos valores. Esta acción no se puede deshacer.', en: 'This action will create a new version of the active budget with all adjustments consolidated as base values. Active savings and approved corrections will be reflected in the new values. This action cannot be undone.', category: 'config' },
+  { key: 'config.confirmSnapshot', es: 'Confirmar y Crear', en: 'Confirm and Create', category: 'config' },
+  { key: 'config.snapshotCreated', es: 'Nueva versión creada con valores consolidados', en: 'New version created with consolidated values', category: 'config' },
+  { key: 'dashboard.budget', es: 'Presupuesto', en: 'Budget', category: 'dashboard' },
+  { key: 'dashboard.committed', es: 'Comprometido', en: 'Committed', category: 'dashboard' },
+  { key: 'dashboard.real', es: 'Real', en: 'Real', category: 'dashboard' },
+  { key: 'dashboard.difference', es: 'Diferencia', en: 'Difference', category: 'dashboard' },
+  { key: 'dashboard.noBudget', es: 'No hay presupuesto vigente configurado. Configure uno en la sección de Configuración.', en: 'No active budget configured. Set one in the Configuration section.', category: 'dashboard' },
+  { key: 'dashboard.companyTotals', es: 'Totales por Compañía', en: 'Company Totals', category: 'dashboard' },
 ];
 
 export async function seedTranslations(prisma: PrismaClient) {

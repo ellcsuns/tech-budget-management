@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { budgetApi, expenseApi, financialCompanyApi, userAreaApi, changeRequestApi, technologyDirectionApi, budgetLineApi, budgetConfirmationApi } from '../services/api';
-import type { Budget, BudgetLine, UserArea, ChangeRequest, TechnologyDirection, BudgetConfirmationRequest, BudgetConfirmationResponse } from '../types';
+import type { Budget, BudgetLine, UserArea, ChangeRequest, TechnologyDirection, BudgetConfirmationRequest, BudgetConfirmationResponse, ComputedBudgetLine, MonthBreakdown } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { fmt } from '../utils/formatters';
 import ConfirmationDialog from '../components/ConfirmationDialog';
@@ -60,6 +60,12 @@ export default function BudgetsPage() {
     searchText: '',
     visibleColumns: { budget: true, committed: true, real: true }
   });
+
+  // Computed values state
+  const [showBase, setShowBase] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
+  const [monthlySummary, setMonthlySummary] = useState<MonthBreakdown[]>([]);
+  const [computedLines, setComputedLines] = useState<ComputedBudgetLine[]>([]);
 
   const { hasPermission } = useAuth();
   const canEdit = hasPermission('budgets', 'MODIFY');
@@ -174,6 +180,12 @@ export default function BudgetsPage() {
       setSelectedBudget(res.data);
       setBudgetLines(res.data.budgetLines || []);
       loadConfirmationData(budgetId);
+      // Load computed values
+      try {
+        const computedRes = await budgetApi.getComputed(budgetId);
+        setComputedLines(computedRes.data.budgetLines || []);
+        setMonthlySummary(computedRes.data.monthlySummary || []);
+      } catch { setComputedLines([]); setMonthlySummary([]); }
     } catch (error) { console.error('Error loading budget details:', error); }
     finally { setIsLoading(false); }
   };
@@ -265,7 +277,9 @@ export default function BudgetsPage() {
     }).filter(Boolean).join(', ');
   };
 
-  const filteredLines = useMemo(() => budgetLines.filter(bl => {
+  const filteredLines = useMemo(() => {
+    const sourceLines = showBase ? budgetLines : (computedLines.length > 0 ? computedLines : budgetLines);
+    return sourceLines.filter(bl => {
     if (filters.searchText && filters.searchText.trim()) {
       const s = filters.searchText.toLowerCase();
       const matchCode = bl.expense?.code?.toLowerCase().includes(s);
@@ -285,18 +299,25 @@ export default function BudgetsPage() {
       if (!catId || !filters.categories.includes(catId)) return false;
     }
     return true;
-  }), [budgetLines, filters, allUserAreas]);
+  });
+  }, [budgetLines, computedLines, showBase, filters, allUserAreas]);
 
   const totals = useMemo(() => {
     const byCurrency: Record<string, number> = {};
     filteredLines.forEach(bl => {
       let lineTotal = 0;
-      for (let m = 1; m <= 12; m++) lineTotal += getPlanValue(bl, m);
+      for (let m = 1; m <= 12; m++) {
+        if (!showBase && (bl as any)[`computedM${m}`] !== undefined) {
+          lineTotal += Number((bl as any)[`computedM${m}`]) || 0;
+        } else {
+          lineTotal += getPlanValue(bl, m);
+        }
+      }
       const curr = bl.currency || 'USD';
       byCurrency[curr] = (byCurrency[curr] || 0) + lineTotal;
     });
     return byCurrency;
-  }, [filteredLines]);
+  }, [filteredLines, showBase]);
 
   const statusLabel = (s: string) => {
     if (s === 'PENDING') return { text: t('common.pending'), cls: 'bg-yellow-100 text-yellow-800' };
@@ -334,8 +355,59 @@ export default function BudgetsPage() {
 
       {selectedBudget && (
         <>
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
             <FilterPanel budgetLines={budgetLines} filters={filters} onFiltersChange={setFilters} />
+
+            {/* Toggle base vs computed + summary */}
+            <div className="flex items-center gap-2 mb-4">
+              <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 cursor-pointer">
+                <input type="checkbox" checked={showBase} onChange={(e) => setShowBase(e.target.checked)}
+                  className="rounded border-gray-300 text-accent focus:ring-accent" />
+                {t('budget.showBaseValues') || 'Mostrar valores base (sin ajustes)'}
+              </label>
+              <button onClick={() => setShowSummary(!showSummary)}
+                className="ml-auto px-3 py-1 text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50">
+                {showSummary ? (t('budget.hideSummary') || 'Ocultar Resumen') : (t('budget.showSummary') || 'Ver Resumen Mensual')}
+              </button>
+            </div>
+
+            {/* Monthly Summary Breakdown */}
+            {showSummary && monthlySummary.length > 0 && (
+              <div className="border dark:border-gray-600 rounded-lg overflow-x-auto mb-4">
+                <table className="min-w-full text-xs">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th className="px-3 py-2 text-left text-gray-500 dark:text-gray-400">{t('budget.concept') || 'Concepto'}</th>
+                      {MONTHS.map(m => <th key={m} className="px-3 py-2 text-right text-gray-500 dark:text-gray-400">{m}</th>)}
+                      <th className="px-3 py-2 text-right text-gray-500 dark:text-gray-400">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
+                    <tr>
+                      <td className="px-3 py-1.5 text-gray-700 dark:text-gray-300 font-medium">{t('budget.baseValues') || 'Base'}</td>
+                      {monthlySummary.map((ms, i) => <td key={i} className="px-3 py-1.5 text-right text-gray-600 dark:text-gray-400">{fmt(ms.base)}</td>)}
+                      <td className="px-3 py-1.5 text-right font-medium text-gray-700 dark:text-gray-300">{fmt(monthlySummary.reduce((s, ms) => s + ms.base, 0))}</td>
+                    </tr>
+                    <tr className="bg-green-50/50 dark:bg-green-900/10">
+                      <td className="px-3 py-1.5 text-green-700 dark:text-green-400 font-medium">- {t('budget.savings') || 'Ahorros'}</td>
+                      {monthlySummary.map((ms, i) => <td key={i} className="px-3 py-1.5 text-right text-green-600 dark:text-green-400">{ms.savings > 0 ? fmt(ms.savings) : '-'}</td>)}
+                      <td className="px-3 py-1.5 text-right font-medium text-green-700 dark:text-green-400">{fmt(monthlySummary.reduce((s, ms) => s + ms.savings, 0))}</td>
+                    </tr>
+                    <tr className="bg-blue-50/50 dark:bg-blue-900/10">
+                      <td className="px-3 py-1.5 text-blue-700 dark:text-blue-400 font-medium">+/- {t('budget.corrections') || 'Correcciones'}</td>
+                      {monthlySummary.map((ms, i) => <td key={i} className="px-3 py-1.5 text-right text-blue-600 dark:text-blue-400">{ms.corrections !== 0 ? (ms.corrections > 0 ? '+' : '') + fmt(ms.corrections) : '-'}</td>)}
+                      <td className="px-3 py-1.5 text-right font-medium text-blue-700 dark:text-blue-400">{fmt(monthlySummary.reduce((s, ms) => s + ms.corrections, 0))}</td>
+                    </tr>
+                    <tr className="bg-gray-100 dark:bg-gray-700 font-bold">
+                      <td className="px-3 py-1.5 text-gray-900 dark:text-gray-100">= {t('budget.computedTotal') || 'Total Computado'}</td>
+                      {monthlySummary.map((ms, i) => <td key={i} className="px-3 py-1.5 text-right text-gray-900 dark:text-gray-100">{fmt(ms.computed)}</td>)}
+                      <td className="px-3 py-1.5 text-right text-gray-900 dark:text-gray-100">{fmt(monthlySummary.reduce((s, ms) => s + ms.computed, 0))}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
+
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <div className="ml-auto flex items-center gap-3">
                 {!canEdit && <p className="text-sm text-gray-500 flex items-center gap-1"><HiOutlineLockClosed className="w-4 h-4" /> {t('budget.readOnly')}</p>}
@@ -416,6 +488,7 @@ export default function BudgetsPage() {
                 onRemoveRow={handleRemoveRow}
                 onRowClick={canEdit ? openEditPopup : undefined}
                 userAreas={allUserAreas}
+                showComputed={!showBase}
               />
             )}
           </div>

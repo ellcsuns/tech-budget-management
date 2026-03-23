@@ -345,6 +345,38 @@ export interface CompanyTotals {
   diff: number;
 }
 
+// Computed Budget Types
+export interface MonthBreakdown {
+  month: number;
+  base: number;
+  savings: number;
+  corrections: number;
+  computed: number;
+}
+
+export interface ComputedBudgetLine extends BudgetLine {
+  breakdown: MonthBreakdown[];
+  hasSavings: boolean;
+  hasCorrections: boolean;
+  computedM1: number;
+  computedM2: number;
+  computedM3: number;
+  computedM4: number;
+  computedM5: number;
+  computedM6: number;
+  computedM7: number;
+  computedM8: number;
+  computedM9: number;
+  computedM10: number;
+  computedM11: number;
+  computedM12: number;
+}
+
+export interface ComputedBudget extends Budget {
+  budgetLines: ComputedBudgetLine[];
+  monthlySummary: MonthBreakdown[];
+}
+
 
 // Budget Confirmation Types
 export interface BudgetConfirmationRequest {
