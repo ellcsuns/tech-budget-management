@@ -30,11 +30,14 @@ body {
 .dark .bg-gray-200 { background-color: #374151 !important; }
 
 /* Text colors */
+.dark .text-gray-950 { color: #f9fafb !important; }
+.dark .text-gray-900 { color: #f9fafb !important; }
 .dark .text-gray-800 { color: #f3f4f6 !important; }
 .dark .text-gray-700 { color: #e5e7eb !important; }
 .dark .text-gray-600 { color: #d1d5db !important; }
 .dark .text-gray-500 { color: #9ca3af !important; }
 .dark .text-gray-400 { color: #9ca3af !important; }
+.dark .text-gray-300 { color: #9ca3af !important; }
 
 /* Borders */
 .dark .border-gray-200 { border-color: #374151 !important; }
@@ -72,6 +75,19 @@ body {
 .dark thead { background-color: #1a2332 !important; }
 .dark thead .bg-gray-50 { background-color: #1a2332 !important; }
 .dark tbody tr:hover { background-color: #283548 !important; }
+.dark tbody { background-color: #1f2937 !important; }
+.dark tfoot { background-color: #1a2332 !important; }
+.dark tfoot .bg-gray-100 { background-color: #1a2332 !important; }
+.dark td { color: #e5e7eb; }
+.dark th { color: #9ca3af !important; }
+
+/* Sticky cells in dark mode */
+.dark .sticky { background-color: #1f2937 !important; }
+.dark tr:hover .sticky { background-color: #283548 !important; }
+.dark tfoot .sticky { background-color: #1a2332 !important; }
+
+/* Font weight text visibility in dark mode - only for default gray text */
+.dark td.font-medium:not([class*="text-blue"]):not([class*="text-green"]):not([class*="text-red"]):not([class*="text-indigo"]):not([class*="text-emerald"]):not([class*="text-amber"]):not([class*="text-orange"]) { color: #e5e7eb; }
 
 /* Cards and shadows */
 .dark .shadow { box-shadow: 0 1px 3px 0 rgba(0,0,0,0.4), 0 1px 2px -1px rgba(0,0,0,0.4) !important; }
