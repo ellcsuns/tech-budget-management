@@ -40,7 +40,12 @@ api.interceptors.response.use(
       localStorage.removeItem('auth_token');
       if (window.location.pathname !== '/login') window.location.href = '/login';
     }
-    console.error('API Error:', error.response?.data || error.message);
+    // Attach technicalDetails to error for components to use
+    const data = error.response?.data;
+    if (data?.technicalDetails) {
+      error.technicalDetails = data.technicalDetails;
+    }
+    console.error('API Error:', data || error.message);
     return Promise.reject(error);
   }
 );
@@ -236,6 +241,7 @@ export const changeRequestApi = {
   getMyRequests: () => api.get<ChangeRequest[]>('/change-requests/my'),
   getPending: () => api.get<ChangeRequest[]>('/change-requests/pending'),
   getPendingCount: () => api.get<{ count: number }>('/change-requests/pending-count'),
+  getResolved: () => api.get<ChangeRequest[]>('/change-requests/resolved'),
   approve: (id: string) => api.post<ChangeRequest>(`/change-requests/${id}/approve`),
   approveMultiple: (requestIds: string[]) => api.post('/change-requests/approve-multiple', { requestIds }),
   reject: (id: string) => api.post<ChangeRequest>(`/change-requests/${id}/reject`),

@@ -6,6 +6,7 @@ export interface CreateRoleDTO {
   description: string;
   approveAllDirections?: boolean;
   approverTechDirectionIds?: string[];
+  canViewTechnicalErrors?: boolean;
   permissions: PermissionConfigDTO[];
 }
 
@@ -14,6 +15,7 @@ export interface UpdateRoleDTO {
   description?: string;
   approveAllDirections?: boolean;
   approverTechDirectionIds?: string[];
+  canViewTechnicalErrors?: boolean;
   permissions?: PermissionConfigDTO[];
 }
 
@@ -59,6 +61,7 @@ export class RoleService {
         description: data.description,
         approveAllDirections: data.approveAllDirections || false,
         approverTechDirectionIds: data.approverTechDirectionIds || [],
+        canViewTechnicalErrors: data.canViewTechnicalErrors || false,
         permissions: {
           create: normalizedPermissions.map(p => ({
             menuCode: p.menuCode,
@@ -130,7 +133,8 @@ export class RoleService {
         name: data.name,
         description: data.description,
         approveAllDirections: data.approveAllDirections,
-        approverTechDirectionIds: data.approverTechDirectionIds
+        approverTechDirectionIds: data.approverTechDirectionIds,
+        canViewTechnicalErrors: data.canViewTechnicalErrors,
       },
       include: {
         permissions: true

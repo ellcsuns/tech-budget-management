@@ -49,10 +49,20 @@ export class ExpenseService {
       if (!userArea) throw new Error(`Área de usuario ${userAreaId} no encontrada`);
     }
 
+    // Sanitize optional FK fields: convert empty string to null/undefined
+    const parentExpenseId = data.parentExpenseId && data.parentExpenseId.trim() !== '' ? data.parentExpenseId : null;
+    const categoryId = data.categoryId && data.categoryId.trim() !== '' ? data.categoryId : null;
+
     // Validar padre si se proporciona
-    if (data.parentExpenseId) {
-      const parent = await this.prisma.expense.findUnique({ where: { id: data.parentExpenseId } });
+    if (parentExpenseId) {
+      const parent = await this.prisma.expense.findUnique({ where: { id: parentExpenseId } });
       if (!parent) throw new Error('Gasto padre no encontrado');
+    }
+
+    // Validar categoría si se proporciona
+    if (categoryId) {
+      const catExists = await this.prisma.expenseCategory.findUnique({ where: { id: categoryId } });
+      if (!catExists) throw new Error('Categoría no encontrada');
     }
 
     return await this.prisma.expense.create({
@@ -62,8 +72,8 @@ export class ExpenseService {
         longDescription: data.longDescription,
         technologyDirections: data.technologyDirections,
         userAreas: data.userAreas,
-        parentExpenseId: data.parentExpenseId,
-        categoryId: data.categoryId
+        parentExpenseId: parentExpenseId,
+        categoryId: categoryId
       },
       include: {
         parentExpense: true,
@@ -112,7 +122,15 @@ export class ExpenseService {
 
     return await this.prisma.expense.update({
       where: { id },
-      data,
+      data: {
+        ...data,
+        parentExpenseId: data.parentExpenseId !== undefined
+          ? (data.parentExpenseId && data.parentExpenseId.trim() !== '' ? data.parentExpenseId : null)
+          : undefined,
+        categoryId: data.categoryId !== undefined
+          ? (data.categoryId && data.categoryId.trim() !== '' ? data.categoryId : null)
+          : undefined,
+      },
       include: {
         parentExpense: true,
         childExpenses: true,

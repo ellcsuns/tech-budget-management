@@ -28,6 +28,7 @@ export interface UserFilters {
 export interface UserWithPermissions extends User {
   roles: Role[];
   permissions: Array<{ menuCode: string; permissionType: PermissionType }>;
+  canViewTechnicalErrors: boolean;
 }
 
 export interface PaginatedUsers {
@@ -266,10 +267,13 @@ export class UserService {
 
     const roles = user.userRoles.map(ur => ur.role);
 
+    const canViewTechnicalErrors = user.userRoles.some(ur => ur.role.canViewTechnicalErrors);
+
     return {
       ...user,
       roles,
-      permissions
+      permissions,
+      canViewTechnicalErrors,
     };
   }
 

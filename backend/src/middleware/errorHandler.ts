@@ -3,12 +3,19 @@ import { Request, Response, NextFunction } from 'express';
 export function errorHandler(err: any, req: Request, res: Response, next: NextFunction) {
   console.error('Error:', err);
 
+  const technicalDetails = {
+    stack: err.stack || null,
+    code: err.code || null,
+    meta: err.meta || null,
+  };
+
   // Error de Prisma - violación de restricción única
   if (err.code === 'P2002') {
     return res.status(409).json({
       error: 'Conflicto de unicidad',
       message: 'Ya existe un registro con estos valores únicos',
-      details: err.meta
+      details: err.meta,
+      technicalDetails,
     });
   }
 
@@ -16,7 +23,8 @@ export function errorHandler(err: any, req: Request, res: Response, next: NextFu
   if (err.code === 'P2025') {
     return res.status(404).json({
       error: 'No encontrado',
-      message: 'El registro solicitado no existe'
+      message: 'El registro solicitado no existe',
+      technicalDetails,
     });
   }
 
@@ -25,7 +33,8 @@ export function errorHandler(err: any, req: Request, res: Response, next: NextFu
     return res.status(400).json({
       error: 'Referencia inválida',
       message: 'La referencia a otro registro no es válida',
-      details: err.meta
+      details: err.meta,
+      technicalDetails,
     });
   }
 
@@ -33,13 +42,15 @@ export function errorHandler(err: any, req: Request, res: Response, next: NextFu
   if (err.message) {
     return res.status(400).json({
       error: 'Error de validación',
-      message: err.message
+      message: err.message,
+      technicalDetails,
     });
   }
 
   // Error genérico
   res.status(500).json({
     error: 'Error interno del servidor',
-    message: 'Ocurrió un error inesperado'
+    message: 'Ocurrió un error inesperado',
+    technicalDetails,
   });
 }

@@ -7,7 +7,7 @@ import ConfirmationDialog from '../components/ConfirmationDialog';
 import { fmt } from '../utils/formatters';
 import { useI18n } from '../contexts/I18nContext';
 
-const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+const MONTHS = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12'];
 
 export default function SavingsPage() {
   const { t } = useI18n();

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { api } from '../services/api';
+import { setCanViewTechnicalErrors } from '../components/Toast';
 
 interface User {
   id: string;
@@ -19,6 +20,7 @@ interface AuthContextType {
   permissions: Permission[];
   isAuthenticated: boolean;
   isLoading: boolean;
+  canViewTechnicalErrors: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   hasPermission: (menuCode: string, permissionType: 'VIEW' | 'MODIFY' | 'VIEW_OWN' | 'MODIFY_OWN' | 'APPROVE_BUDGET') => boolean;
@@ -30,9 +32,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [canViewTechErrors, setCanViewTechErrors] = useState(false);
 
   useEffect(() => {
-    // Load user from stored token on mount
     const token = localStorage.getItem('auth_token');
     if (token) {
       validateAndLoadUser(token);
@@ -41,13 +43,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  useEffect(() => {
+    setCanViewTechnicalErrors(canViewTechErrors);
+  }, [canViewTechErrors]);
+
   const validateAndLoadUser = async (_token: string) => {
     try {
       const response = await api.get('/auth/me');
       setUser(response.data);
       setPermissions(response.data.permissions || []);
+      setCanViewTechErrors(response.data.canViewTechnicalErrors || false);
     } catch (error) {
-      // Token is invalid, clear it
       localStorage.removeItem('auth_token');
     } finally {
       setIsLoading(false);
@@ -59,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('auth_token', response.data.token);
     setUser(response.data.user);
     setPermissions(response.data.permissions || []);
+    setCanViewTechErrors(response.data.canViewTechnicalErrors || false);
   };
 
   const logout = () => {
@@ -69,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('auth_token');
     setUser(null);
     setPermissions([]);
+    setCanViewTechErrors(false);
   };
 
   const hasPermission = (menuCode: string, permissionType: 'VIEW' | 'MODIFY' | 'VIEW_OWN' | 'MODIFY_OWN' | 'APPROVE_BUDGET'): boolean => {
@@ -78,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, permissions, isAuthenticated: !!user, isLoading, login, logout, hasPermission }}>
+    <AuthContext.Provider value={{ user, permissions, isAuthenticated: !!user, isLoading, canViewTechnicalErrors: canViewTechErrors, login, logout, hasPermission }}>
       {children}
     </AuthContext.Provider>
   );

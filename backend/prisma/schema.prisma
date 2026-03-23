@@ -282,6 +282,7 @@ model Role {
   isSystem                 Boolean      @default(false)
   approveAllDirections     Boolean      @default(false)
   approverTechDirectionIds String[]
+  canViewTechnicalErrors   Boolean      @default(false)
   createdAt                DateTime     @default(now())
   updatedAt                DateTime     @updatedAt
   userRoles                UserRole[]

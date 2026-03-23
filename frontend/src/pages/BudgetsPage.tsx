@@ -10,7 +10,7 @@ import { HiOutlineLockClosed, HiOutlinePlusCircle } from 'react-icons/hi2';
 import { showToast } from '../components/Toast';
 import { useI18n } from '../contexts/I18nContext';
 
-const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+const MONTHS = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12'];
 
 export default function BudgetsPage() {
   const currentMonth = new Date().getMonth() + 1;
@@ -132,7 +132,7 @@ export default function BudgetsPage() {
       setShowAddForm(false); setAddExpenseId(''); setAddCompanyId(''); setAddTechDirId(''); setAddMonthlyValues(Array(12).fill(0));
       loadBudgetDetails(selectedBudget.id);
       showToast(t('budget.lineAdded'), 'success');
-    } catch (error: any) { showToast(error.response?.data?.error || 'Error al agregar línea', 'error'); }
+    } catch (error: any) { showToast(error.response?.data?.error || 'Error al agregar línea', 'error', error.response?.data?.technicalDetails); }
   };
 
   const openEditPopup = (bl: BudgetLine) => {

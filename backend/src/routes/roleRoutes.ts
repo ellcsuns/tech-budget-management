@@ -80,7 +80,7 @@ export function roleRouter(prisma: PrismaClient): Router {
     requirePermission(MENU_CODES.ROLES, PermissionType.MODIFY),
     async (req, res) => {
       try {
-        const { name, description, permissions, approveAllDirections, approverTechDirectionIds } = req.body;
+        const { name, description, permissions, approveAllDirections, approverTechDirectionIds, canViewTechnicalErrors } = req.body;
 
         if (!name || !description || !permissions || permissions.length === 0) {
           return res.status(400).json({
@@ -94,6 +94,7 @@ export function roleRouter(prisma: PrismaClient): Router {
           description,
           approveAllDirections,
           approverTechDirectionIds,
+          canViewTechnicalErrors,
           permissions
         });
 
@@ -118,13 +119,14 @@ export function roleRouter(prisma: PrismaClient): Router {
     requirePermission(MENU_CODES.ROLES, PermissionType.MODIFY),
     async (req, res) => {
       try {
-        const { name, description, permissions, approveAllDirections, approverTechDirectionIds } = req.body;
+        const { name, description, permissions, approveAllDirections, approverTechDirectionIds, canViewTechnicalErrors } = req.body;
 
         const role = await roleService.updateRole(req.params.id, {
           name,
           description,
           approveAllDirections,
           approverTechDirectionIds,
+          canViewTechnicalErrors,
           permissions
         });
 

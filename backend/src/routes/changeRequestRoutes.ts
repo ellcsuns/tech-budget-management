@@ -43,6 +43,13 @@ export function changeRequestRouter(prisma: PrismaClient) {
     } catch (error) { next(error); }
   });
 
+  // Get resolved (approved/rejected) requests - history
+  router.get('/resolved', authenticateJWT, requirePermission(MENU_CODES.APPROVALS, PermissionType.VIEW), async (req, res, next) => {
+    try {
+      res.json(await service.getResolved());
+    } catch (error) { next(error); }
+  });
+
   // Get pending requests for approver
   router.get('/pending', authenticateJWT, requirePermission(MENU_CODES.APPROVALS, PermissionType.VIEW), async (req, res, next) => {
     try {

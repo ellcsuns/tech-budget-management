@@ -126,6 +126,19 @@ export class ChangeRequestService {
     });
   }
 
+  async getResolved() {
+    return await this.prisma.budgetLineChangeRequest.findMany({
+      where: { status: { in: [ChangeRequestStatus.APPROVED, ChangeRequestStatus.REJECTED] } },
+      include: {
+        budgetLine: { include: { expense: true, financialCompany: true, technologyDirection: true, budget: true } },
+        requestedBy: { select: { id: true, username: true, fullName: true } },
+        approvedBy: { select: { id: true, username: true, fullName: true } }
+      },
+      orderBy: { resolvedAt: 'desc' },
+      take: 200
+    });
+  }
+
   async approveMultiple(requestIds: string[], approverId: string, sourceBudgetId?: string) {
     return await this.prisma.$transaction(async (tx: any) => {
       const results = [];

@@ -13,6 +13,7 @@ interface Role {
   isSystem: boolean;
   approveAllDirections: boolean;
   approverTechDirectionIds: string[];
+  canViewTechnicalErrors: boolean;
   userCount: number;
   permissions: Array<{ menuCode: string; permissionType: string }>;
 }
@@ -52,6 +53,7 @@ export default function RoleManagementPage() {
     name: '', description: '',
     approveAllDirections: false,
     approverTechDirectionIds: [] as string[],
+    canViewTechnicalErrors: false,
     permissions: [] as Array<{ menuCode: string; permissionType: string }>
   });
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -76,7 +78,7 @@ export default function RoleManagementPage() {
 
   const handleCreate = () => {
     setSelectedRole(null);
-    setFormData({ name: '', description: '', approveAllDirections: false, approverTechDirectionIds: [], permissions: [] });
+    setFormData({ name: '', description: '', approveAllDirections: false, approverTechDirectionIds: [], canViewTechnicalErrors: false, permissions: [] });
     setIsModalOpen(true);
   };
 
@@ -89,6 +91,7 @@ export default function RoleManagementPage() {
         name: r.name, description: r.description,
         approveAllDirections: r.approveAllDirections || false,
         approverTechDirectionIds: r.approverTechDirectionIds || [],
+        canViewTechnicalErrors: r.canViewTechnicalErrors || false,
         permissions: r.permissions || []
       });
       setIsModalOpen(true);
@@ -102,7 +105,7 @@ export default function RoleManagementPage() {
       else await api.post('/roles', formData);
       setIsModalOpen(false);
       loadRoles();
-    } catch (error: any) { showToast(error.response?.data?.message || 'Error al guardar rol', 'error'); }
+    } catch (error: any) { showToast(error.response?.data?.message || 'Error al guardar rol', 'error', error.response?.data?.technicalDetails); }
   };
 
   const handleDelete = async (role: Role) => {
@@ -240,6 +243,14 @@ export default function RoleManagementPage() {
                 {/* Permissions */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">{t('roles.permissionsLabel')}</label>
+
+                {/* Technical Errors Permission */}
+                <div className="border rounded-md p-4 bg-gray-50 mb-4">
+                  <label className="flex items-center gap-2">
+                    <input type="checkbox" checked={formData.canViewTechnicalErrors} onChange={(e) => setFormData({ ...formData, canViewTechnicalErrors: e.target.checked })} className="w-4 h-4" />
+                    <span className="text-sm">Puede ver errores técnicos / Can view technical errors</span>
+                  </label>
+                </div>
                   <div className="border rounded-md p-4 max-h-96 overflow-y-auto">
                     <table className="w-full">
                       <thead>
