@@ -715,9 +715,17 @@ const translations: TranslationSeed[] = [
   { key: 'topbar.lightMode', es: 'Modo claro', en: 'Light mode', category: 'topbar' },
   { key: 'topbar.notifications', es: 'Aprobaciones pendientes', en: 'Pending approvals', category: 'topbar' },
   { key: 'topbar.editProfile', es: 'Editar perfil', en: 'Edit profile', category: 'topbar' },
+  { key: 'topbar.viewProfile', es: 'Ver perfil', en: 'View profile', category: 'topbar' },
   { key: 'topbar.firstName', es: 'Nombre', en: 'First name', category: 'topbar' },
   { key: 'topbar.lastName', es: 'Apellido', en: 'Last name', category: 'topbar' },
   { key: 'topbar.email', es: 'Correo electrónico', en: 'Email', category: 'topbar' },
+  { key: 'topbar.username', es: 'Usuario', en: 'Username', category: 'topbar' },
+  { key: 'topbar.roles', es: 'Roles', en: 'Roles', category: 'topbar' },
+  { key: 'topbar.status', es: 'Estado', en: 'Status', category: 'topbar' },
+  { key: 'topbar.active', es: 'Activo', en: 'Active', category: 'topbar' },
+  { key: 'topbar.inactive', es: 'Inactivo', en: 'Inactive', category: 'topbar' },
+  { key: 'topbar.lastLogin', es: 'Último acceso', en: 'Last login', category: 'topbar' },
+  { key: 'topbar.memberSince', es: 'Miembro desde', en: 'Member since', category: 'topbar' },
 
   // =============================================
   // BUDGET CONFIRMATION

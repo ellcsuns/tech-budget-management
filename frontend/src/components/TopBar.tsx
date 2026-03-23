@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useI18n } from '../contexts/I18nContext';
 import { useTheme, COLOR_THEMES, FONT_SIZES } from '../contexts/ThemeContext';
-import { changeRequestApi, budgetConfirmationApi, profileApi } from '../services/api';
+import { changeRequestApi, budgetConfirmationApi } from '../services/api';
 import {
   HiOutlineLanguage,
   HiOutlineUserGroup,
@@ -11,7 +11,8 @@ import {
   HiOutlineClipboardDocumentList,
   HiOutlineCheckCircle,
   HiOutlineArrowRightOnRectangle,
-  HiOutlinePencilSquare,
+  HiOutlineIdentification,
+  HiOutlineQuestionMarkCircle,
   HiOutlineXMark,
 } from 'react-icons/hi2';
 
@@ -22,7 +23,7 @@ const LANGUAGES = [
 ];
 
 export default function TopBar() {
-  const { user, logout, refreshUser } = useAuth();
+  const { user, logout } = useAuth();
   const { locale, setLocale, t } = useI18n();
   const { darkMode, setDarkMode, colorTheme, setColorTheme, fontSize, setFontSize } = useTheme();
   const navigate = useNavigate();
@@ -33,10 +34,7 @@ export default function TopBar() {
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const [showFontMenu, setShowFontMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showProfileEdit, setShowProfileEdit] = useState(false);
-  const [profileFirstName, setProfileFirstName] = useState('');
-  const [profileLastName, setProfileLastName] = useState('');
-  const [profileSaving, setProfileSaving] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
 
   const langRef = useRef<HTMLDivElement>(null);
   const themeRef = useRef<HTMLDivElement>(null);
@@ -67,10 +65,7 @@ export default function TopBar() {
       if (langRef.current && !langRef.current.contains(e.target as Node)) setShowLangMenu(false);
       if (themeRef.current && !themeRef.current.contains(e.target as Node)) setShowThemeMenu(false);
       if (fontRef.current && !fontRef.current.contains(e.target as Node)) setShowFontMenu(false);
-      if (userRef.current && !userRef.current.contains(e.target as Node)) {
-        setShowUserMenu(false);
-        setShowProfileEdit(false);
-      }
+      if (userRef.current && !userRef.current.contains(e.target as Node)) setShowUserMenu(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -83,27 +78,11 @@ export default function TopBar() {
     setShowLangMenu(false);
   };
 
-  const openProfileEdit = () => {
-    const parts = (user?.fullName || '').split(' ');
-    setProfileFirstName(parts[0] || '');
-    setProfileLastName(parts.slice(1).join(' ') || '');
-    setShowProfileEdit(true);
-    setShowUserMenu(false);
-  };
-
-  const handleProfileSave = async () => {
-    const fullName = `${profileFirstName.trim()} ${profileLastName.trim()}`.trim();
-    if (!fullName) return;
-    setProfileSaving(true);
-    try {
-      await profileApi.updateProfile({ fullName });
-      await refreshUser();
-      setShowProfileEdit(false);
-    } catch (err) {
-      console.error('Profile update failed:', err);
-    } finally {
-      setProfileSaving(false);
-    }
+  const formatDate = (dateStr?: string | null) => {
+    if (!dateStr) return '-';
+    return new Date(dateStr).toLocaleString(locale === 'es' ? 'es-ES' : 'en-US', {
+      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
   };
 
   // Icons
@@ -122,6 +101,10 @@ export default function TopBar() {
       <path strokeLinecap="round" strokeLinejoin="round" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M6.75 21A3.75 3.75 0 013 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 003.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008z" />
     </svg>
   );
+
+  // Extract user details for profile popup
+  const userRoles = user?.roles?.map(r => r.name).filter(Boolean) || 
+                    user?.userRoles?.map(ur => ur.role?.name).filter(Boolean) || [];
 
   return (
     <div className="h-12 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 flex-shrink-0">
@@ -239,11 +222,17 @@ export default function TopBar() {
                 <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{user?.fullName}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
               </div>
-              <button onClick={openProfileEdit}
+              <button onClick={() => { setShowProfile(true); setShowUserMenu(false); }}
                 className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2">
-                <HiOutlinePencilSquare className="w-4 h-4" />
-                {t('topbar.editProfile') || 'Editar perfil'}
+                <HiOutlineIdentification className="w-4 h-4" />
+                {t('topbar.viewProfile') || 'Ver perfil'}
               </button>
+              <button onClick={() => { navigate('/help'); setShowUserMenu(false); }}
+                className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2">
+                <HiOutlineQuestionMarkCircle className="w-4 h-4" />
+                {t('menu.help') || 'Ayuda'}
+              </button>
+              <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
               <button onClick={logout}
                 className="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors flex items-center gap-2">
                 <HiOutlineArrowRightOnRectangle className="w-4 h-4" />
@@ -254,41 +243,74 @@ export default function TopBar() {
         </div>
       </div>
 
-      {/* Profile edit modal */}
-      {showProfileEdit && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setShowProfileEdit(false)}>
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('topbar.editProfile') || 'Editar perfil'}</h3>
-              <button onClick={() => setShowProfileEdit(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+      {/* View Profile popup */}
+      {showProfile && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setShowProfile(false)}>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md mx-4" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('topbar.viewProfile') || 'Mi perfil'}</h3>
+              <button onClick={() => setShowProfile(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                 <HiOutlineXMark className="w-5 h-5" />
               </button>
             </div>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('topbar.email') || 'Correo electrónico'}</label>
-                <input type="text" value={user?.email || ''} disabled
-                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm cursor-not-allowed" />
+
+            {/* Avatar + Name */}
+            <div className="flex items-center gap-4 px-6 py-5 bg-gray-50 dark:bg-gray-750">
+              <div className="w-14 h-14 rounded-full bg-accent/20 flex items-center justify-center text-accent text-xl font-bold flex-shrink-0">
+                {(user?.fullName || user?.username || '?').charAt(0).toUpperCase()}
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('topbar.firstName') || 'Nombre'}</label>
-                <input type="text" value={profileFirstName} onChange={e => setProfileFirstName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-accent focus:border-accent" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('topbar.lastName') || 'Apellido'}</label>
-                <input type="text" value={profileLastName} onChange={e => setProfileLastName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-accent focus:border-accent" />
+              <div className="min-w-0">
+                <p className="text-lg font-semibold text-gray-900 dark:text-white truncate">{user?.fullName}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">@{user?.username}</p>
               </div>
             </div>
-            <div className="flex justify-end gap-2 mt-5">
-              <button onClick={() => setShowProfileEdit(false)}
-                className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                {t('btn.cancel') || 'Cancelar'}
-              </button>
-              <button onClick={handleProfileSave} disabled={profileSaving || (!profileFirstName.trim() && !profileLastName.trim())}
-                className="px-4 py-2 text-sm bg-accent text-white rounded-lg hover:opacity-90 transition-colors disabled:opacity-50">
-                {profileSaving ? (t('btn.saving') || 'Guardando...') : (t('btn.save') || 'Guardar')}
+
+            {/* Info rows */}
+            <div className="px-6 py-4 space-y-3">
+              <div className="flex justify-between items-start">
+                <span className="text-sm text-gray-500 dark:text-gray-400">{t('topbar.email') || 'Correo electrónico'}</span>
+                <span className="text-sm text-gray-900 dark:text-white text-right">{user?.email || '-'}</span>
+              </div>
+              <div className="flex justify-between items-start">
+                <span className="text-sm text-gray-500 dark:text-gray-400">{t('topbar.username') || 'Usuario'}</span>
+                <span className="text-sm text-gray-900 dark:text-white text-right">{user?.username || '-'}</span>
+              </div>
+              {userRoles.length > 0 && (
+                <div className="flex justify-between items-start">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">{t('topbar.roles') || 'Roles'}</span>
+                  <div className="flex flex-wrap gap-1 justify-end max-w-[200px]">
+                    {userRoles.map((role: string, i: number) => (
+                      <span key={i} className="inline-block px-2 py-0.5 text-xs font-medium bg-accent/10 text-accent rounded-full">{role}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="flex justify-between items-start">
+                <span className="text-sm text-gray-500 dark:text-gray-400">{t('topbar.status') || 'Estado'}</span>
+                <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full ${user?.active !== false ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                  {user?.active !== false ? (t('topbar.active') || 'Activo') : (t('topbar.inactive') || 'Inactivo')}
+                </span>
+              </div>
+              {user?.lastLoginAt && (
+                <div className="flex justify-between items-start">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">{t('topbar.lastLogin') || 'Último acceso'}</span>
+                  <span className="text-sm text-gray-900 dark:text-white text-right">{formatDate(user.lastLoginAt)}</span>
+                </div>
+              )}
+              {user?.createdAt && (
+                <div className="flex justify-between items-start">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">{t('topbar.memberSince') || 'Miembro desde'}</span>
+                  <span className="text-sm text-gray-900 dark:text-white text-right">{formatDate(user.createdAt)}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+              <button onClick={() => setShowProfile(false)}
+                className="px-4 py-2 text-sm bg-accent text-white rounded-lg hover:opacity-90 transition-colors">
+                {t('btn.close') || 'Cerrar'}
               </button>
             </div>
           </div>

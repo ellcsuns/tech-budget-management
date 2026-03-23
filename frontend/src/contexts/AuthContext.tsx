@@ -7,7 +7,13 @@ interface User {
   username: string;
   email: string;
   fullName: string;
+  active?: boolean;
   technologyDirectionId?: string | null;
+  lastLoginAt?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  roles?: { id: string; name: string; description: string }[];
+  userRoles?: { role: { id: string; name: string; description: string } }[];
 }
 
 interface Permission {
