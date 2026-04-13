@@ -287,6 +287,15 @@ const translations: TranslationSeed[] = [
   { key: 'saving.exceedsBudget', es: 'El ahorro excede el presupuesto disponible en uno o más meses', en: 'Saving exceeds available budget in one or more months', category: 'ahorros' },
 
   // =============================================
+  // LEYENDAS
+  // =============================================
+  { key: 'legend.savingApplied', es: 'Ahorro aplicado (presupuesto)', en: 'Saving applied (budget)', category: 'legend' },
+  { key: 'legend.deferral', es: 'Diferido (contabilizado como real)', en: 'Deferral (counted as real)', category: 'legend' },
+  { key: 'legend.deferralInReal', es: 'Los meses marcados en violeta incluyen diferidos contabilizados como transacciones reales', en: 'Months marked in violet include deferrals counted as real transactions', category: 'legend' },
+  { key: 'deferral.title', es: 'Diferidos', en: 'Deferrals', category: 'diferidos' },
+  { key: 'deferral.monthlyAmount', es: 'Mensual', en: 'Monthly', category: 'diferidos' },
+
+  // =============================================
   // DIFERIDOS
   // =============================================
   { key: 'deferral.new', es: 'Nuevo Diferido', en: 'New Deferral', category: 'diferidos' },

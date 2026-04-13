@@ -18,10 +18,13 @@ export interface MonthlyBreakdown {
   committed: number;
   real: number;
   diff: number;
+  hasDeferral: boolean;
+  deferralAmount: number;
 }
 
 export function calcMonthlyBreakdown(budgetLine: BudgetLine, activeSavings: Saving[]): MonthlyBreakdown[] {
   const lineSavings = activeSavings.filter(s => s.budgetLineId === budgetLine.id);
+  const lineDeferrals = budgetLine.deferrals || [];
   const result: MonthlyBreakdown[] = [];
   for (let m = 1; m <= 12; m++) {
     const planVal = Number((budgetLine as any)[`planM${m}`]) || 0;
@@ -30,13 +33,20 @@ export function calcMonthlyBreakdown(budgetLine: BudgetLine, activeSavings: Savi
     const budget = planVal - savingAmount;
     const committedTxns = budgetLine.transactions?.filter(t => t.month === m && t.type === 'COMMITTED') || [];
     const realTxns = budgetLine.transactions?.filter(t => t.month === m && t.type === 'REAL') || [];
-    // Calculate committed using pending balance (transactionValue - compensatedAmount)
     const committed = committedTxns.reduce((sum, t) => {
       const pending = Number(t.transactionValue) - Number(t.compensatedAmount || 0);
       return sum + pending;
     }, 0);
     const real = realTxns.reduce((sum, t) => sum + Number(t.transactionValue), 0);
-    result.push({ month: MONTHS[m - 1], budget, committed, real, diff: budget - committed - real });
+    // Deferral info
+    const matchingDeferrals = lineDeferrals.filter(d => m >= d.startMonth && m <= d.endMonth);
+    const hasDeferral = matchingDeferrals.length > 0;
+    let deferralAmount = 0;
+    matchingDeferrals.forEach(d => {
+      const monthCount = d.endMonth - d.startMonth + 1;
+      deferralAmount += Number(d.totalAmount) / monthCount;
+    });
+    result.push({ month: MONTHS[m - 1], budget, committed, real, diff: budget - committed - real, hasDeferral, deferralAmount });
   }
   return result;
 }
@@ -192,11 +202,16 @@ export default function BudgetLineDetailPopup({ budgetLine, activeSavings, onClo
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {breakdown.map((row, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 font-medium text-gray-700">{row.month}</td>
+                  <tr key={i} className={`hover:bg-gray-50 ${row.hasDeferral ? 'bg-violet-50' : ''}`}>
+                    <td className="px-4 py-2 font-medium text-gray-700">
+                      <span className="inline-flex items-center gap-1">
+                        {row.month}
+                        {row.hasDeferral && <span className="w-2 h-2 rounded-full bg-violet-400 flex-shrink-0" title={`Diferido: ${fmt(row.deferralAmount)}`} />}
+                      </span>
+                    </td>
                     <td className="px-4 py-2 text-right">{fmt(row.budget)}</td>
                     <td className="px-4 py-2 text-right text-blue-600">{row.committed > 0 ? fmt(row.committed) : '-'}</td>
-                    <td className="px-4 py-2 text-right text-green-600">{row.real > 0 ? fmt(row.real) : '-'}</td>
+                    <td className={`px-4 py-2 text-right ${row.hasDeferral ? 'text-violet-700 font-medium' : 'text-green-600'}`}>{row.real > 0 ? fmt(row.real) : '-'}</td>
                     <td className={`px-4 py-2 text-right font-medium ${getDiffColor(row.diff)}`}>{fmt(row.diff)}</td>
                   </tr>
                 ))}
@@ -212,6 +227,47 @@ export default function BudgetLineDetailPopup({ budgetLine, activeSavings, onClo
               </tfoot>
             </table>
           </div>
+
+          {/* Deferral legend */}
+          {breakdown.some(r => r.hasDeferral) && (
+            <div className="flex items-center gap-2 mb-4 text-xs text-gray-500">
+              <span className="inline-flex items-center gap-1"><span className="w-3 h-3 rounded bg-violet-50 border border-violet-300" /><span className="w-2 h-2 rounded-full bg-violet-400" /></span>
+              {t('legend.deferralInReal') || 'Los meses marcados en violeta incluyen diferidos contabilizados como transacciones reales'}
+            </div>
+          )}
+
+          {/* Deferrals detail */}
+          {budgetLine.deferrals && budgetLine.deferrals.length > 0 && (
+            <div className="mb-4">
+              <h3 className="text-sm font-bold mb-2 text-violet-700">{t('deferral.title') || 'Diferidos'} ({budgetLine.deferrals.length})</h3>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 text-xs">
+                  <thead className="bg-violet-50">
+                    <tr>
+                      <th className="px-2 py-1 text-left text-gray-500">{t('label.description')}</th>
+                      <th className="px-2 py-1 text-right text-gray-500">{t('label.amount')}</th>
+                      <th className="px-2 py-1 text-center text-gray-500">{t('deferral.period') || 'Período'}</th>
+                      <th className="px-2 py-1 text-right text-gray-500">{t('deferral.monthlyAmount') || 'Mensual'}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {budgetLine.deferrals.map(def => {
+                      const monthCount = def.endMonth - def.startMonth + 1;
+                      const monthly = Number(def.totalAmount) / monthCount;
+                      return (
+                        <tr key={def.id} className="bg-violet-50/50">
+                          <td className="px-2 py-1">{def.description}</td>
+                          <td className="px-2 py-1 text-right text-violet-700 font-medium">{fmt(Number(def.totalAmount))}</td>
+                          <td className="px-2 py-1 text-center">{MONTHS[def.startMonth - 1]} - {MONTHS[def.endMonth - 1]}</td>
+                          <td className="px-2 py-1 text-right text-violet-600">{fmt(monthly)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {/* Transactions side by side */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">

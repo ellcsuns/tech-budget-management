@@ -68,8 +68,14 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
       });
       const budget = originalBudget - savingAmount;
       const hasSaving = savingAmount > 0;
-      // Check if any deferral covers this month
-      const hasDeferral = lineDeferrals.some(d => month >= d.startMonth && month <= d.endMonth);
+      // Check if any deferral covers this month and compute deferral amount
+      const matchingDeferrals = lineDeferrals.filter(d => month >= d.startMonth && month <= d.endMonth);
+      const hasDeferral = matchingDeferrals.length > 0;
+      let deferralAmount = 0;
+      matchingDeferrals.forEach(d => {
+        const monthCount = d.endMonth - d.startMonth + 1;
+        deferralAmount += Number(d.totalAmount) / monthCount;
+      });
       const committedTxns = bl.transactions?.filter(t => t.month === month && t.type === 'COMMITTED') || [];
       const realTxns = bl.transactions?.filter(t => t.month === month && t.type === 'REAL') || [];
       values.push({
@@ -79,6 +85,7 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
         savingAmount,
         hasSaving,
         hasDeferral,
+        deferralAmount,
         committed: committedTxns.reduce((sum, t) => sum + (Number(t.transactionValue) - Number(t.compensatedAmount)), 0),
         real: realTxns.reduce((sum, t) => sum + Number(t.transactionValue), 0)
       });
@@ -304,9 +311,9 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
                       )}
                       {filters.visibleColumns.committed && <td className="px-2 py-3 text-sm text-right text-blue-600">{value.committed > 0 ? fmt(value.committed) : '-'}</td>}
                       {filters.visibleColumns.real && (
-                        <td className="px-2 py-3 text-sm text-right text-green-600">
+                        <td className={`px-2 py-3 text-sm text-right ${value.hasDeferral ? 'bg-violet-50 text-violet-700' : 'text-green-600'}`}>
                           <span className="inline-flex items-center gap-1 justify-end">
-                            {value.hasDeferral && value.real > 0 && <span className="w-2 h-2 rounded-full bg-violet-400 flex-shrink-0" title="Diferido" />}
+                            {value.hasDeferral && value.real > 0 && <span className="w-2 h-2 rounded-full bg-violet-400 flex-shrink-0" title={`Diferido: ${fmt(value.deferralAmount)}`} />}
                             {value.real > 0 ? fmt(value.real) : '-'}
                           </span>
                         </td>
@@ -352,8 +359,8 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
       </div>
       {/* Legend */}
       <div className="flex items-center gap-4 mt-2 px-2 text-xs text-gray-500">
-        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" /> Ahorro aplicado (presupuesto)</span>
-        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-violet-400" /> Diferido (real)</span>
+        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" /> {t('legend.savingApplied') || 'Ahorro aplicado (presupuesto)'}</span>
+        <span className="inline-flex items-center gap-1"><span className="w-3 h-3 rounded bg-violet-50 border border-violet-300" /><span className="w-2 h-2 rounded-full bg-violet-400" /> {t('legend.deferral') || 'Diferido (contabilizado como real)'}</span>
       </div>
       {showBudgetLineDetail && selectedBudgetLine && (
         <BudgetLineDetailPopup budgetLine={selectedBudgetLine} activeSavings={activeSavings} onClose={() => { setShowBudgetLineDetail(false); setSelectedBudgetLine(null); }} />

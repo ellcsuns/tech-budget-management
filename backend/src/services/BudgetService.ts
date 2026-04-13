@@ -64,6 +64,7 @@ export class BudgetService {
             financialCompany: true,
             technologyDirection: true,
             transactions: true,
+            deferrals: true,
             lastModifiedBy: { select: { id: true, username: true, fullName: true } },
             savings: true
           }
@@ -119,6 +120,7 @@ export class BudgetService {
           financialCompany: true,
           technologyDirection: true,
           transactions: true,
+          deferrals: true,
           lastModifiedBy: { select: { id: true, username: true, fullName: true } },
           savings: { where: { status: SavingStatus.ACTIVE } }
         }
@@ -290,6 +292,7 @@ export class BudgetService {
             financialCompany: true,
             technologyDirection: true,
             transactions: true,
+            deferrals: true,
             lastModifiedBy: { select: { id: true, username: true, fullName: true } },
             savings: { where: { status: SavingStatus.ACTIVE } },
             changeRequests: { where: { status: ChangeRequestStatus.APPROVED } }
