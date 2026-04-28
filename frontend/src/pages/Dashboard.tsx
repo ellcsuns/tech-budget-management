@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { budgetApi } from '../services/api';
-import type { BudgetLine, CompanyTotals, ComputedBudgetLine, MonthBreakdown } from '../types';
+import { budgetApi, savingsApi } from '../services/api';
+import type { BudgetLine, Saving, CompanyTotals, ComputedBudgetLine, MonthBreakdown } from '../types';
 import ExpenseTable from '../components/ExpenseTable';
 import FilterPanel from '../components/FilterPanel';
 import { fmt } from '../utils/formatters';
@@ -11,6 +11,7 @@ const MONTHS = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M1
 export default function Dashboard() {
   const { t } = useI18n();
   const [budgetLines, setBudgetLines] = useState<ComputedBudgetLine[]>([]);
+  const [activeSavings, setActiveSavings] = useState<Saving[]>([]);
   const [monthlySummary, setMonthlySummary] = useState<MonthBreakdown[]>([]);
   const [loading, setLoading] = useState(true);
   const [noBudget, setNoBudget] = useState(false);
@@ -31,6 +32,12 @@ export default function Dashboard() {
     try {
       const response = await budgetApi.getActive();
       const budget = response.data;
+      // Load active savings
+      try {
+        const savingsRes = await savingsApi.getAll({ budgetId: budget.id, status: 'ACTIVE' });
+        setActiveSavings(savingsRes.data);
+      } catch { setActiveSavings([]); }
+      // Load computed budget
       try {
         const computedRes = await budgetApi.getComputed(budget.id);
         setBudgetLines(computedRes.data.budgetLines || []);
@@ -90,6 +97,18 @@ export default function Dashboard() {
     return Array.from(map.values());
   }, [filteredLines, showBase]);
 
+  // Currency totals
+  const currencyTotals = useMemo(() => {
+    const map = new Map<string, number>();
+    filteredLines.forEach(bl => {
+      const curr = bl.currency || 'USD';
+      let plan = 0;
+      for (let m = 1; m <= 12; m++) plan += getVal(bl, m);
+      map.set(curr, (map.get(curr) || 0) + plan);
+    });
+    return Array.from(map.entries());
+  }, [filteredLines, showBase]);
+
   useEffect(() => {
     let budget = 0, committed = 0, real = 0;
     filteredLines.forEach(bl => {
@@ -126,24 +145,50 @@ export default function Dashboard() {
           showBaseToggle={true} showBase={showBase} onShowBaseChange={setShowBase}
           showSummaryToggle={true} showSummary={showSummary} onShowSummaryChange={setShowSummary}
         />
-        <div className="flex gap-4 flex-wrap mb-4">
-          <div className="bg-blue-50 dark:bg-blue-900/30 px-4 py-2 rounded-lg">
-            <span className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.budget') || 'Presupuesto'}</span>
+
+        {/* KPI totals */}
+        <div className="flex gap-3 flex-wrap justify-center mb-4">
+          <div className="bg-blue-50 dark:bg-blue-900/30 px-4 py-2 rounded-lg text-center">
+            <span className="text-[10px] text-gray-500 dark:text-gray-400 uppercase">{t('dashboard.budget') || 'Presupuesto'}</span>
             <p className="text-sm font-bold text-blue-800 dark:text-blue-300">${fmt(totals.budget)}</p>
           </div>
-          <div className="bg-indigo-50 dark:bg-indigo-900/30 px-4 py-2 rounded-lg">
-            <span className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.committed') || 'Comprometido'}</span>
+          <div className="bg-indigo-50 dark:bg-indigo-900/30 px-4 py-2 rounded-lg text-center">
+            <span className="text-[10px] text-gray-500 dark:text-gray-400 uppercase">{t('dashboard.committed') || 'Comprometido'}</span>
             <p className="text-sm font-bold text-indigo-800 dark:text-indigo-300">${fmt(totals.committed)}</p>
           </div>
-          <div className="bg-emerald-50 dark:bg-emerald-900/30 px-4 py-2 rounded-lg">
-            <span className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.real') || 'Real'}</span>
+          <div className="bg-emerald-50 dark:bg-emerald-900/30 px-4 py-2 rounded-lg text-center">
+            <span className="text-[10px] text-gray-500 dark:text-gray-400 uppercase">{t('dashboard.real') || 'Real'}</span>
             <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">${fmt(totals.real)}</p>
           </div>
-          <div className={`${getDiffBg()} px-4 py-2 rounded-lg`}>
-            <span className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.difference') || 'Diferencia'}</span>
+          <div className={`${getDiffBg()} px-4 py-2 rounded-lg text-center`}>
+            <span className="text-[10px] text-gray-500 dark:text-gray-400 uppercase">{t('dashboard.difference') || 'Diferencia'}</span>
             <p className={`text-sm font-bold ${getDiffColor()}`}>${fmt(totals.diff)}</p>
           </div>
         </div>
+
+        {/* Company + Currency totals */}
+        {(companyTotals.length > 1 || currencyTotals.length > 1) && (
+          <div className="flex gap-1.5 overflow-x-auto mb-3 pb-1">
+            {companyTotals.map(ct => (
+              <div key={ct.companyId} className="bg-gray-50 dark:bg-gray-700 px-2 py-1 rounded flex-shrink-0 text-center" title={ct.companyName}>
+                <div className="text-[10px] font-bold text-gray-700 dark:text-gray-300">{ct.companyCode}</div>
+                <div className="flex gap-1.5 text-[10px] whitespace-nowrap">
+                  <span className="text-blue-700 dark:text-blue-400">${fmt(ct.budget)}</span>
+                  <span className="text-indigo-700 dark:text-indigo-400">${fmt(ct.committed)}</span>
+                  <span className="text-emerald-700 dark:text-emerald-400">${fmt(ct.real)}</span>
+                </div>
+              </div>
+            ))}
+            {currencyTotals.length > 1 && currencyTotals.map(([curr, val]) => (
+              <div key={curr} className="bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded flex-shrink-0 text-center">
+                <div className="text-[10px] font-bold text-gray-700 dark:text-gray-300">{curr}</div>
+                <div className="text-[10px] text-blue-700 dark:text-blue-400 whitespace-nowrap">${fmt(val)}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Monthly summary */}
         {showSummary && monthlySummary.length > 0 && (
           <div className="border dark:border-gray-600 rounded-lg overflow-x-auto mb-4">
             <table className="min-w-full text-xs">
@@ -179,25 +224,9 @@ export default function Dashboard() {
             </table>
           </div>
         )}
-        {companyTotals.length > 1 && (
-          <div className="border-t dark:border-gray-600 pt-2 mb-1">
-            <div className="flex gap-1.5 overflow-x-auto">
-              {companyTotals.map(ct => (
-                <div key={ct.companyId} className="bg-gray-50 dark:bg-gray-700 px-2 py-1 rounded flex-shrink-0 text-center min-w-0" title={ct.companyName}>
-                  <div className="text-[10px] font-bold text-gray-700 dark:text-gray-300 mb-0.5">{ct.companyCode}</div>
-                  <div className="flex gap-1.5 text-[10px] whitespace-nowrap">
-                    <span className="text-blue-700 dark:text-blue-400">${fmt(ct.budget)}</span>
-                    <span className="text-indigo-700 dark:text-indigo-400">${fmt(ct.committed)}</span>
-                    <span className="text-emerald-700 dark:text-emerald-400">${fmt(ct.real)}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-        <ExpenseTable budgetLines={expenseTableLines} viewMode="COMPARISON" filters={filters} readOnly={true} onTotalsChange={setTotals} activeSavings={[]} />
+        <ExpenseTable budgetLines={expenseTableLines} viewMode="COMPARISON" filters={filters} readOnly={true} onTotalsChange={setTotals} activeSavings={activeSavings} />
       </div>
     </div>
   );
