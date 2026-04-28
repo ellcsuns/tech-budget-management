@@ -356,15 +356,9 @@ export default function BudgetsPage() {
       {selectedBudget && (
         <>
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-            <FilterPanel budgetLines={budgetLines} filters={filters} onFiltersChange={setFilters} />
-
-            {/* Summary toggle */}
-            <div className="flex items-center gap-2 mb-4">
-              <button onClick={() => setShowSummary(!showSummary)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all whitespace-nowrap ${showSummary ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700' : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 hover:border-gray-400'}`}>
-                {t('budget.showSummary') || 'Resumen Mensual'}
-              </button>
-            </div>
+            <FilterPanel budgetLines={budgetLines} filters={filters} onFiltersChange={setFilters}
+              showSummaryToggle={true} showSummary={showSummary} onShowSummaryChange={setShowSummary}
+            />
 
             {/* Monthly Summary Breakdown */}
             {showSummary && monthlySummary.length > 0 && (
@@ -403,15 +397,31 @@ export default function BudgetsPage() {
               </div>
             )}
 
-            <div className="flex flex-wrap items-center gap-3 mb-4">
-              <div className="flex gap-4 flex-wrap">
-                {Object.entries(totals).map(([curr, val]) => (
-                  <div key={curr} className="bg-blue-50 dark:bg-blue-900/30 px-4 py-2 rounded-lg">
-                    <span className="text-xs text-gray-500 dark:text-gray-400">Total {curr}</span>
-                    <p className="text-sm font-bold text-blue-800 dark:text-blue-300">${fmt(val as number)}</p>
+            <div className="flex gap-1.5 flex-wrap mb-3">
+              {Object.entries(totals).map(([curr, val]) => (
+                <div key={curr} className="bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded text-center flex-shrink-0">
+                  <div className="text-[10px] font-bold text-gray-700 dark:text-gray-300">{curr}</div>
+                  <div className="text-[10px] text-blue-700 dark:text-blue-400">${fmt(val as number)}</div>
+                </div>
+              ))}
+              {(() => {
+                const compMap = new Map<string, { code: string; name: string; total: number }>();
+                filteredLines.forEach(bl => {
+                  const cid = bl.financialCompanyId;
+                  if (!compMap.has(cid)) compMap.set(cid, { code: bl.financialCompany?.code || cid, name: bl.financialCompany?.name || '', total: 0 });
+                  const entry = compMap.get(cid)!;
+                  for (let m = 1; m <= 12; m++) {
+                    if (!showBase && (bl as any)[`computedM${m}`] !== undefined) entry.total += Number((bl as any)[`computedM${m}`]) || 0;
+                    else entry.total += getPlanValue(bl, m);
+                  }
+                });
+                return Array.from(compMap.values()).map(ct => (
+                  <div key={ct.code} className="bg-gray-50 dark:bg-gray-700 px-2 py-1 rounded text-center flex-shrink-0" title={ct.name}>
+                    <div className="text-[10px] font-bold text-gray-700 dark:text-gray-300">{ct.code}</div>
+                    <div className="text-[10px] text-blue-700 dark:text-blue-400">${fmt(ct.total)}</div>
                   </div>
-                ))}
-              </div>
+                ));
+              })()}
             </div>
           </div>
 

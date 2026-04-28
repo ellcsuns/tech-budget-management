@@ -20,17 +20,22 @@ export interface MonthlyBreakdown {
   diff: number;
   hasDeferral: boolean;
   deferralAmount: number;
+  hasSaving: boolean;
 }
 
 export function calcMonthlyBreakdown(budgetLine: BudgetLine, activeSavings: Saving[]): MonthlyBreakdown[] {
   const lineSavings = activeSavings.filter(s => s.budgetLineId === budgetLine.id);
   const lineDeferrals = budgetLine.deferrals || [];
+  const blSavingsData = (budgetLine as any).savings || [];
   const result: MonthlyBreakdown[] = [];
   for (let m = 1; m <= 12; m++) {
     const planVal = Number((budgetLine as any)[`planM${m}`]) || 0;
     let savingAmount = 0;
-    lineSavings.forEach(s => { savingAmount += Number((s as any)[`savingM${m}`]) || 0; });
-    const budget = planVal - savingAmount;
+    const savingsSource = lineSavings.length > 0 ? lineSavings : blSavingsData;
+    savingsSource.forEach((s: any) => { savingAmount += Number(s[`savingM${m}`]) || 0; });
+    const isComputed = (budgetLine as any)[`computedM${m}`] !== undefined;
+    const budget = isComputed ? planVal : planVal - savingAmount;
+    const hasSaving = savingAmount > 0 || ((budgetLine as any).hasSavings && (budgetLine as any).breakdown?.[m - 1]?.savings > 0);
     const committedTxns = budgetLine.transactions?.filter(t => t.month === m && t.type === 'COMMITTED') || [];
     const realTxns = budgetLine.transactions?.filter(t => t.month === m && t.type === 'REAL') || [];
     const committed = committedTxns.reduce((sum, t) => {
@@ -46,7 +51,7 @@ export function calcMonthlyBreakdown(budgetLine: BudgetLine, activeSavings: Savi
       const monthCount = d.endMonth - d.startMonth + 1;
       deferralAmount += Number(d.totalAmount) / monthCount;
     });
-    result.push({ month: MONTHS[m - 1], budget, committed, real, diff: budget - committed - real, hasDeferral, deferralAmount });
+    result.push({ month: MONTHS[m - 1], budget, committed, real, diff: budget - committed - real, hasDeferral, deferralAmount, hasSaving });
   }
   return result;
 }
@@ -209,7 +214,12 @@ export default function BudgetLineDetailPopup({ budgetLine, activeSavings, onClo
                         {row.hasDeferral && <span className="w-2 h-2 rounded-full bg-violet-400 flex-shrink-0" title={`Diferido: ${fmt(row.deferralAmount)}`} />}
                       </span>
                     </td>
-                    <td className="px-4 py-2 text-right">{fmt(row.budget)}</td>
+                    <td className="px-4 py-2 text-right">
+                      <span className="inline-flex items-center gap-1 justify-end">
+                        {row.hasSaving && <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" title="Ahorro aplicado" />}
+                        {fmt(row.budget)}
+                      </span>
+                    </td>
                     <td className="px-4 py-2 text-right text-blue-600">{row.committed > 0 ? fmt(row.committed) : '-'}</td>
                     <td className={`px-4 py-2 text-right ${row.hasDeferral ? 'text-violet-700 font-medium' : 'text-green-600'}`}>{row.real > 0 ? fmt(row.real) : '-'}</td>
                     <td className={`px-4 py-2 text-right font-medium ${getDiffColor(row.diff)}`}>{fmt(row.diff)}</td>

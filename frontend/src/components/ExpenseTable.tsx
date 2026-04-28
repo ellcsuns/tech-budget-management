@@ -59,15 +59,22 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
   const getMonthlyValues = (bl: BudgetLine) => {
     const lineSavings = activeSavings.filter(s => s.budgetLineId === bl.id);
     const lineDeferrals = bl.deferrals || [];
+    // Check hasSavings from computed budget data as fallback
+    const blHasSavings = (bl as any).hasSavings === true;
+    const blSavingsData = (bl as any).savings || [];
     const values: any[] = [];
     for (let month = 1; month <= 12; month++) {
       const originalBudget = getPlanValue(bl, month);
       let savingAmount = 0;
-      lineSavings.forEach(s => {
-        savingAmount += Number((s as any)[`savingM${month}`]) || 0;
+      // Try activeSavings first, then fall back to bl.savings from computed data
+      const savingsSource = lineSavings.length > 0 ? lineSavings : blSavingsData;
+      savingsSource.forEach((s: any) => {
+        savingAmount += Number(s[`savingM${month}`]) || 0;
       });
-      const budget = originalBudget - savingAmount;
-      const hasSaving = savingAmount > 0;
+      // If using computed values (planM already adjusted), don't subtract again
+      const isComputed = (bl as any)[`computedM${month}`] !== undefined;
+      const budget = isComputed ? originalBudget : originalBudget - savingAmount;
+      const hasSaving = savingAmount > 0 || (blHasSavings && (bl as any).breakdown?.[month - 1]?.savings > 0);
       // Check if any deferral covers this month and compute deferral amount
       const matchingDeferrals = lineDeferrals.filter(d => month >= d.startMonth && month <= d.endMonth);
       const hasDeferral = matchingDeferrals.length > 0;
