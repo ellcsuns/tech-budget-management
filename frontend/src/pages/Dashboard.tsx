@@ -122,16 +122,10 @@ export default function Dashboard() {
   return (
     <div className="space-y-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-        <div className="flex items-center gap-2 mb-4">
-          <FilterPanel budgetLines={budgetLines as any} filters={filters} onFiltersChange={setFilters} />
-          <div className="h-5 w-px bg-gray-300 dark:bg-gray-600 flex-shrink-0" />
-          <button onClick={() => setShowBase(!showBase)} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all whitespace-nowrap ${showBase ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700' : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 hover:border-gray-400'}`}>
-            {t('budget.adjustments') || 'Ajustes'}
-          </button>
-          <button onClick={() => setShowSummary(!showSummary)} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all whitespace-nowrap ${showSummary ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700' : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 hover:border-gray-400'}`}>
-            {t('budget.showSummary') || 'Resumen Mensual'}
-          </button>
-        </div>
+        <FilterPanel budgetLines={budgetLines as any} filters={filters} onFiltersChange={setFilters}
+          showBaseToggle={true} showBase={showBase} onShowBaseChange={setShowBase}
+          showSummaryToggle={true} showSummary={showSummary} onShowSummaryChange={setShowSummary}
+        />
         <div className="flex gap-4 flex-wrap mb-4">
           <div className="bg-blue-50 dark:bg-blue-900/30 px-4 py-2 rounded-lg">
             <span className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.budget') || 'Presupuesto'}</span>
