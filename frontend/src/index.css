@@ -112,8 +112,10 @@ body {
 .dark .bg-orange-50 { background-color: rgba(249,115,22,0.15) !important; }
 .dark .bg-purple-50 { background-color: rgba(168,85,247,0.15) !important; }
 .dark .bg-amber-50 { background-color: rgba(245,158,11,0.15) !important; }
-.dark .bg-violet-50 { background-color: rgba(139,92,246,0.15) !important; }
-.dark .bg-violet-50\/50 { background-color: rgba(139,92,246,0.1) !important; }
+.dark .bg-violet-50 { background-color: rgba(139,92,246,0.18) !important; }
+.dark .bg-violet-50\/50 { background-color: rgba(139,92,246,0.12) !important; }
+.dark td.bg-violet-50 { background-color: rgba(139,92,246,0.18) !important; }
+.dark tr.bg-violet-50 { background-color: rgba(139,92,246,0.18) !important; }
 
 /* Colored text - brighter in dark mode */
 .dark .text-blue-800 { color: #93c5fd !important; }

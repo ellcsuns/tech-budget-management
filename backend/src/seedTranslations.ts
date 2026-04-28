@@ -132,6 +132,8 @@ const translations: TranslationSeed[] = [
   { key: 'month.short.12', es: 'M12', en: 'M12', category: 'common' },
   { key: 'filter.search', es: 'Buscar gasto...', en: 'Search expense...', category: 'common' },
   { key: 'filter.clearFilters', es: 'Limpiar filtros', en: 'Clear filters', category: 'common' },
+  { key: 'filter.columns', es: 'Columnas', en: 'Columns', category: 'common' },
+  { key: 'filter.clear', es: 'Limpiar', en: 'Clear', category: 'common' },
   { key: 'filter.all', es: 'Todas', en: 'All', category: 'common' },
   { key: 'filter.searchComma', es: 'Filtrar (separar por comas)...', en: 'Filter (comma separated)...', category: 'common' },
   { key: 'section.administration', es: 'Administración', en: 'Administration', category: 'common' },

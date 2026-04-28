@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { financialCompanyApi, expenseCategoryApi } from '../services/api';
 import type { BudgetLine, FinancialCompany, ExpenseCategory } from '../types';
-import { HiOutlineXMark } from 'react-icons/hi2';
+import { HiOutlineXMark, HiOutlineFunnel, HiOutlineChevronDown } from 'react-icons/hi2';
 import { useI18n } from '../contexts/I18nContext';
 
 interface FilterPanelProps {
@@ -20,6 +20,73 @@ interface FilterPanelProps {
   onFiltersChange: (filters: any) => void;
 }
 
+function MultiSelectDropdown({ label, items, selectedIds, onToggle, renderItem }: {
+  label: string;
+  items: { id: string; label: string }[];
+  selectedIds: string[];
+  onToggle: (id: string) => void;
+  renderItem?: (item: { id: string; label: string }, selected: boolean) => React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const activeCount = selectedIds.length;
+  const allSelected = activeCount === 0 || activeCount === items.length;
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+          !allSelected
+            ? 'bg-accent/10 border-accent text-accent dark:bg-accent/20 dark:text-white'
+            : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:border-gray-400 dark:hover:border-gray-500'
+        }`}
+      >
+        <HiOutlineFunnel className="w-3.5 h-3.5" />
+        {label}
+        {!allSelected && <span className="bg-accent text-white text-[10px] px-1.5 py-0.5 rounded-full leading-none">{activeCount}</span>}
+        <HiOutlineChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg z-30 min-w-[180px] max-h-[280px] overflow-y-auto py-1">
+          {items.map(item => {
+            const selected = selectedIds.length === 0 || selectedIds.includes(item.id);
+            return (
+              <button
+                key={item.id}
+                onClick={() => onToggle(item.id)}
+                className={`w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 transition-colors ${
+                  selected
+                    ? 'text-gray-900 dark:text-gray-100'
+                    : 'text-gray-400 dark:text-gray-500'
+                } hover:bg-gray-50 dark:hover:bg-gray-700`}
+              >
+                <span className={`w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center ${
+                  selected
+                    ? 'bg-accent border-accent text-white'
+                    : 'border-gray-300 dark:border-gray-600'
+                }`}>
+                  {selected && <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                </span>
+                {renderItem ? renderItem(item, selected) : item.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function FilterPanel({ budgetLines, filters, onFiltersChange }: FilterPanelProps) {
   const { t } = useI18n();
   const [financialCompanies, setFinancialCompanies] = useState<FinancialCompany[]>([]);
@@ -31,26 +98,16 @@ export default function FilterPanel({ budgetLines, filters, onFiltersChange }: F
   }, []);
 
   const loadFinancialCompanies = async () => {
-    try {
-      const response = await financialCompanyApi.getAll();
-      setFinancialCompanies(response.data);
-    } catch (error) {
-      console.error('Error loading financial companies:', error);
-    }
+    try { setFinancialCompanies((await financialCompanyApi.getAll()).data); }
+    catch (error) { console.error('Error loading financial companies:', error); }
   };
 
   const loadExpenseCategories = async () => {
-    try {
-      const response = await expenseCategoryApi.getAll();
-      setExpenseCategories(response.data);
-    } catch (error) {
-      console.error('Error loading expense categories:', error);
-    }
+    try { setExpenseCategories((await expenseCategoryApi.getAll()).data); }
+    catch (error) { console.error('Error loading expense categories:', error); }
   };
 
-  const currencies = Array.from(new Set(
-    budgetLines.map(bl => bl.currency).filter(Boolean)
-  ));
+  const currencies = Array.from(new Set(budgetLines.map(bl => bl.currency).filter(Boolean)));
 
   const toggleCurrency = (currency: string) => {
     const current = filters.currencies || [];
@@ -82,58 +139,97 @@ export default function FilterPanel({ budgetLines, filters, onFiltersChange }: F
     onFiltersChange({ ...filters, searchText: value });
   };
 
-  const accentOn = 'bg-accent text-white';
-  const accentOff = 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-300';
+  const hasActiveFilters = !!(filters.currencies || filters.financialCompanyIds || filters.categories || filters.searchText);
+
+  const colOn = 'bg-accent text-white shadow-sm';
+  const colOff = 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600';
+
+  const currOn = 'bg-accent text-white shadow-sm';
+  const currOff = 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:border-accent dark:hover:border-accent';
 
   return (
-    <div className="flex flex-wrap items-center gap-3 mb-4">
-      <input
-        type="text"
-        value={filters.searchText || ''}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearchChange(e.target.value)}
-        placeholder={t('filter.searchComma')}
-        className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent w-64 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-      />
-      <div className="w-px h-6 bg-gray-300 dark:bg-gray-600" />
-      <div className="flex items-center gap-1">
-        <button onClick={() => toggleColumn('budget')} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filters.visibleColumns.budget ? accentOn : accentOff}`}>{t('expense.budget')}</button>
-        <button onClick={() => toggleColumn('committed')} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filters.visibleColumns.committed ? accentOn : accentOff}`}>{t('expense.committed')}</button>
-        <button onClick={() => toggleColumn('real')} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filters.visibleColumns.real ? accentOn : accentOff}`}>{t('expense.real')}</button>
+    <div className="space-y-3 mb-4">
+      {/* Row 1: Search + Column toggles */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-shrink-0">
+          <input
+            type="text"
+            value={filters.searchText || ''}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearchChange(e.target.value)}
+            placeholder={t('filter.searchComma')}
+            className="pl-3 pr-8 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent w-56 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+          />
+          {filters.searchText && (
+            <button onClick={() => handleSearchChange('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+              <HiOutlineXMark className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        <div className="h-5 w-px bg-gray-300 dark:bg-gray-600" />
+
+        {/* Column visibility toggles */}
+        <div className="flex items-center gap-1">
+          <span className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider mr-1">{t('filter.columns') || 'Columnas'}</span>
+          <button onClick={() => toggleColumn('budget')} className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${filters.visibleColumns.budget ? colOn : colOff}`}>{t('expense.budget')}</button>
+          <button onClick={() => toggleColumn('committed')} className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${filters.visibleColumns.committed ? colOn : colOff}`}>{t('expense.committed')}</button>
+          <button onClick={() => toggleColumn('real')} className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${filters.visibleColumns.real ? colOn : colOff}`}>{t('expense.real')}</button>
+        </div>
+
+        {hasActiveFilters && (
+          <>
+            <div className="ml-auto" />
+            <button onClick={clearFilters} className="inline-flex items-center gap-1 text-xs text-accent hover:opacity-70 transition-opacity" title={t('filter.clearFilters')}>
+              <HiOutlineXMark className="w-4 h-4" />
+              {t('filter.clear') || 'Limpiar'}
+            </button>
+          </>
+        )}
       </div>
-      <div className="w-px h-6 bg-gray-300 dark:bg-gray-600" />
-      {currencies.length > 0 && (
-        <>
+
+      {/* Row 2: Filter dropdowns + currency pills */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* Currency pills */}
+        {currencies.length > 0 && (
           <div className="flex items-center gap-1">
             {currencies.map(currency => (
-              <button key={currency} onClick={() => toggleCurrency(currency)} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${(filters.currencies?.includes(currency) ?? true) ? accentOn : accentOff}`}>{currency}</button>
+              <button
+                key={currency}
+                onClick={() => toggleCurrency(currency)}
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                  (filters.currencies?.includes(currency) ?? true) ? currOn : currOff
+                }`}
+              >
+                {currency}
+              </button>
             ))}
           </div>
-          <div className="w-px h-6 bg-gray-300 dark:bg-gray-600" />
-        </>
-      )}
-      {financialCompanies.length > 0 && (
-        <>
-          <div className="flex items-center gap-1">
-            {financialCompanies.map(company => (
-              <button key={company.id} onClick={() => toggleFinancialCompany(company.id)} title={company.name} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${(filters.financialCompanyIds?.includes(company.id) ?? true) ? accentOn : accentOff}`}>{company.code}</button>
-            ))}
-          </div>
-          <div className="w-px h-6 bg-gray-300 dark:bg-gray-600" />
-        </>
-      )}
-      {expenseCategories.length > 0 && (
-        <>
-          <div className="flex items-center gap-1 flex-wrap">
-            {expenseCategories.map(cat => (
-              <button key={cat.id} onClick={() => toggleCategory(cat.id)} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${(filters.categories?.includes(cat.id) ?? true) ? accentOn : accentOff}`}>{cat.name}</button>
-            ))}
-          </div>
-          <div className="w-px h-6 bg-gray-300 dark:bg-gray-600" />
-        </>
-      )}
-      <button onClick={clearFilters} className="text-accent hover:opacity-70 transition-opacity ml-auto" title={t('filter.clearFilters')}>
-        <HiOutlineXMark className="w-6 h-6" />
-      </button>
+        )}
+
+        {currencies.length > 0 && (financialCompanies.length > 0 || expenseCategories.length > 0) && (
+          <div className="h-5 w-px bg-gray-300 dark:bg-gray-600" />
+        )}
+
+        {/* Company dropdown */}
+        {financialCompanies.length > 0 && (
+          <MultiSelectDropdown
+            label={t('label.company') || 'Empresa'}
+            items={financialCompanies.map((c: FinancialCompany) => ({ id: c.id, label: `${c.code} — ${c.name}` }))}
+            selectedIds={filters.financialCompanyIds || []}
+            onToggle={toggleFinancialCompany}
+          />
+        )}
+
+        {/* Category dropdown */}
+        {expenseCategories.length > 0 && (
+          <MultiSelectDropdown
+            label={t('label.category') || 'Categoría'}
+            items={expenseCategories.map((c: ExpenseCategory) => ({ id: c.id, label: c.name }))}
+            selectedIds={filters.categories || []}
+            onToggle={toggleCategory}
+          />
+        )}
+      </div>
     </div>
   );
 }
