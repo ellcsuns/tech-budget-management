@@ -254,11 +254,11 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
               <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('table.currency')}</th>
               <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('table.company')}</th>
               {months.map((month) => (
-                <th key={month} colSpan={[filters.visibleColumns.budget, filters.visibleColumns.committed, filters.visibleColumns.real, true].filter(Boolean).length} className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border-l">
+                <th key={month} colSpan={[filters.visibleColumns.budget, filters.visibleColumns.committed, filters.visibleColumns.real, filters.visibleColumns.diff !== false].filter(Boolean).length} className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border-l">
                   {month}
                 </th>
               ))}
-              <th colSpan={[filters.visibleColumns.budget, filters.visibleColumns.committed, filters.visibleColumns.real, true].filter(Boolean).length} className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border-l">{t('table.total')}</th>
+              <th colSpan={[filters.visibleColumns.budget, filters.visibleColumns.committed, filters.visibleColumns.real, filters.visibleColumns.diff !== false].filter(Boolean).length} className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border-l">{t('table.total')}</th>
             </tr>
             <tr>
               <th className="sticky left-0 bg-gray-50 z-10"></th>
@@ -269,14 +269,14 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
                   {filters.visibleColumns.budget && <th className="px-2 py-2 text-xs text-gray-500">{t('expense.budget')}</th>}
                   {filters.visibleColumns.committed && <th className="px-2 py-2 text-xs text-gray-500">{t('expense.committed')}</th>}
                   {filters.visibleColumns.real && <th className="px-2 py-2 text-xs text-gray-500">{t('expense.real')}</th>}
-                  <th className="px-2 py-2 text-xs text-gray-500">{t('expense.diff')}</th>
+                  {(filters.visibleColumns.diff !== false) && <th className="px-2 py-2 text-xs text-gray-500">{t('expense.diff')}</th>}
                 </React.Fragment>
               ))}
               <React.Fragment>
                 {filters.visibleColumns.budget && <th className="px-2 py-2 text-xs text-gray-500">{t('expense.budget')}</th>}
                 {filters.visibleColumns.committed && <th className="px-2 py-2 text-xs text-gray-500">{t('expense.committed')}</th>}
                 {filters.visibleColumns.real && <th className="px-2 py-2 text-xs text-gray-500">{t('expense.real')}</th>}
-                <th className="px-2 py-2 text-xs text-gray-500">{t('expense.diff')}</th>
+                {(filters.visibleColumns.diff !== false) && <th className="px-2 py-2 text-xs text-gray-500">{t('expense.diff')}</th>}
               </React.Fragment>
             </tr>
           </thead>
@@ -318,14 +318,14 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
                           </span>
                         </td>
                       )}
-                      {(() => { const diff = value.budget - (value.committed + value.real); return <td className={`px-2 py-3 text-sm text-right font-medium ${getDiffColor(diff)}`}>{diff !== 0 ? fmt(diff) : '-'}</td>; })()}
+                      {(() => { if (filters.visibleColumns.diff === false) return null; const diff = value.budget - (value.committed + value.real); return <td className={`px-2 py-3 text-sm text-right font-medium ${getDiffColor(diff)}`}>{diff !== 0 ? fmt(diff) : '-'}</td>; })()}
                     </React.Fragment>
                   ))}
                   <React.Fragment>
                     {filters.visibleColumns.budget && <td className="px-2 py-3 text-sm text-right font-semibold text-gray-900 border-l">{totalBudget > 0 ? fmt(totalBudget) : '-'}</td>}
                     {filters.visibleColumns.committed && <td className="px-2 py-3 text-sm text-right font-semibold text-blue-600">{totalCommitted > 0 ? fmt(totalCommitted) : '-'}</td>}
                     {filters.visibleColumns.real && <td className="px-2 py-3 text-sm text-right font-semibold text-green-600">{totalReal > 0 ? fmt(totalReal) : '-'}</td>}
-                    {(() => { const totalDiff = totalBudget - (totalCommitted + totalReal); return <td className={`px-2 py-3 text-sm text-right font-semibold ${getDiffColor(totalDiff)}`}>{totalDiff !== 0 ? fmt(totalDiff) : '-'}</td>; })()}
+                    {(() => { if (filters.visibleColumns.diff === false) return null; const totalDiff = totalBudget - (totalCommitted + totalReal); return <td className={`px-2 py-3 text-sm text-right font-semibold ${getDiffColor(totalDiff)}`}>{totalDiff !== 0 ? fmt(totalDiff) : '-'}</td>; })()}
                   </React.Fragment>
                 </tr>
               );
@@ -343,7 +343,7 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
                     {filters.visibleColumns.budget && <td className="px-2 py-3 text-sm text-right">{fmt(t.budget)}</td>}
                     {filters.visibleColumns.committed && <td className="px-2 py-3 text-sm text-right text-blue-600">{fmt(t.committed)}</td>}
                     {filters.visibleColumns.real && <td className="px-2 py-3 text-sm text-right text-green-600">{fmt(t.real)}</td>}
-                    <td className={`px-2 py-3 text-sm text-right ${getDiffColor(diff)}`}>{fmt(diff)}</td>
+                    {(filters.visibleColumns.diff !== false) && <td className={`px-2 py-3 text-sm text-right ${getDiffColor(diff)}`}>{fmt(diff)}</td>}
                   </React.Fragment>
                 );
               })}
@@ -351,7 +351,7 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
                 {filters.visibleColumns.budget && <td className="px-2 py-3 text-sm text-right border-l">{fmt(grandTotals.budget)}</td>}
                 {filters.visibleColumns.committed && <td className="px-2 py-3 text-sm text-right text-blue-600">{fmt(grandTotals.committed)}</td>}
                 {filters.visibleColumns.real && <td className="px-2 py-3 text-sm text-right text-green-600">{fmt(grandTotals.real)}</td>}
-                <td className={`px-2 py-3 text-sm text-right ${getDiffColor(grandTotals.diff)}`}>{fmt(grandTotals.diff)}</td>
+                {(filters.visibleColumns.diff !== false) && <td className={`px-2 py-3 text-sm text-right ${getDiffColor(grandTotals.diff)}`}>{fmt(grandTotals.diff)}</td>}
               </React.Fragment>
             </tr>
           </tfoot>
