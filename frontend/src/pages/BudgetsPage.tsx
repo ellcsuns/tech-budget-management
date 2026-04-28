@@ -1,3 +1,4 @@
+// BudgetsPage - Budget management with filters, summary, and editing
 import { useState, useEffect, useMemo } from 'react';
 import { budgetApi, expenseApi, financialCompanyApi, userAreaApi, changeRequestApi, technologyDirectionApi, budgetLineApi, budgetConfirmationApi } from '../services/api';
 import type { Budget, BudgetLine, UserArea, ChangeRequest, TechnologyDirection, BudgetConfirmationRequest, BudgetConfirmationResponse, ComputedBudgetLine, MonthBreakdown } from '../types';

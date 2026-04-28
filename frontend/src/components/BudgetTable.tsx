@@ -13,12 +13,15 @@ interface BudgetTableProps {
   onCellEdit: (budgetLineId: string, month: number, value: string) => void;
   onRemoveRow: (budgetLineId: string) => void;
   onRowClick?: (bl: BudgetLine) => void;
+  userAreas?: any[];
+  showComputed?: boolean;
 }
 
-const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+// Month labels - always use M1-M12 format
+const MONTHS = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12'];
 
 export default function BudgetTable(props: BudgetTableProps) {
-  const { budgetLines, editedCells, validationErrors, canEdit, onCellEdit, onRemoveRow, onRowClick } = props;
+  const { budgetLines, editedCells, validationErrors, canEdit, onCellEdit, onRemoveRow, onRowClick, showComputed } = props;
   const [descWidth, setDescWidth] = useState(180);
   const resizing = useRef(false);
   const startX = useRef(0);
@@ -44,6 +47,10 @@ export default function BudgetTable(props: BudgetTableProps) {
   const getCellKey = (blId: string, month: number) => `${blId}-${month}`;
 
   const getPlanValue = (bl: BudgetLine, month: number): number => {
+    if (showComputed) {
+      const key = `computedM${month}` as any;
+      if ((bl as any)[key] !== undefined) return Number((bl as any)[key]) || 0;
+    }
     const key = `planM${month}` as keyof BudgetLine;
     return Number(bl[key]) || 0;
   };
@@ -67,6 +74,14 @@ export default function BudgetTable(props: BudgetTableProps) {
   const getCellError = (blId: string, month: number): string | undefined =>
     validationErrors.get(getCellKey(blId, month));
 
+  // Color dot indicators
+  const getLineDots = (bl: any): JSX.Element[] => {
+    const dots: JSX.Element[] = [];
+    if (bl.hasSavings) dots.push(<span key="s" className="inline-block w-2 h-2 rounded-full bg-green-500 mr-0.5" title="Ahorro activo" />);
+    if (bl.hasCorrections) dots.push(<span key="c" className="inline-block w-2 h-2 rounded-full bg-blue-500 mr-0.5" title="Corrección aprobada" />);
+    return dots;
+  };
+
   const monthlyTotals = useMemo(() => {
     const totals: number[] = [];
     for (let month = 1; month <= 12; month++) {
@@ -75,47 +90,51 @@ export default function BudgetTable(props: BudgetTableProps) {
       totals.push(sum);
     }
     return totals;
-  }, [budgetLines, editedCells]);
+  }, [budgetLines, editedCells, showComputed]);
 
   const grandTotal = useMemo(() =>
-    budgetLines.reduce((s, bl) => s + getLineTotal(bl), 0), [budgetLines, editedCells]);
+    budgetLines.reduce((s, bl) => s + getLineTotal(bl), 0), [budgetLines, editedCells, showComputed]);
 
   if (budgetLines.length === 0) {
     return <div className="text-center py-8 text-gray-500">No hay líneas de presupuesto para mostrar</div>;
   }
 
   return (
-    <div className="overflow-x-auto bg-white rounded-lg shadow">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50 sticky top-0">
+    <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow">
+      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
+        <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0">
           <tr>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider relative" style={{ width: descWidth, minWidth: 100 }}>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Código</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider relative" style={{ width: descWidth, minWidth: 100 }}>
               Descripción
               <span className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-accent" onMouseDown={onMouseDown} />
             </th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Empresa</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Moneda</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Empresa</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Moneda</th>
             {MONTHS.map((month, idx) => (
-              <th key={idx} className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{month}</th>
+              <th key={idx} className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{month}</th>
             ))}
-            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total</th>
             {canEdit && (
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
             )}
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
           {budgetLines.map((bl) => {
             const lineTotal = getLineTotal(bl);
+            const dots = getLineDots(bl);
             return (
-              <tr key={bl.id} className="hover:bg-gray-50 group cursor-pointer" onClick={() => onRowClick?.(bl)}>
-                <td className="px-4 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">{bl.expense?.code}</td>
-                <td className="px-4 py-2 text-sm text-gray-700" style={{ width: descWidth, maxWidth: descWidth, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <tr key={bl.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 group cursor-pointer" onClick={() => onRowClick?.(bl)}>
+                <td className="px-4 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
+                  {dots.length > 0 && <span className="mr-1">{dots}</span>}
+                  {bl.expense?.code}
+                </td>
+                <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300" style={{ width: descWidth, maxWidth: descWidth, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {bl.expense?.shortDescription}
                 </td>
-                <td className="px-4 py-2 text-sm text-gray-500 whitespace-nowrap">{bl.financialCompany?.name || '-'}</td>
-                <td className="px-4 py-2 text-sm text-gray-500 whitespace-nowrap">{bl.currency}</td>
+                <td className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{bl.financialCompany?.name || '-'}</td>
+                <td className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{bl.currency}</td>
                 {MONTHS.map((_, monthIdx) => {
                   const month = monthIdx + 1;
                   return (
@@ -132,7 +151,7 @@ export default function BudgetTable(props: BudgetTableProps) {
                 <TotalCell total={lineTotal} currency={bl.currency} />
                 {canEdit && (
                   <td className="px-4 py-2 text-center">
-                    <button onClick={() => onRemoveRow(bl.id)} className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity" title="Eliminar fila">
+                    <button onClick={(e) => { e.stopPropagation(); onRemoveRow(bl.id); }} className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity" title="Eliminar fila">
                       <HiOutlineTrash className="w-4 h-4" />
                     </button>
                   </td>
@@ -141,13 +160,13 @@ export default function BudgetTable(props: BudgetTableProps) {
             );
           })}
         </tbody>
-        <tfoot className="bg-gray-100 font-bold">
+        <tfoot className="bg-gray-100 dark:bg-gray-700 font-bold">
           <tr>
-            <td className="px-4 py-3 text-sm" colSpan={4}>Total</td>
+            <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100" colSpan={4}>Total</td>
             {monthlyTotals.map((t, i) => (
-              <td key={i} className="px-4 py-3 text-sm text-right border border-gray-200">{fmt(t)}</td>
+              <td key={i} className="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600">{fmt(t)}</td>
             ))}
-            <td className="px-4 py-3 text-sm text-right border border-gray-200">{fmt(grandTotal)}</td>
+            <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600">{fmt(grandTotal)}</td>
             {canEdit && <td></td>}
           </tr>
         </tfoot>

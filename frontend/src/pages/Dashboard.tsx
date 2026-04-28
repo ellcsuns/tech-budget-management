@@ -1,3 +1,4 @@
+// Dashboard - Main budget overview with KPIs, filters, and comparison table
 import { useState, useEffect, useMemo } from 'react';
 import { budgetApi, savingsApi } from '../services/api';
 import type { BudgetLine, Saving, CompanyTotals, ComputedBudgetLine, MonthBreakdown } from '../types';

@@ -1,3 +1,4 @@
+// FilterPanel - shared filter component for Dashboard and BudgetsPage
 import React, { useState, useEffect, useRef } from 'react';
 import { financialCompanyApi, expenseCategoryApi } from '../services/api';
 import type { BudgetLine, FinancialCompany, ExpenseCategory } from '../types';
