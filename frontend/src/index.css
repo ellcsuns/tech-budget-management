@@ -87,7 +87,7 @@ body {
 .dark tfoot .sticky { background-color: #1a2332 !important; }
 
 /* Font weight text visibility in dark mode - only for default gray text */
-.dark td.font-medium:not([class*="text-blue"]):not([class*="text-green"]):not([class*="text-red"]):not([class*="text-indigo"]):not([class*="text-emerald"]):not([class*="text-amber"]):not([class*="text-orange"]) { color: #e5e7eb; }
+.dark td.font-medium:not([class*="text-blue"]):not([class*="text-green"]):not([class*="text-red"]):not([class*="text-indigo"]):not([class*="text-emerald"]):not([class*="text-amber"]):not([class*="text-orange"]):not([class*="text-violet"]) { color: #e5e7eb; }
 
 /* Cards and shadows */
 .dark .shadow { box-shadow: 0 1px 3px 0 rgba(0,0,0,0.4), 0 1px 2px -1px rgba(0,0,0,0.4) !important; }
@@ -112,6 +112,8 @@ body {
 .dark .bg-orange-50 { background-color: rgba(249,115,22,0.15) !important; }
 .dark .bg-purple-50 { background-color: rgba(168,85,247,0.15) !important; }
 .dark .bg-amber-50 { background-color: rgba(245,158,11,0.15) !important; }
+.dark .bg-violet-50 { background-color: rgba(139,92,246,0.15) !important; }
+.dark .bg-violet-50\/50 { background-color: rgba(139,92,246,0.1) !important; }
 
 /* Colored text - brighter in dark mode */
 .dark .text-blue-800 { color: #93c5fd !important; }
@@ -134,10 +136,15 @@ body {
 .dark .text-amber-600 { color: #fbbf24 !important; }
 .dark .text-amber-700 { color: #fbbf24 !important; }
 .dark .text-orange-600 { color: #fb923c !important; }
+.dark .text-violet-700 { color: #c4b5fd !important; }
+.dark .text-violet-600 { color: #a78bfa !important; }
 
 /* Rings */
 .dark .ring-gray-200 { --tw-ring-color: #374151 !important; }
 .dark .ring-gray-300 { --tw-ring-color: #4b5563 !important; }
+
+/* Violet borders (deferral legend) */
+.dark .border-violet-300 { border-color: #7c3aed !important; }
 
 /* Border-t, border-b standalone */
 .dark .border-t { border-top-color: #374151; }
