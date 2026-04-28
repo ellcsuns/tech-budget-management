@@ -125,7 +125,6 @@ export default function BudgetTable(props: BudgetTableProps) {
             return (
               <tr key={bl.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 group cursor-pointer" onClick={() => onRowClick?.(bl)}>
                 <td className="px-4 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
-                  {dots.length > 0 && <span className="mr-1">{dots}</span>}
                   {bl.expense?.code}
                 </td>
                 <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300" style={{ width: descWidth, maxWidth: descWidth, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
