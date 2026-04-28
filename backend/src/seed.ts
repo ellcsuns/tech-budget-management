@@ -648,29 +648,34 @@ async function main() {
   console.log('💵 Creando ahorros...');
 
   const savingsData = [
-    { blIdx: 0, amount: 5000, desc: 'Optimización de instancias EC2 con Reserved Instances', status: SavingStatus.ACTIVE, dist: [0, 0, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500] },
-    { blIdx: 1, amount: 3000, desc: 'Migración a instancias spot para ambientes de desarrollo', status: SavingStatus.ACTIVE, dist: [0, 0, 0, 500, 500, 500, 500, 500, 500, 0, 0, 0] },
-    { blIdx: 5, amount: 2000, desc: 'Consolidación de licencias IDE duplicadas', status: SavingStatus.PENDING, dist: [0, 0, 0, 0, 400, 400, 400, 400, 400, 0, 0, 0] },
-    { blIdx: 11, amount: 1500, desc: 'Renegociación contrato antivirus corporativo', status: SavingStatus.ACTIVE, dist: [125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125] },
-    { blIdx: 14, amount: 8000, desc: 'Migración data warehouse a solución cloud más económica', status: SavingStatus.PENDING, dist: [0, 0, 0, 0, 0, 1000, 1000, 1000, 1000, 1000, 1000, 2000] },
-    { blIdx: 25, amount: 10000, desc: 'Renegociación licencias Microsoft 365 por volumen', status: SavingStatus.ACTIVE, dist: [833, 833, 833, 833, 833, 833, 833, 833, 833, 833, 833, 837] },
-    { blIdx: 27, amount: 15000, desc: 'Optimización módulos SAP no utilizados', status: SavingStatus.PENDING, dist: [0, 0, 0, 0, 0, 0, 2500, 2500, 2500, 2500, 2500, 2500] },
-    { blIdx: 23, amount: 4000, desc: 'Reducción de nodos Kubernetes en horario nocturno', status: SavingStatus.ACTIVE, dist: [333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 337] },
-    { blIdx: 17, amount: 2400, desc: 'Optimización ancho de banda WAN', status: SavingStatus.ACTIVE, dist: [200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200] },
-    { blIdx: 20, amount: 6000, desc: 'Uso de modelos ML open source en lugar de propietarios', status: SavingStatus.PENDING, dist: [0, 0, 0, 1000, 1000, 1000, 1000, 1000, 1000, 0, 0, 0] },
+    { blIdx: 0, desc: 'Optimización de instancias EC2 con Reserved Instances', status: SavingStatus.ACTIVE, dist: [800, 800, 900, 900, 1000, 1000, 1100, 1100, 1000, 900, 800, 700] },
+    { blIdx: 1, desc: 'Migración a instancias spot para ambientes de desarrollo', status: SavingStatus.ACTIVE, dist: [500, 500, 600, 600, 700, 700, 700, 600, 600, 500, 500, 500] },
+    { blIdx: 5, desc: 'Consolidación de licencias IDE duplicadas', status: SavingStatus.PENDING, dist: [0, 0, 0, 300, 300, 300, 300, 300, 300, 300, 0, 0] },
+    { blIdx: 11, desc: 'Renegociación contrato antivirus corporativo', status: SavingStatus.ACTIVE, dist: [150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150] },
+    { blIdx: 14, desc: 'Migración data warehouse a solución cloud más económica', status: SavingStatus.PENDING, dist: [0, 0, 0, 0, 0, 800, 800, 800, 800, 800, 800, 1200] },
+    { blIdx: 25, desc: 'Renegociación licencias Microsoft 365 por volumen', status: SavingStatus.ACTIVE, dist: [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000] },
+    { blIdx: 27, desc: 'Optimización módulos SAP no utilizados', status: SavingStatus.PENDING, dist: [0, 0, 0, 0, 0, 0, 2000, 2000, 2000, 2000, 2000, 2000] },
+    { blIdx: 23, desc: 'Reducción de nodos Kubernetes en horario nocturno', status: SavingStatus.ACTIVE, dist: [400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400] },
+    { blIdx: 17, desc: 'Optimización ancho de banda WAN', status: SavingStatus.ACTIVE, dist: [250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250] },
+    { blIdx: 20, desc: 'Uso de modelos ML open source en lugar de propietarios', status: SavingStatus.PENDING, dist: [0, 0, 600, 600, 800, 800, 800, 800, 600, 600, 0, 0] },
   ];
 
   for (const s of savingsData) {
     if (s.blIdx >= allBudgetLines.length) continue;
     const monthlyDist: Record<string, number> = {};
     s.dist.forEach((val, idx) => { monthlyDist[String(idx + 1)] = val; });
+    const totalAmount = s.dist.reduce((a, b) => a + b, 0);
     await prisma.saving.create({
       data: {
         budgetLineId: allBudgetLines[s.blIdx].id,
-        totalAmount: s.amount,
+        totalAmount,
         description: s.desc,
         status: s.status,
         monthlyDistribution: monthlyDist,
+        savingM1: s.dist[0], savingM2: s.dist[1], savingM3: s.dist[2],
+        savingM4: s.dist[3], savingM5: s.dist[4], savingM6: s.dist[5],
+        savingM7: s.dist[6], savingM8: s.dist[7], savingM9: s.dist[8],
+        savingM10: s.dist[9], savingM11: s.dist[10], savingM12: s.dist[11],
         createdBy: s.status === SavingStatus.ACTIVE ? user1.id : user2.id,
         activatedAt: s.status === SavingStatus.ACTIVE ? new Date() : null,
       }

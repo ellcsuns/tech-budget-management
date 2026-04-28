@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { savingsApi, budgetApi, budgetLineApi, financialCompanyApi, expenseCategoryApi, technologyDirectionApi } from '../services/api';
 import type { Saving, Budget, BudgetLine, FinancialCompany, ExpenseCategory, TechnologyDirection } from '../types';
-import { HiOutlineTrash, HiOutlinePlusCircle, HiOutlinePlay, HiOutlineXMark, HiOutlinePause } from 'react-icons/hi2';
+import { HiOutlineTrash, HiOutlinePlusCircle, HiOutlinePlay, HiOutlineXMark, HiOutlinePause, HiOutlineChevronDown, HiOutlineFunnel } from 'react-icons/hi2';
 import { showToast } from '../components/Toast';
 import ConfirmationDialog from '../components/ConfirmationDialog';
 import { fmt } from '../utils/formatters';
@@ -172,9 +172,44 @@ export default function SavingsPage() {
   const accentOn = 'bg-accent text-white';
   const accentOff = 'bg-gray-200 text-gray-500';
 
+  // Dropdown filter helper
+  const DropBtn = ({ label, active, children, onClear }: { label: string; active: boolean; children: React.ReactNode; onClear?: () => void }) => {
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+      const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+      document.addEventListener('mousedown', h);
+      return () => document.removeEventListener('mousedown', h);
+    }, []);
+    return (
+      <div ref={ref} className="relative">
+        <button onClick={() => setOpen(!open)} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all border whitespace-nowrap ${active ? 'bg-accent/10 dark:bg-accent/20 border-accent text-accent dark:text-blue-300' : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-400'}`}>
+          <HiOutlineFunnel className="w-3.5 h-3.5" />
+          {label}
+          <HiOutlineChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
+        </button>
+        {open && (
+          <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl z-30 min-w-[200px] max-h-[280px] overflow-y-auto py-1">
+            {onClear && active && <button onClick={onClear} className="w-full text-left px-3 py-1.5 text-xs text-accent hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700">Limpiar</button>}
+            {children}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const ChkItem = ({ label, checked, onChange }: { label: string; checked: boolean; onChange: () => void }) => (
+    <button onClick={onChange} className={`w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 ${checked ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'}`}>
+      <span className={`w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center ${checked ? 'bg-accent border-accent text-white' : 'border-gray-300 dark:border-gray-600'}`}>
+        {checked && <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+      </span>
+      {label}
+    </button>
+  );
+
   return (
     <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-4">
         <div>
           {!isActiveBudgetSelected && selectedBudget && (
             <span className="text-sm text-amber-600 bg-amber-50 px-3 py-1 rounded">{t('saving.readOnly')}</span>
@@ -186,85 +221,62 @@ export default function SavingsPage() {
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white p-4 rounded shadow mb-6">
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('label.budget')}</label>
-            <select value={selectedBudget} onChange={(e) => { setSelectedBudget(e.target.value); setShowForm(false); setLineSavings([]); }} className="w-full border rounded px-3 py-2">
-              <option value="">{t('label.all')}</option>
-              {budgets.map(b => (<option key={b.id} value={b.id}>{b.year} - v{b.version}{b.isActive ? ` (${t('label.active').toLowerCase()})` : ''}</option>))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('table.budgetLine')}</label>
-            <select value={selectedBudgetLine} onChange={(e) => setSelectedBudgetLine(e.target.value)} className="w-full border rounded px-3 py-2" disabled={!selectedBudget}>
-              <option value="">{t('filter.all')}</option>
-              {budgetLines.map(bl => (<option key={bl.id} value={bl.id}>{bl.expense?.code} - {bl.financialCompany?.code}</option>))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('label.status')}</label>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-full border rounded px-3 py-2">
-              <option value="">{t('label.all')}</option>
-              <option value="PENDING">{t('label.pending')}</option>
-              <option value="ACTIVE">{t('label.active')}</option>
-            </select>
-          </div>
-        </div>
-        <button onClick={loadSavings} className="mt-4 btn-secondary">{t('btn.filter')}</button>
-      </div>
+      {/* Filters - single line dropdowns */}
+      <div className="bg-white dark:bg-gray-800 p-3 rounded shadow mb-4">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {/* Budget dropdown */}
+          <DropBtn label={selectedBudget ? budgets.find(b => b.id === selectedBudget)?.year + ' v' + budgets.find(b => b.id === selectedBudget)?.version : (t('label.budget') || 'Presupuesto')} active={!!selectedBudget}>
+            {budgets.map(b => (
+              <ChkItem key={b.id} label={`${b.year} - v${b.version}${b.isActive ? ` (${t('label.active').toLowerCase()})` : ''}`} checked={selectedBudget === b.id} onChange={() => { setSelectedBudget(b.id); setShowForm(false); setLineSavings([]); loadSavings(); }} />
+            ))}
+          </DropBtn>
 
-      {/* Advanced Filters */}
-      <div className="bg-white p-4 rounded shadow mb-6">
-        <div className="flex flex-wrap items-center gap-3">
+          {/* Budget Line dropdown */}
+          <DropBtn label={selectedBudgetLine ? (budgetLines.find(bl => bl.id === selectedBudgetLine)?.expense?.code || t('table.budgetLine')) : (t('table.budgetLine') || 'Línea')} active={!!selectedBudgetLine} onClear={() => { setSelectedBudgetLine(''); }}>
+            {budgetLines.map(bl => (
+              <ChkItem key={bl.id} label={`${bl.expense?.code} - ${bl.financialCompany?.code}`} checked={selectedBudgetLine === bl.id} onChange={() => setSelectedBudgetLine(bl.id)} />
+            ))}
+          </DropBtn>
+
+          {/* Status dropdown */}
+          <DropBtn label={statusFilter ? (statusFilter === 'ACTIVE' ? t('label.active') : t('label.pending')) : (t('label.status') || 'Estado')} active={!!statusFilter} onClear={() => setStatusFilter('')}>
+            <ChkItem label={t('label.pending') || 'Pendiente'} checked={statusFilter === 'PENDING'} onChange={() => setStatusFilter(statusFilter === 'PENDING' ? '' : 'PENDING')} />
+            <ChkItem label={t('label.active') || 'Activo'} checked={statusFilter === 'ACTIVE'} onChange={() => setStatusFilter(statusFilter === 'ACTIVE' ? '' : 'ACTIVE')} />
+          </DropBtn>
+
+          {/* Currency dropdown */}
           {availableCurrencies.length > 0 && (
-            <>
-              <div className="flex items-center gap-1">
-                {availableCurrencies.map(currency => (
-                  <button key={currency} onClick={() => toggleFilter(filterCurrencies, currency, setFilterCurrencies)}
-                    className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filterCurrencies.includes(currency) ? accentOn : accentOff}`}>{currency}</button>
-                ))}
-              </div>
-              <div className="w-px h-6 bg-gray-300" />
-            </>
+            <DropBtn label={filterCurrencies.length > 0 ? `${t('label.currency') || 'Moneda'} (${filterCurrencies.length})` : (t('label.currency') || 'Moneda')} active={filterCurrencies.length > 0} onClear={() => setFilterCurrencies([])}>
+              {availableCurrencies.map(c => (
+                <ChkItem key={c} label={c} checked={filterCurrencies.length === 0 || filterCurrencies.includes(c)} onChange={() => toggleFilter(filterCurrencies, c, setFilterCurrencies)} />
+              ))}
+            </DropBtn>
           )}
+
+          {/* Company dropdown */}
           {allCompanies.length > 0 && (
-            <>
-              <div className="flex items-center gap-1">
-                {allCompanies.map(company => (
-                  <button key={company.id} onClick={() => toggleFilter(filterCompanyIds, company.id, setFilterCompanyIds)}
-                    title={company.name} className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filterCompanyIds.includes(company.id) ? accentOn : accentOff}`}>{company.code}</button>
-                ))}
-              </div>
-              <div className="w-px h-6 bg-gray-300" />
-            </>
+            <DropBtn label={filterCompanyIds.length > 0 ? `${t('label.company') || 'Empresa'} (${filterCompanyIds.length})` : (t('label.company') || 'Empresa')} active={filterCompanyIds.length > 0} onClear={() => setFilterCompanyIds([])}>
+              {allCompanies.map(c => (
+                <ChkItem key={c.id} label={`${c.code} — ${c.name}`} checked={filterCompanyIds.length === 0 || filterCompanyIds.includes(c.id)} onChange={() => toggleFilter(filterCompanyIds, c.id, setFilterCompanyIds)} />
+              ))}
+            </DropBtn>
           )}
+
+          {/* Category dropdown */}
           {allCategories.length > 0 && (
-            <>
-              <div className="flex items-center gap-1 flex-wrap">
-                {allCategories.map(cat => (
-                  <button key={cat.id} onClick={() => toggleFilter(filterCategories, cat.id, setFilterCategories)}
-                    className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filterCategories.includes(cat.id) ? accentOn : accentOff}`}>{cat.name}</button>
-                ))}
-              </div>
-              <div className="w-px h-6 bg-gray-300" />
-            </>
+            <DropBtn label={filterCategories.length > 0 ? `${t('label.category') || 'Categoría'} (${filterCategories.length})` : (t('label.category') || 'Categoría')} active={filterCategories.length > 0} onClear={() => setFilterCategories([])}>
+              {allCategories.map(c => (
+                <ChkItem key={c.id} label={c.name} checked={filterCategories.length === 0 || filterCategories.includes(c.id)} onChange={() => toggleFilter(filterCategories, c.id, setFilterCategories)} />
+              ))}
+            </DropBtn>
           )}
-          {allTechDirections.length > 0 && (
-            <>
-              <div className="flex items-center gap-1 flex-wrap">
-                {allTechDirections.map(td => (
-                  <button key={td.id} onClick={() => toggleFilter(filterTechDirIds, td.id, setFilterTechDirIds)}
-                    className={`px-3 py-1 rounded text-xs font-medium transition-colors ${filterTechDirIds.includes(td.id) ? accentOn : accentOff}`}>{td.code}</button>
-                ))}
-              </div>
-              <div className="w-px h-6 bg-gray-300" />
-            </>
-          )}
+
+          <button onClick={loadSavings} className="px-3 py-1.5 text-xs font-medium bg-accent text-white rounded-md hover:opacity-90 transition-opacity">{t('btn.filter')}</button>
+
           {hasActiveFilters && (
-            <button onClick={clearAllFilters} className="text-accent hover:opacity-70 transition-opacity ml-auto" title={t('filter.clearFilters')}>
-              <HiOutlineXMark className="w-6 h-6" />
+            <button onClick={clearAllFilters} className="inline-flex items-center gap-1 px-2 py-1.5 text-xs text-accent hover:opacity-70 ml-auto">
+              <HiOutlineXMark className="w-4 h-4" />
+              {t('filter.clear') || 'Limpiar'}
             </button>
           )}
         </div>
