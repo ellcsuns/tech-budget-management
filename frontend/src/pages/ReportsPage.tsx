@@ -5,11 +5,12 @@ import { HiOutlineArrowDownTray } from 'react-icons/hi2';
 import { useI18n } from '../contexts/I18nContext';
 
 const MONTHS_KEYS = [1,2,3,4,5,6,7,8,9,10,11,12];
+const MONTHS_LABELS = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12'];
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1'];
 
 export default function ReportsPage() {
   const { t } = useI18n();
-  const MONTHS = MONTHS_KEYS.map(m => t(`month.short.${m}`));
+  const MONTHS = MONTHS_LABELS;
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [selectedBudget, setSelectedBudget] = useState<string>('');
   const [budgetLines, setBudgetLines] = useState<BudgetLine[]>([]);

@@ -357,6 +357,7 @@ export default function BudgetsPage() {
         <>
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
             <FilterPanel budgetLines={budgetLines} filters={filters} onFiltersChange={setFilters}
+              hideValues={true}
               showSummaryToggle={true} showSummary={showSummary} onShowSummaryChange={setShowSummary}
             />
 

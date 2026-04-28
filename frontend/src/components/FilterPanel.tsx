@@ -14,6 +14,7 @@ interface FilterPanelProps {
     visibleColumns: { budget: boolean; committed: boolean; real: boolean; diff: boolean };
   };
   onFiltersChange: (filters: any) => void;
+  hideValues?: boolean;
   showBaseToggle?: boolean;
   showBase?: boolean;
   onShowBaseChange?: (v: boolean) => void;
@@ -61,7 +62,7 @@ function ChkItem({ label, checked, onChange }: { label: string; checked: boolean
   );
 }
 
-export default function FilterPanel({ budgetLines, filters, onFiltersChange, showBaseToggle, showBase, onShowBaseChange, showSummaryToggle, showSummary, onShowSummaryChange }: FilterPanelProps) {
+export default function FilterPanel({ budgetLines, filters, onFiltersChange, hideValues, showBaseToggle, showBase, onShowBaseChange, showSummaryToggle, showSummary, onShowSummaryChange }: FilterPanelProps) {
   const { t } = useI18n();
   const [financialCompanies, setFinancialCompanies] = useState<FinancialCompany[]>([]);
   const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
@@ -96,12 +97,12 @@ export default function FilterPanel({ budgetLines, filters, onFiltersChange, sho
           <div className="max-h-[200px] overflow-y-auto">{descriptions.sort().map(d => <ChkItem key={d} label={d} checked={terms.length === 0 || terms.some(t => d.toLowerCase().includes(t.toLowerCase()))} onChange={() => toggleDesc(d)} />)}</div>
         </DropBtn>
 
-        <DropBtn label={hiddenCols > 0 ? `${t('filter.values') || 'Valores'} (${4 - hiddenCols})` : (t('filter.values') || 'Valores')} icon={<HiOutlineTableCells className="w-3.5 h-3.5" />} active={hiddenCols > 0}>
+        {!hideValues && <DropBtn label={hiddenCols > 0 ? `${t('filter.values') || 'Valores'} (${4 - hiddenCols})` : (t('filter.values') || 'Valores')} icon={<HiOutlineTableCells className="w-3.5 h-3.5" />} active={hiddenCols > 0}>
           <ChkItem label={t('dashboard.budget') || 'Presupuesto'} checked={filters.visibleColumns.budget} onChange={() => toggleColumn('budget')} />
           <ChkItem label={t('dashboard.committed') || 'Comprometido'} checked={filters.visibleColumns.committed} onChange={() => toggleColumn('committed')} />
           <ChkItem label={t('dashboard.real') || 'Real'} checked={filters.visibleColumns.real} onChange={() => toggleColumn('real')} />
           <ChkItem label={t('dashboard.difference') || 'Diferencia'} checked={filters.visibleColumns.diff} onChange={() => toggleColumn('diff')} />
-        </DropBtn>
+        </DropBtn>}
 
         {currencies.length > 0 && (
           <DropBtn label={t('label.currency') || 'Moneda'} icon={<HiOutlineCurrencyDollar className="w-3.5 h-3.5" />} active={!!filters.currencies} onClear={() => onFiltersChange({ ...filters, currencies: undefined })}>

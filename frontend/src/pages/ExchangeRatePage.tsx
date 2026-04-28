@@ -5,11 +5,12 @@ import { showToast } from '../components/Toast';
 import { useI18n } from '../contexts/I18nContext';
 
 const MONTHS_KEYS = [1,2,3,4,5,6,7,8,9,10,11,12];
+const MONTHS_LABELS = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12'];
 const CURRENCIES = ['CLP', 'EUR', 'BRL', 'MXN'];
 
 export default function ExchangeRatePage() {
   const { t } = useI18n();
-  const MONTHS = MONTHS_KEYS.map(m => t(`month.short.${m}`));
+  const MONTHS = MONTHS_LABELS;
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [selectedBudgetId, setSelectedBudgetId] = useState('');
   const [rates, setRates] = useState<ConversionRate[]>([]);

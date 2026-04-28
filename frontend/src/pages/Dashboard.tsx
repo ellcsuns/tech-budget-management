@@ -147,7 +147,7 @@ export default function Dashboard() {
         />
 
         {/* KPI totals */}
-        <div className="flex gap-3 flex-wrap justify-center mb-4">
+        <div className="flex gap-3 flex-wrap mb-4">
           <div className="bg-blue-50 dark:bg-blue-900/30 px-4 py-2 rounded-lg text-center">
             <span className="text-[10px] text-gray-500 dark:text-gray-400 uppercase">{t('dashboard.budget') || 'Presupuesto'}</span>
             <p className="text-sm font-bold text-blue-800 dark:text-blue-300">${fmt(totals.budget)}</p>
