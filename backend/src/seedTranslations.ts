@@ -182,9 +182,8 @@ const translations: TranslationSeed[] = [
   { key: 'login.userPlaceholder', es: 'Ingrese su usuario', en: 'Enter your username', category: 'login' },
   { key: 'login.passPlaceholder', es: 'Ingrese su contraseña', en: 'Enter your password', category: 'login' },
   { key: 'login.invalidCredentials', es: 'Credenciales inválidas', en: 'Invalid credentials', category: 'login' },
-  { key: 'login.defaultWarning', es: '⚠️ Está usando la contraseña por defecto. Por favor cámbiela después de iniciar sesión.', en: '⚠️ You are using the default password. Please change it after logging in.', category: 'login' },
-  { key: 'login.defaultUser', es: 'Usuario por defecto: admin', en: 'Default user: admin', category: 'login' },
-  { key: 'login.defaultPass', es: 'Contraseña por defecto: admin', en: 'Default password: admin', category: 'login' },
+  { key: 'login.sso', es: 'Ingreso por SSO', en: 'Sign in with SSO', category: 'login' },
+  { key: 'login.or', es: 'o', en: 'or', category: 'login' },
 
   // =============================================
   // DASHBOARD
