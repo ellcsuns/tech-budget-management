@@ -17,7 +17,6 @@ interface BudgetTableProps {
   showComputed?: boolean;
 }
 
-// Month labels - always use M1-M12 format
 const MONTHS = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12'];
 
 export default function BudgetTable(props: BudgetTableProps) {
@@ -74,7 +73,6 @@ export default function BudgetTable(props: BudgetTableProps) {
   const getCellError = (blId: string, month: number): string | undefined =>
     validationErrors.get(getCellKey(blId, month));
 
-  // Color dot indicators
   const getLineDots = (bl: any): JSX.Element[] => {
     const dots: JSX.Element[] = [];
     if (bl.hasSavings) dots.push(<span key="s" className="inline-block w-2 h-2 rounded-full bg-green-500 mr-0.5" title="Ahorro activo" />);
