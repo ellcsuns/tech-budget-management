@@ -133,6 +133,7 @@ const translations: TranslationSeed[] = [
   { key: 'filter.search', es: 'Buscar gasto...', en: 'Search expense...', category: 'common' },
   { key: 'filter.clearFilters', es: 'Limpiar filtros', en: 'Clear filters', category: 'common' },
   { key: 'filter.columns', es: 'Columnas', en: 'Columns', category: 'common' },
+  { key: 'filter.values', es: 'Valores', en: 'Values', category: 'common' },
   { key: 'filter.clear', es: 'Limpiar', en: 'Clear', category: 'common' },
   { key: 'filter.all', es: 'Todas', en: 'All', category: 'common' },
   { key: 'filter.searchComma', es: 'Filtrar (separar por comas)...', en: 'Filter (comma separated)...', category: 'common' },
@@ -190,6 +191,10 @@ const translations: TranslationSeed[] = [
   // =============================================
   { key: 'dashboard.noBudget', es: 'No hay presupuesto vigente configurado. Configure uno en la sección de Configuración.', en: 'No active budget configured. Set one up in the Configuration section.', category: 'dashboard' },
   { key: 'dashboard.companyTotals', es: 'Totales por Compañía', en: 'Totals by Company', category: 'dashboard' },
+  { key: 'dashboard.budget', es: 'Presupuesto', en: 'Budget', category: 'dashboard' },
+  { key: 'dashboard.committed', es: 'Comprometido', en: 'Committed', category: 'dashboard' },
+  { key: 'dashboard.real', es: 'Real', en: 'Real', category: 'dashboard' },
+  { key: 'dashboard.difference', es: 'Diferencia', en: 'Difference', category: 'dashboard' },
 
   // =============================================
   // PRESUPUESTOS
@@ -772,7 +777,8 @@ const translations: TranslationSeed[] = [
 
   // Computed Budget / Transactional Rules
   { key: 'budget.showBaseValues', es: 'Mostrar valores base (sin ajustes)', en: 'Show base values (no adjustments)', category: 'budget' },
-  { key: 'budget.showSummary', es: 'Ver Resumen Mensual', en: 'View Monthly Summary', category: 'budget' },
+  { key: 'budget.adjustments', es: 'Ajustes', en: 'Adjustments', category: 'budget' },
+  { key: 'budget.showSummary', es: 'Resumen Mensual', en: 'Monthly Summary', category: 'budget' },
   { key: 'budget.hideSummary', es: 'Ocultar Resumen', en: 'Hide Summary', category: 'budget' },
   { key: 'budget.concept', es: 'Concepto', en: 'Concept', category: 'budget' },
   { key: 'budget.baseValues', es: 'Base', en: 'Base', category: 'budget' },

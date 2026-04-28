@@ -62,7 +62,7 @@ export default function BudgetsPage() {
   });
 
   // Computed values state
-  const [showBase, setShowBase] = useState(false);
+  const showBase = false;
   const [showSummary, setShowSummary] = useState(false);
   const [monthlySummary, setMonthlySummary] = useState<MonthBreakdown[]>([]);
   const [computedLines, setComputedLines] = useState<ComputedBudgetLine[]>([]);
@@ -358,16 +358,11 @@ export default function BudgetsPage() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
             <FilterPanel budgetLines={budgetLines} filters={filters} onFiltersChange={setFilters} />
 
-            {/* Toggle base vs computed + summary */}
+            {/* Summary toggle */}
             <div className="flex items-center gap-2 mb-4">
-              <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 cursor-pointer">
-                <input type="checkbox" checked={showBase} onChange={(e) => setShowBase(e.target.checked)}
-                  className="rounded border-gray-300 text-accent focus:ring-accent" />
-                {t('budget.showBaseValues') || 'Mostrar valores base (sin ajustes)'}
-              </label>
               <button onClick={() => setShowSummary(!showSummary)}
-                className="ml-auto px-3 py-1 text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50">
-                {showSummary ? (t('budget.hideSummary') || 'Ocultar Resumen') : (t('budget.showSummary') || 'Ver Resumen Mensual')}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all whitespace-nowrap ${showSummary ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700' : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 hover:border-gray-400'}`}>
+                {t('budget.showSummary') || 'Resumen Mensual'}
               </button>
             </div>
 
@@ -409,27 +404,30 @@ export default function BudgetsPage() {
             )}
 
             <div className="flex flex-wrap items-center gap-3 mb-4">
-              <div className="ml-auto flex items-center gap-3">
-                {!canEdit && <p className="text-sm text-gray-500 flex items-center gap-1"><HiOutlineLockClosed className="w-4 h-4" /> {t('budget.readOnly')}</p>}
-                {canEdit && (
-                  <button onClick={() => setShowAddForm(true)} className="btn-secondary flex items-center gap-1 text-sm">
-                    <HiOutlinePlusCircle className="w-4 h-4" /> {t('budget.addLine')}
-                  </button>
-                )}
-                <button onClick={() => { setShowMyRequests(!showMyRequests); if (!showMyRequests) loadMyRequests(); }}
-                  className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded text-sm hover:bg-blue-100">
-                  {showMyRequests ? t('budget.hideRequests') || 'Ocultar Solicitudes' : t('budget.myRequests')}
-                </button>
+              <div className="flex gap-4 flex-wrap">
+                {Object.entries(totals).map(([curr, val]) => (
+                  <div key={curr} className="bg-blue-50 dark:bg-blue-900/30 px-4 py-2 rounded-lg">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Total {curr}</span>
+                    <p className="text-sm font-bold text-blue-800 dark:text-blue-300">${fmt(val as number)}</p>
+                  </div>
+                ))}
               </div>
             </div>
+          </div>
 
-            <div className="flex gap-4 flex-wrap">
-              {Object.entries(totals).map(([curr, val]) => (
-                <div key={curr} className="bg-blue-50 px-4 py-2 rounded-lg">
-                  <span className="text-xs text-gray-500">Total {curr}</span>
-                  <p className="text-sm font-bold text-blue-800">${fmt(val as number)}</p>
-                </div>
-              ))}
+          {/* Action buttons - separate row */}
+          <div className="flex items-center gap-3">
+            <div className="ml-auto flex items-center gap-3">
+              {!canEdit && <p className="text-sm text-gray-500 flex items-center gap-1"><HiOutlineLockClosed className="w-4 h-4" /> {t('budget.readOnly')}</p>}
+              {canEdit && (
+                <button onClick={() => setShowAddForm(true)} className="btn-secondary flex items-center gap-1 text-sm">
+                  <HiOutlinePlusCircle className="w-4 h-4" /> {t('budget.addLine')}
+                </button>
+              )}
+              <button onClick={() => { setShowMyRequests(!showMyRequests); if (!showMyRequests) loadMyRequests(); }}
+                className="px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-sm hover:bg-blue-100 dark:hover:bg-blue-900/50">
+                {showMyRequests ? t('budget.hideRequests') || 'Ocultar Solicitudes' : t('budget.myRequests')}
+              </button>
             </div>
           </div>
 

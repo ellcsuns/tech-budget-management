@@ -153,9 +153,9 @@ export default function FilterPanel({ budgetLines, filters, onFiltersChange }: F
         </div>
       </DropdownFilter>
 
-      {/* Columns dropdown */}
+      {/* Values dropdown */}
       <DropdownFilter
-        label={`${t('filter.columns') || 'Columnas'} (${colCount})`}
+        label={`${t('filter.values') || 'Valores'} (${colCount})`}
         active={colCount < 4}
       >
         <CheckItem label={t('dashboard.budget') || 'Presupuesto'} checked={filters.visibleColumns.budget} onChange={() => toggleColumn('budget')} />

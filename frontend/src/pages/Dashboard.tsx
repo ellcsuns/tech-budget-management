@@ -122,14 +122,14 @@ export default function Dashboard() {
   return (
     <div className="space-y-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-        <FilterPanel budgetLines={budgetLines as any} filters={filters} onFiltersChange={setFilters} />
         <div className="flex items-center gap-2 mb-4">
-          <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 cursor-pointer">
-            <input type="checkbox" checked={showBase} onChange={(e) => setShowBase(e.target.checked)} className="rounded border-gray-300 text-accent focus:ring-accent" />
-            {t('budget.showBaseValues') || 'Mostrar valores base (sin ajustes)'}
-          </label>
-          <button onClick={() => setShowSummary(!showSummary)} className="ml-auto px-3 py-1 text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50">
-            {showSummary ? (t('budget.hideSummary') || 'Ocultar Resumen') : (t('budget.showSummary') || 'Ver Resumen Mensual')}
+          <FilterPanel budgetLines={budgetLines as any} filters={filters} onFiltersChange={setFilters} />
+          <div className="h-5 w-px bg-gray-300 dark:bg-gray-600 flex-shrink-0" />
+          <button onClick={() => setShowBase(!showBase)} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all whitespace-nowrap ${showBase ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700' : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 hover:border-gray-400'}`}>
+            {t('budget.adjustments') || 'Ajustes'}
+          </button>
+          <button onClick={() => setShowSummary(!showSummary)} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all whitespace-nowrap ${showSummary ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700' : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 hover:border-gray-400'}`}>
+            {t('budget.showSummary') || 'Resumen Mensual'}
           </button>
         </div>
         <div className="flex gap-4 flex-wrap mb-4">
@@ -186,15 +186,16 @@ export default function Dashboard() {
           </div>
         )}
         {companyTotals.length > 1 && (
-          <div className="border-t dark:border-gray-600 pt-3">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{t('dashboard.companyTotals') || 'Totales por Compañía'}</p>
-            <div className="flex gap-2 flex-wrap">
+          <div className="border-t dark:border-gray-600 pt-2 mb-1">
+            <div className="flex gap-1.5 overflow-x-auto">
               {companyTotals.map(ct => (
-                <div key={ct.companyId} className="bg-gray-50 dark:bg-gray-700 px-3 py-1.5 rounded inline-flex items-center gap-3" title={ct.companyName}>
-                  <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{ct.companyCode}</span>
-                  <span className="text-xs text-blue-700 dark:text-blue-400">P: ${fmt(ct.budget)}</span>
-                  <span className="text-xs text-indigo-700 dark:text-indigo-400">C: ${fmt(ct.committed)}</span>
-                  <span className="text-xs text-emerald-700 dark:text-emerald-400">R: ${fmt(ct.real)}</span>
+                <div key={ct.companyId} className="bg-gray-50 dark:bg-gray-700 px-2 py-1 rounded flex-shrink-0 text-center min-w-0" title={ct.companyName}>
+                  <div className="text-[10px] font-bold text-gray-700 dark:text-gray-300 mb-0.5">{ct.companyCode}</div>
+                  <div className="flex gap-1.5 text-[10px] whitespace-nowrap">
+                    <span className="text-blue-700 dark:text-blue-400">${fmt(ct.budget)}</span>
+                    <span className="text-indigo-700 dark:text-indigo-400">${fmt(ct.committed)}</span>
+                    <span className="text-emerald-700 dark:text-emerald-400">${fmt(ct.real)}</span>
+                  </div>
                 </div>
               ))}
             </div>
