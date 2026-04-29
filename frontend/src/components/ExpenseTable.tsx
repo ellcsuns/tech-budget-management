@@ -15,7 +15,7 @@ interface ExpenseTableProps {
   activeSavings?: Saving[];
 }
 
-type SortField = 'code' | 'description' | 'total' | `month-${number}`;
+type SortField = 'code' | 'description' | 'currency' | 'company' | 'total' | 'totalBudget' | 'totalCommitted' | 'totalReal' | 'totalDiff' | `month-${number}`;
 type SortDir = 'asc' | 'desc';
 
 export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly = false, onTotalsChange, activeSavings = [] }: ExpenseTableProps) {
@@ -134,7 +134,26 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
       let va: any, vb: any;
       if (sortField === 'code') { va = a.expense?.code || ''; vb = b.expense?.code || ''; }
       else if (sortField === 'description') { va = a.expense?.shortDescription || ''; vb = b.expense?.shortDescription || ''; }
+      else if (sortField === 'currency') { va = a.currency || ''; vb = b.currency || ''; }
+      else if (sortField === 'company') { va = a.financialCompany?.code || ''; vb = b.financialCompany?.code || ''; }
       else if (sortField === 'total') { va = getPlanTotal(a); vb = getPlanTotal(b); }
+      else if (sortField === 'totalBudget') {
+        const mva = getMonthlyValues(a); const mvb = getMonthlyValues(b);
+        va = calcTotal(mva, 'budget'); vb = calcTotal(mvb, 'budget');
+      }
+      else if (sortField === 'totalCommitted') {
+        const mva = getMonthlyValues(a); const mvb = getMonthlyValues(b);
+        va = calcTotal(mva, 'committed'); vb = calcTotal(mvb, 'committed');
+      }
+      else if (sortField === 'totalReal') {
+        const mva = getMonthlyValues(a); const mvb = getMonthlyValues(b);
+        va = calcTotal(mva, 'real'); vb = calcTotal(mvb, 'real');
+      }
+      else if (sortField === 'totalDiff') {
+        const mva = getMonthlyValues(a); const mvb = getMonthlyValues(b);
+        va = calcTotal(mva, 'budget') - calcTotal(mva, 'committed') - calcTotal(mva, 'real');
+        vb = calcTotal(mvb, 'budget') - calcTotal(mvb, 'committed') - calcTotal(mvb, 'real');
+      }
       else if (sortField.startsWith('month-')) {
         const m = parseInt(sortField.split('-')[1]);
         va = getPlanValue(a, m); vb = getPlanValue(b, m);
@@ -259,8 +278,8 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
                 {t('table.description')}{sortIcon('description')}
                 <span className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-accent" onMouseDown={onMouseDown} />
               </th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('table.currency')}</th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('table.company')}</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer select-none" onClick={() => toggleSort('currency')}>{t('table.currency')}{sortIcon('currency')}</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer select-none" onClick={() => toggleSort('company')}>{t('table.company')}{sortIcon('company')}</th>
               {months.map((month) => (
                 <th key={month} colSpan={[filters.visibleColumns.budget, filters.visibleColumns.committed, filters.visibleColumns.real, filters.visibleColumns.diff !== false].filter(Boolean).length} className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border-l">
                   {month}
@@ -282,10 +301,10 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
                 </React.Fragment>
               ))}
               <React.Fragment>
-                {filters.visibleColumns.budget && <th className="px-2 py-2 text-xs text-gray-500">{t('expense.budget')}</th>}
-                {filters.visibleColumns.committed && <th className="px-2 py-2 text-xs text-gray-500">{t('expense.committed')}</th>}
-                {filters.visibleColumns.real && <th className="px-2 py-2 text-xs text-gray-500">{t('expense.real')}</th>}
-                {(filters.visibleColumns.diff !== false) && <th className="px-2 py-2 text-xs text-gray-500">{t('expense.diff')}</th>}
+                {filters.visibleColumns.budget && <th className="px-2 py-2 text-xs text-gray-500 cursor-pointer select-none" onClick={() => toggleSort('totalBudget')}>{t('expense.budget')}{sortIcon('totalBudget')}</th>}
+                {filters.visibleColumns.committed && <th className="px-2 py-2 text-xs text-gray-500 cursor-pointer select-none" onClick={() => toggleSort('totalCommitted')}>{t('expense.committed')}{sortIcon('totalCommitted')}</th>}
+                {filters.visibleColumns.real && <th className="px-2 py-2 text-xs text-gray-500 cursor-pointer select-none" onClick={() => toggleSort('totalReal')}>{t('expense.real')}{sortIcon('totalReal')}</th>}
+                {(filters.visibleColumns.diff !== false) && <th className="px-2 py-2 text-xs text-gray-500 cursor-pointer select-none" onClick={() => toggleSort('totalDiff')}>{t('expense.diff')}{sortIcon('totalDiff')}</th>}
               </React.Fragment>
             </tr>
           </thead>
