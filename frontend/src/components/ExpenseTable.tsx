@@ -254,6 +254,7 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
+              <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer select-none" onClick={() => toggleSort('code')}>{t('table.code')}{sortIcon('code')}</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sticky left-0 bg-gray-50 z-10 cursor-pointer select-none relative" style={{ width: descWidth, minWidth: 100 }} onClick={() => toggleSort('description')}>
                 {t('table.description')}{sortIcon('description')}
                 <span className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-accent" onMouseDown={onMouseDown} />
@@ -268,6 +269,7 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
               <th colSpan={[filters.visibleColumns.budget, filters.visibleColumns.committed, filters.visibleColumns.real, filters.visibleColumns.diff !== false].filter(Boolean).length} className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border-l">{t('table.total')}</th>
             </tr>
             <tr>
+              <th></th>
               <th className="sticky left-0 bg-gray-50 z-10"></th>
               <th></th>
               <th></th>
@@ -297,6 +299,7 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
               const hasAnyDeferral = monthlyValues.some(v => v.hasDeferral);
               return (
                 <tr key={bl.id} onClick={() => { setSelectedBudgetLine(bl); setShowBudgetLineDetail(true); }} className="hover:bg-gray-50 cursor-pointer">
+                  <td className="px-2 py-3 text-sm text-gray-500 whitespace-nowrap">{bl.expense?.code}</td>
                   <td className="px-4 py-3 text-sm text-gray-900 sticky left-0 bg-white z-10" style={{ width: descWidth, maxWidth: descWidth, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     <span className="inline-flex items-center gap-1">
                       <span className="truncate">{bl.expense?.shortDescription}</span>
@@ -334,6 +337,7 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
           </tbody>
           <tfoot className="bg-gray-100 font-bold">
             <tr>
+              <td></td>
               <td className="px-4 py-3 text-sm sticky left-0 bg-gray-100 z-10">{t('table.total')}</td>
               <td></td>
               <td></td>

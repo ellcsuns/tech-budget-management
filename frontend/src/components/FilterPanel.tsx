@@ -87,6 +87,8 @@ export default function FilterPanel({ budgetLines, filters, onFiltersChange, hid
   const terms = (filters.searchText || '').split(',').map(s => s.trim()).filter(Boolean);
   const hiddenCols = [filters.visibleColumns.budget, filters.visibleColumns.committed, filters.visibleColumns.real, filters.visibleColumns.diff].filter(v => !v).length;
 
+  const codes = Array.from(new Set(budgetLines.map(bl => bl.expense?.code).filter(Boolean))) as string[];
+
   return (
     <div className="flex items-center gap-1.5 mb-4">
       {/* Left: filters */}
@@ -95,7 +97,11 @@ export default function FilterPanel({ budgetLines, filters, onFiltersChange, hid
           <div className="px-3 py-1.5 border-b border-gray-100 dark:border-gray-700">
             <input type="text" value={filters.searchText || ''} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onFiltersChange({ ...filters, searchText: e.target.value })} placeholder={t('filter.searchComma')} className="w-full px-2 py-1 text-xs border border-gray-200 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-accent" />
           </div>
-          <div className="max-h-[200px] overflow-y-auto">{descriptions.sort().map(d => <ChkItem key={d} label={d} checked={terms.length === 0 || terms.some(t => d.toLowerCase().includes(t.toLowerCase()))} onChange={() => toggleDesc(d)} />)}</div>
+          <div className="max-h-[200px] overflow-y-auto">
+            {codes.sort().map(code => <ChkItem key={code} label={code} checked={terms.length === 0 || terms.some(t => code.toLowerCase().includes(t.toLowerCase()))} onChange={() => toggleDesc(code)} />)}
+            <div className="border-t border-gray-100 dark:border-gray-700 mt-1 pt-1" />
+            {descriptions.sort().map(d => <ChkItem key={d} label={d} checked={terms.length === 0 || terms.some(t => d.toLowerCase().includes(t.toLowerCase()))} onChange={() => toggleDesc(d)} />)}
+          </div>
         </DropBtn>
 
         {!hideValues && <DropBtn label={hiddenCols > 0 ? `${t('filter.values') || 'Valores'} (${4 - hiddenCols})` : (t('filter.values') || 'Valores')} icon={<HiOutlineTableCells className="w-3.5 h-3.5" />} active={hiddenCols > 0}>
