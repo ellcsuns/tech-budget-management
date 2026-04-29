@@ -11,6 +11,7 @@ interface FilterPanelProps {
     currencies?: string[];
     financialCompanyIds?: string[];
     categories?: string[];
+    codes?: string[];
     searchText?: string;
     visibleColumns: { budget: boolean; committed: boolean; real: boolean; diff: boolean };
   };
@@ -76,23 +77,30 @@ export default function FilterPanel({ budgetLines, filters, onFiltersChange, hid
   const toggleCurrency = (c: string) => { const cur = filters.currencies || []; const n = cur.includes(c) ? cur.filter(x => x !== c) : [...cur, c]; onFiltersChange({ ...filters, currencies: n.length > 0 ? n : undefined }); };
   const toggleCompany = (id: string) => { const cur = filters.financialCompanyIds || []; const n = cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id]; onFiltersChange({ ...filters, financialCompanyIds: n.length > 0 ? n : undefined }); };
   const toggleCategory = (id: string) => { const cur = filters.categories || []; const n = cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id]; onFiltersChange({ ...filters, categories: n.length > 0 ? n : undefined }); };
+  const toggleCode = (code: string) => { const cur = filters.codes || []; const n = cur.includes(code) ? cur.filter(x => x !== code) : [...cur, code]; onFiltersChange({ ...filters, codes: n.length > 0 ? n : undefined }); };
   const toggleColumn = (col: 'budget' | 'committed' | 'real' | 'diff') => { onFiltersChange({ ...filters, visibleColumns: { ...filters.visibleColumns, [col]: !filters.visibleColumns[col] } }); };
   const toggleDesc = (desc: string) => { const cur = (filters.searchText || '').split(',').map(s => s.trim()).filter(Boolean); const n = cur.includes(desc) ? cur.filter(d => d !== desc) : [...cur, desc]; onFiltersChange({ ...filters, searchText: n.join(', ') }); };
-  const clearAll = () => { onFiltersChange({ currencies: undefined, financialCompanyIds: undefined, categories: undefined, searchText: '', visibleColumns: { budget: true, committed: true, real: true, diff: true } }); };
-  const hasActive = !!(filters.currencies || filters.financialCompanyIds || filters.categories || filters.searchText);
+  const clearAll = () => { onFiltersChange({ currencies: undefined, financialCompanyIds: undefined, categories: undefined, codes: undefined, searchText: '', visibleColumns: { budget: true, committed: true, real: true, diff: true } }); };
+  const hasActive = !!(filters.currencies || filters.financialCompanyIds || filters.categories || filters.codes || filters.searchText);
   const terms = (filters.searchText || '').split(',').map(s => s.trim()).filter(Boolean);
   const hiddenCols = [filters.visibleColumns.budget, filters.visibleColumns.committed, filters.visibleColumns.real, filters.visibleColumns.diff].filter(v => !v).length;
 
   return (
     <div className="flex items-center gap-1.5 mb-4">
       <div className="flex items-center gap-1.5 flex-wrap">
+        {/* Code filter */}
+        <DropBtn label={t('table.code') || 'Código'} icon={<HiOutlineMagnifyingGlass className="w-3.5 h-3.5" />} active={!!filters.codes} onClear={() => onFiltersChange({ ...filters, codes: undefined })}>
+          <div className="max-h-[250px] overflow-y-auto">
+            {codes.sort().map(code => <ChkItem key={code} label={code} checked={!filters.codes || filters.codes.includes(code)} onChange={() => toggleCode(code)} />)}
+          </div>
+        </DropBtn>
+
+        {/* Description filter */}
         <DropBtn label={t('table.description') || 'Descripción'} icon={<HiOutlineMagnifyingGlass className="w-3.5 h-3.5" />} active={terms.length > 0} onClear={() => onFiltersChange({ ...filters, searchText: '' })}>
           <div className="px-3 py-1.5 border-b border-gray-100 dark:border-gray-700">
             <input type="text" value={filters.searchText || ''} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onFiltersChange({ ...filters, searchText: e.target.value })} placeholder={t('filter.searchComma')} className="w-full px-2 py-1 text-xs border border-gray-200 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-accent" />
           </div>
           <div className="max-h-[200px] overflow-y-auto">
-            {codes.sort().map(code => <ChkItem key={code} label={code} checked={terms.length === 0 || terms.some(t => code.toLowerCase().includes(t.toLowerCase()))} onChange={() => toggleDesc(code)} />)}
-            <div className="border-t border-gray-100 dark:border-gray-700 mt-1 pt-1" />
             {descriptions.sort().map(d => <ChkItem key={d} label={d} checked={terms.length === 0 || terms.some(t => d.toLowerCase().includes(t.toLowerCase()))} onChange={() => toggleDesc(d)} />)}
           </div>
         </DropBtn>

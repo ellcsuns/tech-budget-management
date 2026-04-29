@@ -23,6 +23,7 @@ export default function Dashboard() {
     currencies: undefined as string[] | undefined,
     financialCompanyIds: undefined as string[] | undefined,
     categories: undefined as string[] | undefined,
+    codes: undefined as string[] | undefined,
     searchText: '',
     visibleColumns: { budget: true, committed: true, real: true, diff: true }
   });
@@ -60,6 +61,9 @@ export default function Dashboard() {
       if (filters.categories) {
         const catId = (bl.expense as any)?.categoryId;
         if (!catId || !filters.categories.includes(catId)) return false;
+      }
+      if (filters.codes && filters.codes.length > 0) {
+        if (!filters.codes.includes(bl.expense?.code || '')) return false;
       }
       if (filters.searchText) {
         const terms = filters.searchText.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);

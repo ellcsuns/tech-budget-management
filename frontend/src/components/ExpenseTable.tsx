@@ -115,6 +115,9 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
     if (filters.financialCompanyIds && filters.financialCompanyIds.length > 0) {
       if (!filters.financialCompanyIds.includes(bl.financialCompanyId)) return false;
     }
+    if (filters.codes && filters.codes.length > 0) {
+      if (!filters.codes.includes(bl.expense?.code || '')) return false;
+    }
     return true;
   }), [budgetLines, filters]);
 
