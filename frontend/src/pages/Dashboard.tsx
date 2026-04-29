@@ -141,7 +141,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-3">
         <FilterPanel budgetLines={budgetLines as any} filters={filters} onFiltersChange={setFilters}
           showBaseToggle={true} showBase={showBase} onShowBaseChange={setShowBase}
           showSummaryToggle={true} showSummary={showSummary} onShowSummaryChange={setShowSummary}
@@ -226,7 +226,7 @@ export default function Dashboard() {
           </div>
         )}
       </div>
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-2">
         <ExpenseTable budgetLines={expenseTableLines} viewMode="COMPARISON" filters={filters} readOnly={true} onTotalsChange={setTotals} activeSavings={activeSavings} />
       </div>
     </div>

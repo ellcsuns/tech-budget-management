@@ -35,7 +35,7 @@ export default function Layout({ children }: LayoutProps) {
       <div className="flex-1 flex flex-col overflow-hidden">
         <TopBar />
         <main className="flex-1 overflow-auto">
-          <div className="container mx-auto px-6 py-8">
+          <div className="container mx-auto px-2 py-4">
             {children}
           </div>
         </main>

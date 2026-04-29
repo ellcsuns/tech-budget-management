@@ -309,20 +309,14 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
                   {monthlyValues.map((value) => (
                     <React.Fragment key={value.month}>
                       {filters.visibleColumns.budget && (
-                        <td className={`px-2 py-3 text-sm text-right ${value.hasSaving ? 'text-gray-900' : 'text-gray-900'}`} title={value.hasSaving ? `Original: ${fmt(value.originalBudget)} | Ahorro: ${fmt(value.savingAmount)}` : undefined}>
-                          <span className="inline-flex items-center gap-1 justify-end">
-                            {value.hasSaving && <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" title={`Ahorro: ${fmt(value.savingAmount)}`} />}
-                            {value.budget > 0 ? fmt(value.budget) : '-'}
-                          </span>
+                        <td className={`px-2 py-3 text-sm text-right text-gray-900`} title={value.hasSaving ? `Original: ${fmt(value.originalBudget)} | Ahorro: ${fmt(value.savingAmount)}` : undefined}>
+                          {value.budget > 0 ? fmt(value.budget) : '-'}
                         </td>
                       )}
                       {filters.visibleColumns.committed && <td className="px-2 py-3 text-sm text-right text-blue-600">{value.committed > 0 ? fmt(value.committed) : '-'}</td>}
                       {filters.visibleColumns.real && (
                         <td className={`px-2 py-3 text-sm text-right ${value.hasDeferral ? 'bg-violet-50 text-violet-700' : 'text-green-600'}`}>
-                          <span className="inline-flex items-center gap-1 justify-end">
-                            {value.hasDeferral && value.real > 0 && <span className="w-2 h-2 rounded-full bg-violet-400 flex-shrink-0" title={`Diferido: ${fmt(value.deferralAmount)}`} />}
-                            {value.real > 0 ? fmt(value.real) : '-'}
-                          </span>
+                          {value.real > 0 ? fmt(value.real) : '-'}
                         </td>
                       )}
                       {(() => { if (filters.visibleColumns.diff === false) return null; const diff = value.budget - (value.committed + value.real); return <td className={`px-2 py-3 text-sm text-right font-medium ${getDiffColor(diff)}`}>{diff !== 0 ? fmt(diff) : '-'}</td>; })()}
