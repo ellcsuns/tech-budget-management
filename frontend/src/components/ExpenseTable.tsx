@@ -312,7 +312,7 @@ export default function ExpenseTable({ budgetLines, viewMode, filters, readOnly 
                   {monthlyValues.map((value) => (
                     <React.Fragment key={value.month}>
                       {filters.visibleColumns.budget && (
-                        <td className={`px-2 py-3 text-sm text-right text-gray-900`} title={value.hasSaving ? `Original: ${fmt(value.originalBudget)} | Ahorro: ${fmt(value.savingAmount)}` : undefined}>
+                        <td className={`px-2 py-3 text-sm text-right ${value.hasSaving ? 'bg-amber-50 text-amber-700' : 'text-gray-900'}`} title={value.hasSaving ? `Original: ${fmt(value.originalBudget)} | Ahorro: ${fmt(value.savingAmount)}` : undefined}>
                           {value.budget > 0 ? fmt(value.budget) : '-'}
                         </td>
                       )}

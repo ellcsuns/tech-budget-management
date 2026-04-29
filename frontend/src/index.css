@@ -116,6 +116,7 @@ body {
 .dark .bg-violet-50\/50 { background-color: rgba(139,92,246,0.12) !important; }
 .dark td.bg-violet-50 { background-color: rgba(139,92,246,0.18) !important; }
 .dark tr.bg-violet-50 { background-color: rgba(139,92,246,0.18) !important; }
+.dark td.bg-amber-50 { background-color: rgba(245,158,11,0.15) !important; }
 
 /* Colored text - brighter in dark mode */
 .dark .text-blue-800 { color: #93c5fd !important; }
