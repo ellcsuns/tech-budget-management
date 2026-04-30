@@ -20,7 +20,8 @@ export const MENU_CODES = {
   CONFIGURATION: 'configuration',
   APPROVALS: 'approvals',
   AUDIT: 'audit',
-  BUDGET_CONFIRMATION: 'budget-confirmation'
+  BUDGET_CONFIRMATION: 'budget-confirmation',
+  MONTHLY_RECONCILIATION: 'monthly-reconciliation'
 } as const;
 
 export type MenuCode = typeof MENU_CODES[keyof typeof MENU_CODES];

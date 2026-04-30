@@ -23,6 +23,7 @@ import { changeRequestRouter } from './routes/changeRequestRoutes';
 import { auditRouter } from './routes/auditRoutes';
 import { userPreferenceRouter } from './routes/userPreferenceRoutes';
 import { budgetConfirmationRouter } from './routes/budgetConfirmationRoutes';
+import { reconciliationRouter } from './routes/reconciliationRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/requestLogger';
 import { createAuditLogger } from './middleware/auditLogger';
@@ -83,6 +84,7 @@ app.use('/api/change-requests', changeRequestRouter(prisma));
 app.use('/api/audit', auditRouter(prisma));
 app.use('/api/user-preferences', userPreferenceRouter(prisma));
 app.use('/api/budget-confirmations', budgetConfirmationRouter(prisma));
+app.use('/api/reconciliations', reconciliationRouter(prisma));
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

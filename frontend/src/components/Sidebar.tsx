@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useI18n } from '../contexts/I18nContext';
-import { changeRequestApi } from '../services/api';
+import { changeRequestApi, reconciliationApi } from '../services/api';
 import Logo from './icons/Logo';
 import {
   HiOutlineChartBarSquare,
@@ -22,6 +22,7 @@ import {
   HiOutlineTableCells,
   HiOutlineLanguage,
   HiOutlineClipboardDocumentList,
+  HiOutlineClipboardDocumentCheck,
   HiOutlineQuestionMarkCircle,
 } from 'react-icons/hi2';
 import { IconType } from 'react-icons';
@@ -42,6 +43,7 @@ const menuItems: MenuItem[] = [
   { path: '/savings', labelKey: 'menu.savings', fallback: 'Ahorros', icon: HiOutlineCurrencyDollar, menuCode: 'budgets' },
   { path: '/deferrals', labelKey: 'menu.deferrals', fallback: 'Diferidos', icon: HiOutlineCalendarDays, menuCode: 'budgets' },
   { path: '/approvals', labelKey: 'menu.approvals', fallback: 'Aprobaciones', icon: HiOutlineClipboardDocumentList, menuCode: 'approvals' },
+  { path: '/reconciliation', labelKey: 'menu.reconciliation', fallback: 'Conciliación Mensual', icon: HiOutlineClipboardDocumentCheck, menuCode: 'monthly-reconciliation' },
   { path: '/expenses', labelKey: 'menu.expenses', fallback: 'Gastos', icon: HiOutlineDocumentText, menuCode: 'expenses' },
   { path: '/committed-transactions', labelKey: 'menu.committedTransactions', fallback: 'Trans. Comprometidas', icon: HiOutlineLockClosed, menuCode: 'committed-transactions' },
   { path: '/real-transactions', labelKey: 'menu.realTransactions', fallback: 'Trans. Reales', icon: HiOutlineCheckCircle, menuCode: 'real-transactions' },
@@ -65,6 +67,7 @@ export default function Sidebar() {
     return localStorage.getItem('sidebar_collapsed') === 'true';
   });
   const [pendingCount, setPendingCount] = useState(0);
+  const [reconciliationPendingCount, setReconciliationPendingCount] = useState(0);
 
   useEffect(() => {
     localStorage.setItem('sidebar_collapsed', String(collapsed));
@@ -79,6 +82,18 @@ export default function Sidebar() {
     };
     loadPendingCount();
     const interval = setInterval(loadPendingCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const loadReconciliationCount = async () => {
+      try {
+        const res = await reconciliationApi.getPendingCount();
+        setReconciliationPendingCount(res.data.count || 0);
+      } catch { setReconciliationPendingCount(0); }
+    };
+    loadReconciliationCount();
+    const interval = setInterval(loadReconciliationCount, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -125,7 +140,8 @@ export default function Sidebar() {
         {mainItems.map((item) => {
           const isActive = location.pathname === item.path;
           const Icon = item.icon;
-          const showBadge = item.menuCode === 'approvals' && pendingCount > 0;
+          const showBadge = (item.menuCode === 'approvals' && pendingCount > 0) || (item.menuCode === 'monthly-reconciliation' && reconciliationPendingCount > 0);
+          const badgeCount = item.menuCode === 'approvals' ? pendingCount : item.menuCode === 'monthly-reconciliation' ? reconciliationPendingCount : 0;
           return (
             <Link key={item.path} to={item.path}
               title={collapsed ? (t(item.labelKey) || item.fallback) : undefined}
@@ -134,7 +150,7 @@ export default function Sidebar() {
               {!collapsed && <span className="text-sm font-medium">{t(item.labelKey) || item.fallback}</span>}
               {showBadge && (
                 <span className={`${collapsed ? 'absolute -top-1 -right-1' : 'ml-auto'} bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1`}>
-                  {pendingCount}
+                  {badgeCount}
                 </span>
               )}
             </Link>

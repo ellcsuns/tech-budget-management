@@ -305,5 +305,23 @@ export const planValueApi = {
   delete: (id: string) => api.delete(`/budget-lines/${id}`)
 };
 
+// Reconciliation API
+export const reconciliationApi = {
+  getSummary: (budgetId?: string) => {
+    const params = budgetId ? `?budgetId=${budgetId}` : '';
+    return api.get(`/reconciliations/summary${params}`);
+  },
+  confirmSaving: (data: { budgetLineId: string; month: number; amount: number }) =>
+    api.post('/reconciliations/saving', data),
+  redistribute: (data: { budgetLineId: string; month: number; distribution: Record<number, number> }) =>
+    api.post('/reconciliations/redistribution', data),
+  adjust: (data: { budgetLineId: string; month: number; reductions: Record<number, number> }) =>
+    api.post('/reconciliations/adjustment', data),
+  getStatus: () => api.get('/reconciliations/status'),
+  getHistory: (budgetLineId: string) => api.get(`/reconciliations/history/${budgetLineId}`),
+  getTracking: () => api.get('/reconciliations/tracking'),
+  getPendingCount: () => api.get<{ count: number }>('/reconciliations/pending-count'),
+};
+
 export default api;
 export { api };

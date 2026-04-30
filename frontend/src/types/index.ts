@@ -405,3 +405,69 @@ export interface BudgetConfirmationResponse {
   createdAt: string;
   updatedAt?: string;
 }
+
+
+// Monthly Reconciliation Types
+export interface ReconciliationSummary {
+  budgetId: string;
+  currentMonth: number;
+  lines: ReconciliationLineSummary[];
+}
+
+export interface ReconciliationLineSummary {
+  budgetLineId: string;
+  expenseCode: string;
+  expenseDescription: string;
+  financialCompany: string;
+  currency: string;
+  months: ReconciliationMonthData[];
+}
+
+export interface ReconciliationMonthData {
+  month: number;
+  planned: number;
+  actual: number;
+  difference: number;
+  isClosed: boolean;
+  isReconciled: boolean;
+  reconciliation?: {
+    id: string;
+    decisionType: 'SAVING' | 'REDISTRIBUTION' | 'ADJUSTMENT';
+    createdAt: string;
+  };
+}
+
+export interface MonthlyReconciliationRecord {
+  id: string;
+  budgetLineId: string;
+  month: number;
+  year: number;
+  decisionType: 'SAVING' | 'REDISTRIBUTION' | 'ADJUSTMENT';
+  plannedAmount: number;
+  actualAmount: number;
+  differenceAmount: number;
+  details: Record<string, number>;
+  changeRequestId?: string;
+  savingId?: string;
+  user?: { id: string; fullName: string };
+  createdAt: string;
+}
+
+export interface ReconciliationMonthStatus {
+  month: number;
+  year: number;
+  totalLines: number;
+  reconciledLines: number;
+  isComplete: boolean;
+}
+
+export interface ReconciliationUserTracking {
+  userId: string;
+  fullName: string;
+  technologyDirection: string;
+  months: {
+    month: number;
+    isComplete: boolean;
+    reconciledAt: string | null;
+  }[];
+}

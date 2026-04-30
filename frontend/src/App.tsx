@@ -27,6 +27,8 @@ import DetailedReportsPage from './pages/DetailedReportsPage';
 import ApprovalsPage from './pages/ApprovalsPage';
 import AuditPage from './pages/AuditPage';
 import HelpPage from './pages/HelpPage';
+import { lazy, Suspense } from 'react';
+const ReconciliationPage = lazy(() => import('./pages/ReconciliationPage'));
 import ErrorBoundary from './components/ErrorBoundary';
 import ToastContainer from './components/Toast';
 
@@ -63,6 +65,7 @@ function App() {
               <Route path="/translations" element={<ProtectedRoute menuCode="users" permissionType="VIEW"><Layout><TranslationsPage /></Layout></ProtectedRoute>} />
               <Route path="/approvals" element={<ProtectedRoute menuCode="approvals" permissionType="VIEW"><Layout><ApprovalsPage /></Layout></ProtectedRoute>} />
               <Route path="/audit" element={<ProtectedRoute menuCode="audit" permissionType="VIEW"><Layout><AuditPage /></Layout></ProtectedRoute>} />
+              <Route path="/reconciliation" element={<ProtectedRoute menuCode="monthly-reconciliation" permissionType="VIEW"><Layout><Suspense fallback={<div>Loading...</div>}><ReconciliationPage /></Suspense></Layout></ProtectedRoute>} />
               <Route path="/help" element={<ProtectedRoute><Layout><HelpPage /></Layout></ProtectedRoute>} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>

@@ -96,6 +96,7 @@ model BudgetLine {
   savings                 Saving[]
   deferrals               Deferral[]
   changeRequests          BudgetLineChangeRequest[]
+  reconciliations         MonthlyReconciliation[]
   lastModifiedAt          DateTime?
   lastModifiedById        String?
   lastModifiedBy          User?                   @relation("BudgetLineModifier", fields: [lastModifiedById], references: [id])
@@ -271,6 +272,7 @@ model User {
   auditLogs               AuditLog[]
   confirmationRequests    BudgetConfirmationRequest[]  @relation("ConfirmationRequester")
   confirmationResponses   BudgetConfirmationResponse[] @relation("ConfirmationResponder")
+  reconciliations         MonthlyReconciliation[]      @relation("ReconciliationUser")
   
   @@index([username])
   @@index([email])
@@ -546,4 +548,37 @@ model BudgetConfirmationResponse {
   @@index([requestId])
   @@index([userId])
   @@index([status])
+}
+
+// ============================================
+// Monthly Reconciliation Module
+// ============================================
+
+enum ReconciliationDecisionType {
+  SAVING
+  REDISTRIBUTION
+  ADJUSTMENT
+}
+
+model MonthlyReconciliation {
+  id                  String                       @id @default(uuid())
+  budgetLineId        String
+  budgetLine          BudgetLine                   @relation(fields: [budgetLineId], references: [id], onDelete: Cascade)
+  userId              String
+  user                User                         @relation("ReconciliationUser", fields: [userId], references: [id])
+  month               Int                          // 1-12
+  year                Int
+  decisionType        ReconciliationDecisionType
+  plannedAmount       Decimal                      @db.Decimal(15, 2)
+  actualAmount        Decimal                      @db.Decimal(15, 2)
+  differenceAmount    Decimal                      @db.Decimal(15, 2)
+  details             Json                         // redistribution/adjustment breakdown
+  changeRequestId     String?                      // cross-reference to BudgetLineChangeRequest
+  savingId            String?                      // cross-reference to Saving
+  createdAt           DateTime                     @default(now())
+
+  @@unique([budgetLineId, month, year])
+  @@index([userId])
+  @@index([budgetLineId])
+  @@index([month, year])
 }
